@@ -1,0 +1,116 @@
+{
+  "experiment": "payload_tfidf_logistic_baseline",
+  "features": [
+    "payload"
+  ],
+  "excluded_features": [
+    "length",
+    "attack_type"
+  ],
+  "model": "character TF-IDF (3-5 grams) + Logistic Regression",
+  "training_rows": 20712,
+  "training_label_counts": {
+    "norm": 12870,
+    "anom": 7842
+  },
+  "test_results": {
+    "dataset": "HttpParamsDataset standard test",
+    "rows": 10355,
+    "accuracy": 0.994205697730565,
+    "malicious_precision": 0.9997411338338079,
+    "malicious_recall": 0.984952818158633,
+    "malicious_f1": 0.9922918807810894,
+    "false_positive_rate": 0.00015542430836182778,
+    "confusion_matrix_labels": [
+      "norm",
+      "anom"
+    ],
+    "confusion_matrix": [
+      [
+        6433,
+        1
+      ],
+      [
+        59,
+        3862
+      ]
+    ],
+    "classification_report": {
+      "benign": {
+        "precision": 0.9909118915588416,
+        "recall": 0.9998445756916382,
+        "f1-score": 0.9953581927897261,
+        "support": 6434.0
+      },
+      "malicious": {
+        "precision": 0.9997411338338079,
+        "recall": 0.984952818158633,
+        "f1-score": 0.9922918807810894,
+        "support": 3921.0
+      },
+      "accuracy": 0.994205697730565,
+      "macro avg": {
+        "precision": 0.9953265126963248,
+        "recall": 0.9923986969251356,
+        "f1-score": 0.9938250367854078,
+        "support": 10355.0
+      },
+      "weighted avg": {
+        "precision": 0.9942551517191643,
+        "recall": 0.994205697730565,
+        "f1-score": 0.994197110280227,
+        "support": 10355.0
+      }
+    }
+  },
+  "lexical_test_results": {
+    "dataset": "HttpParamsDataset lexical test",
+    "rows": 1106,
+    "accuracy": 0.8996383363471971,
+    "malicious_precision": 0.47474747474747475,
+    "malicious_recall": 0.44339622641509435,
+    "malicious_f1": 0.4585365853658537,
+    "false_positive_rate": 0.052,
+    "confusion_matrix_labels": [
+      "norm",
+      "anom"
+    ],
+    "confusion_matrix": [
+      [
+        948,
+        52
+      ],
+      [
+        59,
+        47
+      ]
+    ],
+    "classification_report": {
+      "benign": {
+        "precision": 0.9414101290963257,
+        "recall": 0.948,
+        "f1-score": 0.9446935724962631,
+        "support": 1000.0
+      },
+      "malicious": {
+        "precision": 0.47474747474747475,
+        "recall": 0.44339622641509435,
+        "f1-score": 0.4585365853658537,
+        "support": 106.0
+      },
+      "accuracy": 0.8996383363471971,
+      "macro avg": {
+        "precision": 0.7080788019219002,
+        "recall": 0.6956981132075472,
+        "f1-score": 0.7016150789310583,
+        "support": 1106.0
+      },
+      "weighted avg": {
+        "precision": 0.8966847752437234,
+        "recall": 0.8996383363471971,
+        "f1-score": 0.8980998648689363,
+        "support": 1106.0
+      }
+    }
+  }
+}
