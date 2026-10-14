@@ -1,0 +1,57 @@
+{
+  "dataset": "AI WAF",
+  "model": "character TF-IDF + Logistic Regression",
+  "random_state": 42,
+  "validation_fraction": 0.2,
+  "rows_before_deduplication": 11949,
+  "duplicates_removed": 3,
+  "rows_after_deduplication": 11946,
+  "train_rows": 9556,
+  "validation_rows": 2390,
+  "accuracy": 0.994142259414226,
+  "precision_malicious": 0.9893617021276596,
+  "recall_malicious": 0.9893617021276596,
+  "f1_malicious": 0.9893617021276596,
+  "false_positive_rate": 0.0040415704387990765,
+  "confusion_matrix_labels": [
+    "benign",
+    "malicious"
+  ],
+  "confusion_matrix": [
+    [
+      1725,
+      7
+    ],
+    [
+      7,
+      651
+    ]
+  ],
+  "classification_report": {
+    "benign": {
+      "precision": 0.995958429561201,
+      "recall": 0.995958429561201,
+      "f1-score": 0.995958429561201,
+      "support": 1732.0
+    },
+    "malicious": {
+      "precision": 0.9893617021276596,
+      "recall": 0.9893617021276596,
+      "f1-score": 0.9893617021276596,
+      "support": 658.0
+    },
+    "accuracy": 0.994142259414226,
+    "macro avg": {
+      "precision": 0.9926600658444302,
+      "recall": 0.9926600658444302,
+      "f1-score": 0.9926600658444302,
+      "support": 2390.0
+    },
+    "weighted avg": {
+      "precision": 0.994142259414226,
+      "recall": 0.994142259414226,
+      "f1-score": 0.994142259414226,
+      "support": 2390.0
+    }
+  }
+}
