@@ -1,0 +1,99 @@
+{
+  "audit_name": "CSIC Indivisible Template Grouping and Partition Audit",
+  "random_seed": 42,
+  "total_requests_partitioned": 61065,
+  "total_unique_templates": 1734,
+  "templates_with_label_conflicts": 16,
+  "conflict_templates_detail": {
+    "GET:/tienda1/miembros/editar.jsp:B1,apellidos,ciudad,cp,direccion,dni,email,login,modo,nombre,ntc,password,provincia": {
+      "benign": 1000,
+      "malicious": 923
+    },
+    "GET:/tienda1/publico/anadir.jsp:B1,cantidad,id,nombre,precio": {
+      "benign": 1000,
+      "malicious": 932
+    },
+    "GET:/tienda1/publico/autenticar.jsp:B1,login,modo,pwd,remember": {
+      "benign": 1000,
+      "malicious": 916
+    },
+    "GET:/tienda1/publico/caracteristicas.jsp:id": {
+      "benign": 1000,
+      "malicious": 503
+    },
+    "GET:/tienda1/publico/entrar.jsp:errorMsg": {
+      "benign": 1000,
+      "malicious": 453
+    },
+    "GET:/tienda1/publico/pagar.jsp:B1,modo,precio": {
+      "benign": 1000,
+      "malicious": 906
+    },
+    "GET:/tienda1/publico/registro.jsp:B1,apellidos,ciudad,cp,direccion,dni,email,login,modo,nombre,ntc,password,provincia": {
+      "benign": 1000,
+      "malicious": 914
+    },
+    "GET:/tienda1/publico/vaciar.jsp:B2": {
+      "benign": 1000,
+      "malicious": 468
+    },
+    "POST:/tienda1/miembros/editar.jsp:B1,apellidos,ciudad,cp,direccion,dni,email,login,modo,nombre,ntc,password,provincia": {
+      "benign": 1000,
+      "malicious": 923
+    },
+    "POST:/tienda1/publico/anadir.jsp:B1,cantidad,id,nombre,precio": {
+      "benign": 1000,
+      "malicious": 932
+    },
+    "POST:/tienda1/publico/autenticar.jsp:B1,login,modo,pwd,remember": {
+      "benign": 1000,
+      "malicious": 916
+    },
+    "POST:/tienda1/publico/caracteristicas.jsp:id": {
+      "benign": 1000,
+      "malicious": 503
+    },
+    "POST:/tienda1/publico/entrar.jsp:errorMsg": {
+      "benign": 1000,
+      "malicious": 453
+    },
+    "POST:/tienda1/publico/pagar.jsp:B1,modo,precio": {
+      "benign": 1000,
+      "malicious": 906
+    },
+    "POST:/tienda1/publico/registro.jsp:B1,apellidos,ciudad,cp,direccion,dni,email,login,modo,nombre,ntc,password,provincia": {
+      "benign": 1000,
+      "malicious": 914
+    },
+    "POST:/tienda1/publico/vaciar.jsp:B2": {
+      "benign": 1000,
+      "malicious": 468
+    }
+  },
+  "development_partition": {
+    "total_rows": 30533,
+    "label_distribution": {
+      "benign": 18000,
+      "malicious": 12533
+    },
+    "unique_templates": 867
+  },
+  "held_out_test_partition": {
+    "total_rows": 30532,
+    "label_distribution": {
+      "benign": 18000,
+      "malicious": 12532
+    },
+    "unique_templates": 867
+  },
+  "cross_boundary_metrics": {
+    "template_signature_overlap": 0,
+    "exact_raw_text_overlap": 0,
+    "shared_payload_values_count": 30063
+  },
+  "scientific_notes": [
+    "Template groups assigned indivisibly to prevent structural template leakage.",
+    "Prior exposure to official CSIC test data is formally disclosed; held-out partition is designated as Post-Hoc Held-Out.",
+    "Shared payload values reflect common SQLi/XSS attack vectors (e.g. ' OR 1=1) and generic parameters tested against distinct endpoints."
+  ]
+}
