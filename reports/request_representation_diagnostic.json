@@ -1,0 +1,127 @@
+{
+  "experiment": "request_representation_diagnostic",
+  "random_state": 42,
+  "results": [
+    {
+      "representation": "full_request",
+      "dataset": "AI WAF validation",
+      "rows": 2390,
+      "accuracy": 0.994142259414226,
+      "malicious_precision": 0.9893617021276596,
+      "malicious_recall": 0.9893617021276596,
+      "malicious_f1": 0.9893617021276596,
+      "false_positive_rate": 0.0040415704387990765,
+      "confusion_matrix": [
+        [
+          1725,
+          7
+        ],
+        [
+          7,
+          651
+        ]
+      ]
+    },
+    {
+      "representation": "full_request",
+      "dataset": "CSIC diagnostic test",
+      "rows": 61065,
+      "accuracy": 0.41157782690575617,
+      "malicious_precision": 0.40666815534981193,
+      "malicious_recall": 0.9445441851186914,
+      "malicious_f1": 0.568550226939795,
+      "false_positive_rate": 0.9595,
+      "confusion_matrix": [
+        [
+          1458,
+          34542
+        ],
+        [
+          1390,
+          23675
+        ]
+      ]
+    },
+    {
+      "representation": "request_target",
+      "dataset": "AI WAF validation",
+      "rows": 2390,
+      "accuracy": 0.8740585774058578,
+      "malicious_precision": 0.7228464419475655,
+      "malicious_recall": 0.8799392097264438,
+      "malicious_f1": 0.7936943111720356,
+      "false_positive_rate": 0.12817551963048499,
+      "confusion_matrix": [
+        [
+          1510,
+          222
+        ],
+        [
+          79,
+          579
+        ]
+      ]
+    },
+    {
+      "representation": "request_target",
+      "dataset": "CSIC diagnostic test",
+      "rows": 61065,
+      "accuracy": 0.4627036764103824,
+      "malicious_precision": 0.40317539692461557,
+      "malicious_recall": 0.6433273488928786,
+      "malicious_f1": 0.4956962803565939,
+      "false_positive_rate": 0.6630555555555555,
+      "confusion_matrix": [
+        [
+          12130,
+          23870
+        ],
+        [
+          8940,
+          16125
+        ]
+      ]
+    },
+    {
+      "representation": "without_host_header",
+      "dataset": "AI WAF validation",
+      "rows": 2390,
+      "accuracy": 0.9945606694560669,
+      "malicious_precision": 0.9908675799086758,
+      "malicious_recall": 0.9893617021276596,
+      "malicious_f1": 0.9901140684410646,
+      "false_positive_rate": 0.003464203233256351,
+      "confusion_matrix": [
+        [
+          1726,
+          6
+        ],
+        [
+          7,
+          651
+        ]
+      ]
+    },
+    {
+      "representation": "without_host_header",
+      "dataset": "CSIC diagnostic test",
+      "rows": 61065,
+      "accuracy": 0.4107098992876443,
+      "malicious_precision": 0.4104800629590766,
+      "malicious_recall": 0.9988430081787353,
+      "malicious_f1": 0.5818469154165262,
+      "false_positive_rate": 0.9987777777777778,
+      "confusion_matrix": [
+        [
+          44,
+          35956
+        ],
+        [
+          29,
+          25036
+        ]
+      ]
+    }
+  ],
+  "note": "CSIC results are diagnostic only; they have already been used for model comparisons and must not be treated as an untouched final benchmark."
+}
