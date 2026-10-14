@@ -1,0 +1,56 @@
+{
+  "dataset": "CSIC 2010",
+  "split": "test",
+  "model": "AI WAF-trained character TF-IDF + Logistic Regression",
+  "test_rows": 61065,
+  "true_label_counts": {
+    "benign": 36000,
+    "malicious": 25065
+  },
+  "accuracy": 0.41157782690575617,
+  "malicious_precision": 0.40666815534981193,
+  "malicious_recall": 0.9445441851186914,
+  "malicious_f1": 0.568550226939795,
+  "false_positive_rate": 0.9595,
+  "confusion_matrix_labels": [
+    "benign",
+    "malicious"
+  ],
+  "confusion_matrix": [
+    [
+      1458,
+      34542
+    ],
+    [
+      1390,
+      23675
+    ]
+  ],
+  "classification_report": {
+    "benign": {
+      "precision": 0.511938202247191,
+      "recall": 0.0405,
+      "f1-score": 0.07506177924217462,
+      "support": 36000.0
+    },
+    "malicious": {
+      "precision": 0.40666815534981193,
+      "recall": 0.9445441851186914,
+      "f1-score": 0.568550226939795,
+      "support": 25065.0
+    },
+    "accuracy": 0.41157782690575617,
+    "macro avg": {
+      "precision": 0.45930317879850147,
+      "recall": 0.4925220925593457,
+      "f1-score": 0.3218060030909848,
+      "support": 61065.0
+    },
+    "weighted avg": {
+      "precision": 0.46872861041090497,
+      "recall": 0.41157782690575617,
+      "f1-score": 0.2776211494467247,
+      "support": 61065.0
+    }
+  }
+}
