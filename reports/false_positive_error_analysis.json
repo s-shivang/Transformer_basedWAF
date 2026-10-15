@@ -1,0 +1,1348 @@
+{
+  "analysis_name": "CSIC Development Partition False Positive Error Analysis",
+  "dataset_path": "C:\\Users\\ptssh\\OneDrive\\Desktop\\transformer-waf\\data\\processed\\csic_dev.parquet",
+  "total_requests": 30533,
+  "baseline_metrics": {
+    "accuracy": 0.4222971866505093,
+    "precision": 0.40908767181824657,
+    "recall": 0.9166201228756083,
+    "f1": 0.5657023267265788,
+    "false_positive_rate": 0.9218888888888889,
+    "confusion_matrix": [
+      [
+        1406,
+        16594
+      ],
+      [
+        1045,
+        11488
+      ]
+    ],
+    "tn": 1406,
+    "fp": 16594,
+    "fn": 1045,
+    "tp": 11488
+  },
+  "intercept": -0.42627814814912307,
+  "top_paths_in_false_positives": {
+    "/tienda1/global/creditos.jsp": 1000,
+    "/tienda1/publico/miembros.jsp": 1000,
+    "/tienda1/publico/autenticar.jsp": 1000,
+    "/tienda1/publico/pagar.jsp": 1000,
+    "/tienda1/publico/entrar.jsp": 1000,
+    "/tienda1/imagenes/1.gif": 1000,
+    "/tienda1/publico/caracteristicas.jsp": 1000,
+    "/tienda1/global/menum.jsp": 1000,
+    "/tienda1/miembros/salir.jsp": 1000,
+    "/tienda1/publico/vaciar.jsp": 1000
+  },
+  "most_influential_malicious_ngrams_in_fps": [
+    {
+      "n_gram": "aaa",
+      "total_contribution": 0.8726
+    },
+    {
+      "n_gram": "/3.",
+      "total_contribution": 0.7017
+    },
+    {
+      "n_gram": "=0.5",
+      "total_contribution": 0.5298
+    },
+    {
+      "n_gram": "q=0.5",
+      "total_contribution": 0.5298
+    },
+    {
+      "n_gram": "0.5\na",
+      "total_contribution": 0.4553
+    },
+    {
+      "n_gram": "5\nac",
+      "total_contribution": 0.4535
+    },
+    {
+      "n_gram": "5\nacc",
+      "total_contribution": 0.4346
+    },
+    {
+      "n_gram": " ut",
+      "total_contribution": 0.4133
+    },
+    {
+      "n_gram": "redi",
+      "total_contribution": 0.4015
+    },
+    {
+      "n_gram": " utf",
+      "total_contribution": 0.2157
+    },
+    {
+      "n_gram": " utf-",
+      "total_contribution": 0.1962
+    },
+    {
+      "n_gram": "aaaa",
+      "total_contribution": 0.1962
+    },
+    {
+      "n_gram": "bab",
+      "total_contribution": 0.107
+    },
+    {
+      "n_gram": "472",
+      "total_contribution": 0.0935
+    },
+    {
+      "n_gram": "adm",
+      "total_contribution": 0.0705
+    },
+    {
+      "n_gram": "admin",
+      "total_contribution": 0.0699
+    },
+    {
+      "n_gram": "dmin",
+      "total_contribution": 0.0699
+    },
+    {
+      "n_gram": "admi",
+      "total_contribution": 0.0697
+    },
+    {
+      "n_gram": "dmi",
+      "total_contribution": 0.0695
+    },
+    {
+      "n_gram": "ror",
+      "total_contribution": 0.0595
+    }
+  ],
+  "top_false_positive_samples": [
+    {
+      "rank": 1,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6803,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.1146
+        },
+        {
+          "n_gram": "aaaa",
+          "contribution_score": 0.0663
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 2,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.67,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0285
+        },
+        {
+          "n_gram": "baba",
+          "contribution_score": 0.0244
+        },
+        {
+          "n_gram": "bab",
+          "contribution_score": 0.0221
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0198
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 3,
+      "canonical_path": "/tienda1/publico/miembros.jsp",
+      "template_signature": "GET:/tienda1/publico/miembros.jsp:",
+      "malicious_probability": 0.6698,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.1154
+        },
+        {
+          "n_gram": "aaaa",
+          "contribution_score": 0.0668
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0286
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0201
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/publico/miembros.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/h"
+    },
+    {
+      "rank": 4,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6665,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0675
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "bab",
+          "contribution_score": 0.022
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 5,
+      "canonical_path": "/tienda1/publico/autenticar.jsp",
+      "template_signature": "GET:/tienda1/publico/autenticar.jsp:B1,login,modo,pwd,remember",
+      "malicious_probability": 0.6661,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "adm",
+          "contribution_score": 0.0352
+        },
+        {
+          "n_gram": "admin",
+          "contribution_score": 0.035
+        },
+        {
+          "n_gram": "dmin",
+          "contribution_score": 0.035
+        },
+        {
+          "n_gram": "admi",
+          "contribution_score": 0.0349
+        },
+        {
+          "n_gram": "dmi",
+          "contribution_score": 0.0348
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0259
+        },
+        {
+          "n_gram": "bab",
+          "contribution_score": 0.0201
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": "min",
+          "contribution_score": 0.0184
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/publico/autenticar.jsp?modo=entrar&login=admin&pwd=gn%F3stic9&remember=on&B1=Entrar HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cach"
+    },
+    {
+      "rank": 6,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6659,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0675
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 7,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6657,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "472",
+          "contribution_score": 0.0312
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0285
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 8,
+      "canonical_path": "/tienda1/publico/autenticar.jsp",
+      "template_signature": "GET:/tienda1/publico/autenticar.jsp:B1,login,modo,pwd,remember",
+      "malicious_probability": 0.6647,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "adm",
+          "contribution_score": 0.0352
+        },
+        {
+          "n_gram": "admin",
+          "contribution_score": 0.0349
+        },
+        {
+          "n_gram": "dmin",
+          "contribution_score": 0.0349
+        },
+        {
+          "n_gram": "admi",
+          "contribution_score": 0.0349
+        },
+        {
+          "n_gram": "dmi",
+          "contribution_score": 0.0347
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0259
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": "min",
+          "contribution_score": 0.0184
+        },
+        {
+          "n_gram": "dir",
+          "contribution_score": 0.0182
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/publico/autenticar.jsp?modo=entrar&login=diradmin1&pwd=2ef4n4o7ar&remember=off&B1=Entrar HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no"
+    },
+    {
+      "rank": 9,
+      "canonical_path": "/tienda1/publico/pagar.jsp",
+      "template_signature": "GET:/tienda1/publico/pagar.jsp:B1,modo,precio",
+      "malicious_probability": 0.664,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.1089
+        },
+        {
+          "n_gram": "aaaa",
+          "contribution_score": 0.063
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.027
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0204
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0204
+        },
+        {
+          "n_gram": "confi",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "onfi",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0189
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0189
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0189
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/publico/pagar.jsp?modo=insertar&precio=8961&B1=Confirmar HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,applicat"
+    },
+    {
+      "rank": 10,
+      "canonical_path": "/tienda1/publico/entrar.jsp",
+      "template_signature": "GET:/tienda1/publico/entrar.jsp:errorMsg",
+      "malicious_probability": 0.662,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0646
+        },
+        {
+          "n_gram": "ror",
+          "contribution_score": 0.0298
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0271
+        },
+        {
+          "n_gram": "baba",
+          "contribution_score": 0.0232
+        },
+        {
+          "n_gram": "bab",
+          "contribution_score": 0.021
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0205
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0205
+        },
+        {
+          "n_gram": "err",
+          "contribution_score": 0.0201
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.019
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0189
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/publico/entrar.jsp?errorMsg=Credenciales+incorrectas HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/"
+    },
+    {
+      "rank": 11,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6618,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0677
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 12,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.661,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "472",
+          "contribution_score": 0.0311
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "451",
+          "contribution_score": 0.0253
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 13,
+      "canonical_path": "/tienda1/publico/entrar.jsp",
+      "template_signature": "GET:/tienda1/publico/entrar.jsp:errorMsg",
+      "malicious_probability": 0.6601,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0641
+        },
+        {
+          "n_gram": "ror",
+          "contribution_score": 0.0296
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0269
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0203
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0203
+        },
+        {
+          "n_gram": "err",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0189
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0188
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0188
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0187
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/publico/entrar.jsp?errorMsg=Credenciales+incorrectas HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/"
+    },
+    {
+      "rank": 14,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6598,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0678
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0285
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 15,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6598,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0283
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.021
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0195
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0195
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 16,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6596,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "472",
+          "contribution_score": 0.0312
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0285
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 17,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.659,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0283
+        },
+        {
+          "n_gram": "abab",
+          "contribution_score": 0.0234
+        },
+        {
+          "n_gram": "bab",
+          "contribution_score": 0.0219
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 18,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6583,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0676
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 19,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.658,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "447",
+          "contribution_score": 0.032
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0286
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0213
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 20,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6578,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0285
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 21,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6577,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0286
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0216
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0213
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.02
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0197
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 22,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6577,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 23,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6576,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0285
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0215
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 24,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6574,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0284
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0214
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0211
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0199
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0198
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": " utf-",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0196
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    },
+    {
+      "rank": 25,
+      "canonical_path": "/tienda1/global/creditos.jsp",
+      "template_signature": "GET:/tienda1/global/creditos.jsp:",
+      "malicious_probability": 0.6569,
+      "top_contributing_malicious_ngrams": [
+        {
+          "n_gram": "aaa",
+          "contribution_score": 0.0669
+        },
+        {
+          "n_gram": "/3.",
+          "contribution_score": 0.0281
+        },
+        {
+          "n_gram": "=0.5",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "q=0.5",
+          "contribution_score": 0.0212
+        },
+        {
+          "n_gram": "redi",
+          "contribution_score": 0.0209
+        },
+        {
+          "n_gram": "0.5\na",
+          "contribution_score": 0.0197
+        },
+        {
+          "n_gram": "5\nac",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": "5\nacc",
+          "contribution_score": 0.0196
+        },
+        {
+          "n_gram": " ut",
+          "contribution_score": 0.0195
+        },
+        {
+          "n_gram": " utf",
+          "contribution_score": 0.0194
+        }
+      ],
+      "request_preview": "GET http://localhost:8080/tienda1/global/creditos.jsp HTTP/1.1\nUser-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)\nPragma: no-cache\nCache-control: no-cache\nAccept: text/xml,application/xml,application/xhtml+xml,text/ht"
+    }
+  ]
+}
