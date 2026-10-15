@@ -1,0 +1,213 @@
+{
+  "experiment": "Cross-Dataset Representation Benchmark (Phase 2)",
+  "random_state": 42,
+  "training_source": "AI WAF Training Set",
+  "validation_source": "AI WAF Validation Set",
+  "cross_dataset_source": "CSIC Development Partition",
+  "results": {
+    "A_raw": {
+      "representation": "raw",
+      "in_domain_validation": {
+        "dataset": "AI WAF Validation (In-Domain)",
+        "representation": "A_raw",
+        "rows": 2390,
+        "accuracy": 0.994142259414226,
+        "precision_malicious": 0.9893617021276596,
+        "recall_malicious": 0.9893617021276596,
+        "f1_malicious": 0.9893617021276596,
+        "false_positive_rate": 0.0040415704387990765,
+        "confusion_matrix": [
+          [
+            1725,
+            7
+          ],
+          [
+            7,
+            651
+          ]
+        ],
+        "tn": 1725,
+        "fp": 7,
+        "fn": 7,
+        "tp": 651
+      },
+      "cross_dataset_csic_dev": {
+        "dataset": "CSIC Dev (Cross-Dataset)",
+        "representation": "A_raw",
+        "rows": 30533,
+        "accuracy": 0.4222971866505093,
+        "precision_malicious": 0.40908767181824657,
+        "recall_malicious": 0.9166201228756083,
+        "f1_malicious": 0.5657023267265788,
+        "false_positive_rate": 0.9218888888888889,
+        "confusion_matrix": [
+          [
+            1406,
+            16594
+          ],
+          [
+            1045,
+            11488
+          ]
+        ],
+        "tn": 1406,
+        "fp": 16594,
+        "fn": 1045,
+        "tp": 11488
+      }
+    },
+    "B_target_payload": {
+      "representation": "target_payload",
+      "in_domain_validation": {
+        "dataset": "AI WAF Validation (In-Domain)",
+        "representation": "B_target_payload",
+        "rows": 2390,
+        "accuracy": 0.9548117154811715,
+        "precision_malicious": 0.9270186335403726,
+        "recall_malicious": 0.9072948328267477,
+        "f1_malicious": 0.9170506912442397,
+        "false_positive_rate": 0.027136258660508082,
+        "confusion_matrix": [
+          [
+            1685,
+            47
+          ],
+          [
+            61,
+            597
+          ]
+        ],
+        "tn": 1685,
+        "fp": 47,
+        "fn": 61,
+        "tp": 597
+      },
+      "cross_dataset_csic_dev": {
+        "dataset": "CSIC Dev (Cross-Dataset)",
+        "representation": "B_target_payload",
+        "rows": 30533,
+        "accuracy": 0.6285003111387679,
+        "precision_malicious": 1.0,
+        "recall_malicious": 0.09494933375887657,
+        "f1_malicious": 0.17343146542301247,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": [
+          [
+            18000,
+            0
+          ],
+          [
+            11343,
+            1190
+          ]
+        ],
+        "tn": 18000,
+        "fp": 0,
+        "fn": 11343,
+        "tp": 1190
+      }
+    },
+    "C_payload_only": {
+      "representation": "payload_only",
+      "in_domain_validation": {
+        "dataset": "AI WAF Validation (In-Domain)",
+        "representation": "C_payload_only",
+        "rows": 2390,
+        "accuracy": 0.9125523012552301,
+        "precision_malicious": 0.9376218323586745,
+        "recall_malicious": 0.7310030395136778,
+        "f1_malicious": 0.8215200683176772,
+        "false_positive_rate": 0.018475750577367205,
+        "confusion_matrix": [
+          [
+            1700,
+            32
+          ],
+          [
+            177,
+            481
+          ]
+        ],
+        "tn": 1700,
+        "fp": 32,
+        "fn": 177,
+        "tp": 481
+      },
+      "cross_dataset_csic_dev": {
+        "dataset": "CSIC Dev (Cross-Dataset)",
+        "representation": "C_payload_only",
+        "rows": 30533,
+        "accuracy": 0.6460878393868928,
+        "precision_malicious": 0.9994216310005783,
+        "recall_malicious": 0.13787600734062075,
+        "f1_malicious": 0.24232225494320572,
+        "false_positive_rate": 5.555555555555556e-05,
+        "confusion_matrix": [
+          [
+            17999,
+            1
+          ],
+          [
+            10805,
+            1728
+          ]
+        ],
+        "tn": 17999,
+        "fp": 1,
+        "fn": 10805,
+        "tp": 1728
+      }
+    },
+    "D_structured": {
+      "representation": "structured",
+      "in_domain_validation": {
+        "dataset": "AI WAF Validation (In-Domain)",
+        "representation": "D_structured",
+        "rows": 2390,
+        "accuracy": 0.9882845188284519,
+        "precision_malicious": 0.9772727272727273,
+        "recall_malicious": 0.9802431610942249,
+        "f1_malicious": 0.9787556904400607,
+        "false_positive_rate": 0.008660508083140877,
+        "confusion_matrix": [
+          [
+            1717,
+            15
+          ],
+          [
+            13,
+            645
+          ]
+        ],
+        "tn": 1717,
+        "fp": 15,
+        "fn": 13,
+        "tp": 645
+      },
+      "cross_dataset_csic_dev": {
+        "dataset": "CSIC Dev (Cross-Dataset)",
+        "representation": "D_structured",
+        "rows": 30533,
+        "accuracy": 0.6325942422952215,
+        "precision_malicious": 1.0,
+        "recall_malicious": 0.1049230032713636,
+        "f1_malicious": 0.18991912189485846,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": [
+          [
+            18000,
+            0
+          ],
+          [
+            11218,
+            1315
+          ]
+        ],
+        "tn": 18000,
+        "fp": 0,
+        "fn": 11218,
+        "tp": 1315
+      }
+    }
+  }
+}
