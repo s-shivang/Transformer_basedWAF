@@ -187,18 +187,23 @@ class InferenceEngine:
                 detail=f"Malformed HTTP request: {str(e)}",
             )
 
-        # 3. Representation D feature assembly
-        feature_text = build_features(parsed_req, representation="structured")
+        # 3. Representation feature assembly (dynamic according to model version)
+        rep_mode = getattr(self.container, "representation_mode", "structured")
+        feature_text = build_features(parsed_req, representation=rep_mode)
         if not feature_text.strip():
             feature_text = "[METHOD] GET [PATH] /"
 
-        # 4. Truncation detection (> max_length tokens)
-        token_count = len(
-            self.container.transformer_tokenizer.encode(
-                feature_text, add_special_tokens=True, truncation=False
-            )
+        # 4. Token count & Truncation detection
+        token_ids = self.container.transformer_tokenizer.encode(
+            feature_text, add_special_tokens=True, truncation=False
         )
-        is_truncated = bool(token_count > self.container.max_length)
+        token_count = len(token_ids)
+        max_len = self.container.max_length
+        use_head_tail = bool(getattr(self.container, "head_tail_chunking", False) and token_count > max_len)
+
+        # Truncation indicates whether tokens fell outside the active model context window
+        effective_limit = (max_len * 2) if getattr(self.container, "head_tail_chunking", False) else max_len
+        is_truncated = bool(token_count > effective_limit)
 
         # 5. Stage 1: Fast-Pass TF-IDF Microsecond Triage
         classes = list(self.container.tfidf_pipeline.classes_)
@@ -225,24 +230,61 @@ class InferenceEngine:
             )
 
         # 6. Stage 2: Deep Contextual Transformer Inference
-        enc = self.container.transformer_tokenizer(
-            feature_text,
-            max_length=self.container.max_length,
-            truncation=True,
-            return_tensors="pt",
-        ).to(self.container.device)
+        if use_head_tail:
+            # 2-Chunk Head+Tail Scoring for Long Requests
+            sep_id = self.container.transformer_tokenizer.sep_token_id
+            cls_id = self.container.transformer_tokenizer.cls_token_id
 
-        with torch.inference_mode():
-            outputs = self.container.transformer_model(**enc)
-            logits = outputs.logits
-            if self.container.device.startswith("cuda") and logits.dtype != torch.float32:
-                logits = logits.float()
-            probs = torch.softmax(logits, dim=-1).squeeze().tolist()
-            raw_prob = (
-                float(probs[1])
-                if isinstance(probs, list) and len(probs) > 1
-                else float(probs)
+            # Head chunk (first max_len tokens)
+            head_ids = list(token_ids[:max_len])
+            if sep_id is not None and head_ids[-1] != sep_id:
+                head_ids[-1] = sep_id
+            head_mask = [1] * len(head_ids)
+
+            # Tail chunk (last max_len tokens with preserved CLS and SEP)
+            tail_core = list(token_ids[-(max_len - 1):])
+            tail_ids = ([cls_id] if cls_id is not None else [head_ids[0]]) + tail_core
+            if len(tail_ids) > max_len:
+                tail_ids = tail_ids[:max_len]
+            if sep_id is not None and tail_ids[-1] != sep_id:
+                tail_ids[-1] = sep_id
+            tail_mask = [1] * len(tail_ids)
+
+            input_ids_tensor = torch.tensor(
+                [head_ids, tail_ids], dtype=torch.long, device=self.container.device
             )
+            attn_mask_tensor = torch.tensor(
+                [head_mask, tail_mask], dtype=torch.long, device=self.container.device
+            )
+
+            with torch.inference_mode():
+                outputs = self.container.transformer_model(
+                    input_ids=input_ids_tensor, attention_mask=attn_mask_tensor
+                )
+                logits = outputs.logits
+                if self.container.device.startswith("cuda") and logits.dtype != torch.float32:
+                    logits = logits.float()
+                probs = torch.softmax(logits, dim=-1)[:, 1]
+                raw_prob = float(torch.max(probs).item())
+        else:
+            enc = self.container.transformer_tokenizer(
+                feature_text,
+                max_length=self.container.max_length,
+                truncation=True,
+                return_tensors="pt",
+            ).to(self.container.device)
+
+            with torch.inference_mode():
+                outputs = self.container.transformer_model(**enc)
+                logits = outputs.logits
+                if self.container.device.startswith("cuda") and logits.dtype != torch.float32:
+                    logits = logits.float()
+                probs = torch.softmax(logits, dim=-1).squeeze().tolist()
+                raw_prob = (
+                    float(probs[1])
+                    if isinstance(probs, list) and len(probs) > 1
+                    else float(probs)
+                )
 
         # 7. Platt Scaling Calibration
         calib_cfg = self.container.thresholds.get("platt_calibration", {})

@@ -5,6 +5,7 @@ Enforces cryptographic SHA-256 verification of frozen artifacts,
 dynamic configuration loading (zero hardcoded thresholds),
 and warmup execution.
 """
+import os
 from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
 import json
@@ -15,7 +16,18 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 ROOT = Path(__file__).resolve().parents[2]
-FROZEN_DIR = ROOT / "models/frozen/v1_0"
+DEFAULT_FROZEN_DIR = ROOT / "models/frozen/v1_0"
+
+
+def get_frozen_dir() -> Path:
+    env_dir = os.environ.get("WAF_MODEL_DIR")
+    if env_dir:
+        p = Path(env_dir)
+        return p if p.is_absolute() else (ROOT / p)
+    return DEFAULT_FROZEN_DIR
+
+
+FROZEN_DIR = get_frozen_dir()
 MANIFEST_PATH = FROZEN_DIR / "model_manifest.json"
 THRESHOLD_PATH = FROZEN_DIR / "threshold.json"
 PREPROCESSING_PATH = FROZEN_DIR / "preprocessing_config.json"
@@ -36,7 +48,7 @@ class ModelContainer:
     """
 
     def __init__(self, frozen_dir: Optional[Path] = None):
-        self.frozen_dir = frozen_dir or FROZEN_DIR
+        self.frozen_dir = frozen_dir or get_frozen_dir()
         self.manifest_path = self.frozen_dir / "model_manifest.json"
         self.is_ready = False
         self.sha256_verified = False
@@ -45,6 +57,8 @@ class ModelContainer:
         self.manifest: Dict[str, Any] = {}
         self.thresholds: Dict[str, Any] = {}
         self.preprocessing_cfg: Dict[str, Any] = {}
+        self.representation_mode = "structured"
+        self.head_tail_chunking = False
         self.max_length = 192
         self.platt_params: Dict[str, float] = {"w": 1.0, "b": 0.0}
 
@@ -104,6 +118,13 @@ class ModelContainer:
             self.preprocessing_cfg = json.load(f)
 
         self.max_length = int(self.preprocessing_cfg.get("max_length", 192))
+        self.representation_mode = str(
+            self.preprocessing_cfg.get(
+                "representation_mode",
+                self.preprocessing_cfg.get("representation", "structured")
+            )
+        )
+        self.head_tail_chunking = bool(self.preprocessing_cfg.get("head_tail_chunking", False))
         calib = self.thresholds.get("platt_calibration", {})
         self.platt_params = {
             "w": float(calib.get("w", 0.7724)),
