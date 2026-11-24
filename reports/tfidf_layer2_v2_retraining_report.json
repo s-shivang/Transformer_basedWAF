@@ -1,0 +1,33 @@
+{
+  "model_type": "TF-IDF (Char n-gram 3-5) + LogisticRegression (Balanced)",
+  "representation": "structured_v2",
+  "dataset_samples": 22667,
+  "train_samples": 18308,
+  "val_samples": 4359,
+  "training_duration_s": 9.87,
+  "eval_duration_s": 1.0709,
+  "val_metrics_at_0_50": {
+    "accuracy": 0.9677,
+    "precision": 0.9931,
+    "recall": 0.936,
+    "f1": 0.9637,
+    "fpr": 0.0055,
+    "roc_auc": 0.9902,
+    "pr_auc": 0.9903,
+    "confusion_matrix": {
+      "tn": 2345,
+      "fp": 13,
+      "fn": 128,
+      "tp": 1873
+    }
+  },
+  "fast_pass_calibration": {
+    "tau_fast_pass": 0.05,
+    "min_malicious_score": 0.221882,
+    "attack_leakage_count": 0,
+    "attack_leakage_pct": 0.0,
+    "benign_passed_count": 232,
+    "total_benign": 2358,
+    "benign_fast_pass_pct": 9.84
+  }
+}

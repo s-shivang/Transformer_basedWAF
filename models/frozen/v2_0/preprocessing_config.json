@@ -1,0 +1,12 @@
+{
+  "representation_mode": "structured_v2",
+  "max_length": 192,
+  "head_tail_chunking": true,
+  "special_tokens": [
+    "[METHOD]",
+    "[PATH]",
+    "[PARAM]",
+    "[PAYLOAD]",
+    "[HEADERS]"
+  ]
+}

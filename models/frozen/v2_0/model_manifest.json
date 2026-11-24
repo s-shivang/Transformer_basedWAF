@@ -1,0 +1,21 @@
+{
+  "model_version": "v2.0.0",
+  "created_timestamp": "2026-11-25T00:10:00+05:30",
+  "description": "Transformer-Based WAF Frozen Release v2.0 with Representation D-v2, Hard-Negative Augmentation, and Head+Tail Chunking",
+  "architecture": {
+    "tier1_fast_pass": "TF-IDF (Char n-gram 3-5) + Logistic Regression",
+    "tier2_contextual": "sentence-transformers/all-MiniLM-L6-v2 (FP16)",
+    "representation": "structured_v2 (Header Stripping & Payload Prioritization)",
+    "head_tail_chunking": true,
+    "max_length": 192
+  },
+  "artifacts_sha256": {
+    "preprocessing_config.json": "8948789006ada1c71f789f5cce8d81e33c8232da72c3121c8b179f02942085f9",
+    "tfidf/tfidf_logistic_baseline.joblib": "5e4f3a9bef9976f29196f0905bd4dba52434f40d50284a17bf72810d8b6cbd0b",
+    "threshold.json": "dd12e6fc191b7f3cd443c946a03664c1f54871e1f4452ad395464f832b3a6764",
+    "transformer/config.json": "2696a2cc21ac1618b490d1c95b73cbbb4a0a9869ed8171109bf898c6c81fcba3",
+    "transformer/model.safetensors": "024a47214494529f6f46fcde339cc13cffbe96d8660684fcd885150df8ee9d81",
+    "transformer/tokenizer.json": "9652879568b27e984f2e32d8d21f2a8a62eecbcaf7b2fb631cd5869d3ce968c7",
+    "transformer/tokenizer_config.json": "7522ab4d1e3db3d42ad270d335bc4882ea80553e025fd532b725aa57b90fdb3e"
+  }
+}
