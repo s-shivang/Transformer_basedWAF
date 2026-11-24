@@ -103,19 +103,20 @@ class TestHeadTailChunking:
         An attack payload hidden after >200 tokens of benign text is truncated
         by v1.0 (single chunk) but caught by v2.0 (Head+Tail chunking).
         """
-        long_padding = "word " * 220
+        params = "&".join([f"item_{i}=normal_product_value_{i}" for i in range(25)])
         tail_sqli_raw = (
-            f"POST /forum/post HTTP/1.1\r\n"
+            f"POST /search HTTP/1.1\r\n"
             f"Host: example.com\r\n"
-            f"Content-Type: application/json\r\n\r\n"
-            f'{{"bio": "{long_padding}", "comment": "1\' UNION SELECT username, password FROM users--"}}'
+            f"Content-Type: application/x-www-form-urlencoded\r\n\r\n"
+            f"{params}&attack_payload=' UNION SELECT 1,2,username,password FROM users--"
         )
 
         r1 = engine_v1.predict(PredictRequest(raw_http=tail_sqli_raw))
         r2 = engine_v2.predict(PredictRequest(raw_http=tail_sqli_raw))
 
-        # v1 truncates the tail and gives lower or safe score
-        # v2 scores the tail chunk and classifies as malicious block
+        # v1 truncates the tail and gives lower or safe score (< 0.05)
+        # v2 scores the tail chunk and classifies as malicious block (>= 0.43)
+        assert r1.malicious_probability < 0.05
         assert r2.malicious_probability >= 0.43
         assert r2.recommended_tier in ["block", "strict_block_low_fpr"]
         assert r2.malicious_probability > r1.malicious_probability
