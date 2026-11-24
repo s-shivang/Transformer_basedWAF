@@ -1,9 +1,9 @@
 # Transformer-Based WAF: Master Architecture & Implementation Plan
 
 **Target Deployment:** Local Laptop (NVIDIA RTX 2050 4 GB / CPU)  
-**Training Compute:** Local Laptop GPU/CPU or AWS Cloud Node (NVIDIA T4 on `g4dn.xlarge`)  
-**Compute Budget Cap:** Maximum \$20 USD for total model training (Multi-layer operational & cloud-side time caps enforced)  
-**Status:** Architecture Refined & Fully Tightened (Independent Cloud-Side Timer Added)  
+**Training Compute:** Exclusively Local Laptop (NVIDIA RTX 2050 4 GB GPU with CUDA 12.4 & FP16 Tensor Cores / CPU)  
+**Compute Budget Cap:** $0 USD (Zero Cloud Spend - 100% On-Device Local Training)  
+**Status:** Architecture Refined & Executing Phase 3/4 On-Device  
 
 ---
 
@@ -131,13 +131,13 @@ flowchart TD
   - Obfuscation flag tracking (`has_double_encoding`, `has_null_bytes`, etc.).
 - [x] **1.3 HTTP Parser & Adapters (`src/pipeline/parser.py`)**:
   - RFC-compliant request line, header, query string, and body parser (`json` and `x-www-form-urlencoded`).
-- [ ] **1.4 Refined Template Auditing & Partitioning**:
+- [x] **1.4 Refined Template Auditing & Partitioning**:
   - Group CSIC requests by normalized path and sorted parameter keys.
   - Assign each template group wholly and indivisibly to one partition.
   - Audit normalized query values and payload content similarity across groups.
   - Flag and investigate any label conflicts within groups.
   - Calculate and report boundary leakage counts before and after grouping, documenting remaining limitations.
-- [ ] **1.5 Error Analysis Tool (`src/evaluation/error_analysis.py`)**:
+- [x] **1.5 Error Analysis Tool (`src/evaluation/error_analysis.py`)**:
   - Evaluates the baseline on the **CSIC Development Partition**.
   - Extracts the top false-positive requests and computes the exact contribution scores ($w_i \cdot x_i$) to identify the specific character n-grams driving false alarms.
   - Groups errors by path, parameter names, headers, and encoding patterns.
@@ -148,14 +148,14 @@ flowchart TD
 ### Phase 2: Representation Experiments & Baseline Repair
 *Goal: Answer the core question: Does separating payload semantics from application-specific context improve cross-dataset detection without sacrificing attack recall?*
 
-- [ ] **2.1 Feature Builder (`src/pipeline/feature_builder.py`)**:
+- [x] **2.1 Feature Builder (`src/pipeline/feature_builder.py`)**:
   Generates four test representations from `ParsedRequest`:
   - **Rep A (Full Raw Request)**: Current baseline.
   - **Rep B (Target + Payload)**: Strips static headers, keeps path and parameters.
   - **Rep C (Canonical Payloads Only)**: Inspects only parameter/body values.
   - **Rep D (Structured Serialization)**:
     `[METHOD] GET [PATH] /tienda1/index.jsp [PARAM] modo = 2 [PAYLOAD] ' OR 1=1 --`
-- [ ] **2.2 Baseline Representation Benchmark (`src/evaluation/cross_dataset.py`)**:
+- [x] **2.2 Baseline Representation Benchmark (`src/evaluation/cross_dataset.py`)**:
   - Train TF-IDF on AI WAF for each representation.
   - Evaluate on the **CSIC Development Partition** (protecting the held-out partition).
   - Track False Positive Rate and Malicious Recall together.
@@ -166,20 +166,14 @@ flowchart TD
 ### Phase 3: Transformer Model Training & Benchmark
 *Goal: Fine-tune a lightweight Transformer to learn syntax semantics (SQL, XSS, Path Traversal) rather than surface-level vocabulary.*
 
-- [ ] **3.1 Model Candidates**:
-  - **Candidate 1**: `distilbert-base-uncased` (66M parameters). Note: tokenization is uncased.
-  - **Candidate 2**: `all-MiniLM-L6-v2` (22M parameters). Benchmark empirically against DistilBERT.
-  - Register special structural tokens (`[METHOD]`, `[PATH]`, `[PARAM]`, `[PAYLOAD]`, `[HEADERS]`) and resize embeddings.
-- [ ] **3.2 Hard-Capped Cloud Training & Independent Shutdown Safeguards**:
-  - Check actual AWS regional pricing for compute (`g4dn.xlarge`), EBS storage, and data transfer.
-  - Execute a **1-epoch sanity check** on a small sample to measure memory, step time, and projected cost.
-  - **Multi-Layer Out-of-Band Shutdown Infrastructure**:
-    1. **Primary**: Independent, time-based **cloud-side timer** (AWS EventBridge schedule or Systems Manager automation) that stops/terminates the instance after a strict 4-hour window from launch. Verify permissions before training.
-    2. **Secondary Local**: OS-level hard watchdog (`shutdown -h +240` at boot) to halt the OS locally if cloud API calls delay.
-    3. **Supplementary**: CloudWatch alarm (`CPUUtilization < 5%` for 15 mins) as an auxiliary check, acknowledging that GPU-bound workloads may idle CPU or crashed loops may pin CPU.
-  - **EBS Storage Termination**: Promptly terminate attached EBS storage volumes upon experiment conclusion to avoid persistent storage fees, strictly maintaining total spend below the **\$20 cap**.
-  - Set `max_length = 128` (track and report truncation rate for long requests), `batch_size = 4`, `gradient_accumulation_steps = 4`.
-- [ ] **3.3 Pipeline Freeze & Final Evaluation**:
+- [x] **3.1 Model Candidates & Initialization (`src/models/transformer_waf.py`)**:
+  - **Architecture**: `sentence-transformers/all-MiniLM-L6-v2` (22M parameters) / `distilbert-base-uncased`.
+  - Registered special structural tokens (`[METHOD]`, `[PATH]`, `[PARAM]`, `[PAYLOAD]`, `[HEADERS]`) and resized token embeddings.
+- [ ] **3.2 Laptop GPU Training Pipeline (`src/models/train_transformer.py`)**:
+  - 100% on-device training on NVIDIA GeForce RTX 2050 (4 GB VRAM) with CUDA 12.4 and PyTorch AMP (FP16).
+  - Mixed dataset composition: AI WAF, CSIC Development Partition, and HTTP Params payloads.
+  - `max_length = 128`, `batch_size = 16`, AdamW optimizer with cosine warmup.
+- [ ] **3.3 Pipeline Freeze & Final Evaluation (`src/evaluation/evaluate_held_out.py`)**:
   - Freeze the **entire pipeline** (preprocessing, representation, model weights, threshold, policy).
   - Evaluate on the **Post-Hoc Held-Out CSIC Partition** and report actual recall achieved at the frozen threshold.
   - Report: Precision, Recall, FPR, F1, PR-AUC, and Confusion Matrix.
@@ -191,21 +185,21 @@ flowchart TD
 ### Phase 4: Live 4-Layer Firewall & Decision Engine
 *Goal: Combine rule-based fast blocking, ML contextual scoring, and behavioral tracking into a production-grade firewall.*
 
-- [ ] **4.1 Layer 1: Rules & Protocol Validator (`src/firewall/rules_engine.py`)**:
+- [x] **4.1 Layer 1: Rules & Protocol Validator (`src/firewall/rules_engine.py`)**:
   - RFC protocol validation (illegal HTTP verbs, oversized headers, malformed encoding).
   - Application-configurable path traversal checks (evaluating normalized paths against configured security boundaries).
-- [ ] **4.2 Layer 2 & 3: Model Scoring Middleware (`src/firewall/ml_detector.py`)**:
-  - Layer 2 (TF-IDF): Fast scoring in shadow mode.
+- [x] **4.2 Layer 2 & 3: Model Scoring Middleware (`src/firewall/ml_detector.py`)**:
+  - Layer 2 (TF-IDF): Fast scoring in shadow mode / fast-pass filter.
   - Layer 3 (Transformer): Contextual analysis for ambiguous or high-risk requests.
-- [ ] **4.3 Layer 4: Behavioral Anomaly Detector (`src/firewall/anomaly_detector.py`)**:
+- [x] **4.3 Layer 4: Behavioral Anomaly Detector (`src/firewall/anomaly_detector.py`)**:
   - Sliding time-window tracking per client IP/session (request frequency, error bursts, scanning patterns).
-- [ ] **4.4 Central Decision Engine (`src/firewall/decision_engine.py`)**:
+- [x] **4.4 Central Decision Engine (`src/firewall/decision_engine.py`)**:
   - Configurable enforcement policy:
     - **BLOCK (403)**: Layer 1 rule violation OR Layer 3 risk score $> \tau_{\text{block}}$.
     - **CHALLENGE (Captcha/Rate-Limit)**: Layer 4 behavioral anomaly triggered.
     - **MONITOR (Log only)**: Moderate risk score ($\tau_{\text{monitor}} \le \text{score} < \tau_{\text{block}}$).
     - **ALLOW**: All checks pass.
-- [ ] **4.5 Shadow Mode & Replay Validation**:
+- [ ] **4.5 Shadow Mode & Replay Validation (`src/firewall/shadow_validator.py`)**:
   - Test the entire pipeline on replayed historical traffic and a controlled canary deployment to verify zero disruption before enabling enforcement.
 
 ---
