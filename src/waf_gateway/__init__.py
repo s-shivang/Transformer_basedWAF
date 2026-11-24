@@ -1,6 +1,6 @@
 """
 WAF Inspection Reverse-Proxy Gateway Package.
 """
-from src.waf_gateway.app import app, gateway, WAFGatewayApp
+from src.waf_gateway.app import gateway, WAFGatewayApp, set_gateway, get_gateway
 
-__all__ = ["app", "gateway", "WAFGatewayApp"]
+__all__ = ["gateway", "WAFGatewayApp", "set_gateway", "get_gateway"]

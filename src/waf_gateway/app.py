@@ -122,11 +122,22 @@ class WAFGatewayApp:
 gateway = WAFGatewayApp()
 
 
+def set_gateway(new_gateway: WAFGatewayApp) -> None:
+    global gateway
+    gateway = new_gateway
+    app.state.gateway = new_gateway
+
+
+def get_gateway() -> WAFGatewayApp:
+    return getattr(app.state, "gateway", gateway)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await gateway.initialize()
+    gw = get_gateway()
+    await gw.initialize()
     yield
-    await gateway.shutdown()
+    await gw.shutdown()
 
 
 app = FastAPI(
@@ -135,6 +146,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+app.state.gateway = gateway
 
 
 # ============================================================================
@@ -144,20 +156,22 @@ app = FastAPI(
 @app.get("/_waf/health", tags=["WAF Admin"])
 async def waf_health():
     """Returns WAF Gateway status, operational mode, and upstream target."""
+    gw = get_gateway()
     return {
         "status": "healthy",
         "service": "waf-inspection-gateway",
-        "inspection_mode": gateway.policy.inspection_mode,
-        "policy_version": gateway.policy.policy_version,
-        "upstream_url": gateway.upstream_url,
-        "ml_service_url": gateway.ml_client.base_url,
+        "inspection_mode": gw.policy.inspection_mode,
+        "policy_version": gw.policy.policy_version,
+        "upstream_url": gw.upstream_url,
+        "ml_service_url": gw.ml_client.base_url,
     }
 
 
 @app.get("/_waf/policy", tags=["WAF Admin"])
 async def get_waf_policy():
     """Returns active WAF configuration and threshold policy."""
-    return gateway.policy.model_dump()
+    gw = get_gateway()
+    return gw.policy.model_dump()
 
 
 @app.post("/_waf/policy", tags=["WAF Admin"])
@@ -166,36 +180,37 @@ async def update_waf_policy(update: PolicyUpdateRequest):
     """
     Updates inspection_mode or operational thresholds dynamically at runtime.
     """
+    gw = get_gateway()
     if update.inspection_mode is not None:
         if update.inspection_mode not in ("monitor", "blocking", "strict", "disabled"):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid inspection_mode: {update.inspection_mode}",
             )
-        gateway.policy.inspection_mode = update.inspection_mode  # type: ignore
+        gw.policy.inspection_mode = update.inspection_mode  # type: ignore
 
     if update.rules_enabled is not None:
-        gateway.policy.rules_enabled = update.rules_enabled
+        gw.policy.rules_enabled = update.rules_enabled
     if update.ml_enabled is not None:
-        gateway.policy.ml_enabled = update.ml_enabled
+        gw.policy.ml_enabled = update.ml_enabled
     if update.anomaly_enabled is not None:
-        gateway.policy.anomaly_enabled = update.anomaly_enabled
+        gw.policy.anomaly_enabled = update.anomaly_enabled
     if update.ml_failure_mode is not None:
         if update.ml_failure_mode not in ("fail_open", "fail_closed"):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid ml_failure_mode: {update.ml_failure_mode}",
             )
-        gateway.policy.ml_failure_mode = update.ml_failure_mode  # type: ignore
+        gw.policy.ml_failure_mode = update.ml_failure_mode  # type: ignore
 
     if update.thresholds is not None:
         for k, v in update.thresholds.items():
-            if hasattr(gateway.policy.thresholds, k):
-                setattr(gateway.policy.thresholds, k, float(v))
+            if hasattr(gw.policy.thresholds, k):
+                setattr(gw.policy.thresholds, k, float(v))
 
     return {
         "status": "updated",
-        "policy": gateway.policy.model_dump(),
+        "policy": gw.policy.model_dump(),
     }
 
 
@@ -215,6 +230,7 @@ async def reverse_proxy_handler(request: Request, full_path: str):
     if full_path.startswith("_waf/"):
         raise HTTPException(status_code=404, detail="Not Found")
 
+    gw = get_gateway()
     client_ip = request.client.host if request.client else "127.0.0.1"
     body_bytes = await request.body()
     body_str = body_bytes.decode("utf-8", errors="replace")
@@ -234,13 +250,13 @@ async def reverse_proxy_handler(request: Request, full_path: str):
     parsed_req = parse_raw_http(raw_http_text, request_id=f"req_{int(time.time()*1000)}")
 
     # 2. Central Decision Engine Evaluation
-    decision = gateway.decision_engine.inspect_request(
+    decision = gw.decision_engine.inspect_request(
         req=parsed_req,
         client_id=client_ip,
     )
 
     # 3. Log Redacted Security Event to JSONL
-    gateway.log_security_event(parsed_req, decision, client_ip=client_ip)
+    gw.log_security_event(parsed_req, decision, client_ip=client_ip)
 
     # 4. Enforce Decision
     # A. BLOCK -> Return 403 Forbidden immediately (never forward upstream)
@@ -287,7 +303,7 @@ async def reverse_proxy_handler(request: Request, full_path: str):
     }
 
     try:
-        upstream_resp = await gateway.upstream_client.request(
+        upstream_resp = await gw.upstream_client.request(
             method=request.method,
             url=raw_path,
             headers=forward_headers,
@@ -322,7 +338,7 @@ async def reverse_proxy_handler(request: Request, full_path: str):
             },
             content={
                 "error": "Bad Gateway: Upstream protected application unreachable",
-                "upstream_url": gateway.upstream_url,
+                "upstream_url": gw.upstream_url,
                 "detail": str(e),
             },
         )
