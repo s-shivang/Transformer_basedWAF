@@ -140,7 +140,8 @@ class BehavioralAnomalyDetector:
         distinct_paths = len({e.path for e in events})
         sensitive_count = sum(1 for e in events if e.is_sensitive)
         if sensitive_count >= self.sensitive_scan_threshold:
-            anomaly_score += 0.45
+            probe_score = min(0.75, 0.45 + 0.10 * (sensitive_count - self.sensitive_scan_threshold + 1))
+            anomaly_score += probe_score
             reasons.append(f"Sensitive probe scanning detected: {sensitive_count} sensitive endpoints hit")
         elif distinct_paths >= 15 and (distinct_paths / total_reqs) > 0.8:
             anomaly_score += 0.35
