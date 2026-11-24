@@ -100,7 +100,7 @@ class BehavioralAnomalyDetector:
     def evaluate(
         self,
         client_id: str,
-        req: ParsedRequest,
+        req: Optional[ParsedRequest] = None,
         current_time: Optional[float] = None,
     ) -> AnomalyEvaluationResult:
         now = current_time or time.time()

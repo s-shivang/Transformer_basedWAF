@@ -166,8 +166,8 @@ def test_fast_pass_clean_traffic(in_process_ml_client):
 
 
 def test_blocking_mode_high_risk_attack(in_process_ml_client):
-    """Obfuscated attack not caught by Layer 1 triggers Transformer and BLOCK (>=0.90)."""
-    policy = FirewallPolicy(inspection_mode="blocking")
+    """When Layer 1 rules are bypassed/disabled, ML catches attack and triggers BLOCK (>=0.50)."""
+    policy = FirewallPolicy(inspection_mode="blocking", rules_enabled=False)
     engine = CentralDecisionEngine(policy=policy, ml_client=in_process_ml_client)
 
     attack_req = (
@@ -243,8 +243,8 @@ def test_challenge_band_escalation_with_anomaly():
 
 
 def test_monitor_mode_never_blocks_live_traffic():
-    """In monitor mode, attacks receive action=MONITOR and would_action=BLOCK."""
-    policy = FirewallPolicy(inspection_mode="monitor")
+    """In monitor mode, ML attacks receive action=MONITOR and would_action=BLOCK."""
+    policy = FirewallPolicy(inspection_mode="monitor", rules_enabled=False)
     mock_ml = MagicMock()
     mock_ml.predict.return_value = MLClientResult(
         success=True,

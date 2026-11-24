@@ -43,6 +43,22 @@ class WAFDecision(BaseModel):
     latency_ms: float
     details: Dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def http_status(self) -> int:
+        if self.action == "BLOCK":
+            return 403
+        elif self.action == "CHALLENGE":
+            return 429
+        return 200
+
+    @property
+    def primary_reason(self) -> str:
+        return self.reason
+
+
+# Backward compatibility alias
+DecisionResult = WAFDecision
+
 
 class CentralDecisionEngine:
     """
@@ -209,7 +225,9 @@ class CentralDecisionEngine:
         anomaly_flags: List[str] = []
         is_anomaly_active = False
         if self.policy.anomaly_enabled:
-            anom_res: AnomalyEvaluationResult = self.anomaly_detector.evaluate(client_id, current_time=now)
+            anom_res: AnomalyEvaluationResult = self.anomaly_detector.evaluate(
+                client_id, req=parsed_req, current_time=now
+            )
             anomaly_flags = anom_res.reasons
             is_anomaly_active = (anom_res.action in ("CHALLENGE", "BLOCK") or anom_res.anomaly_score >= 0.50)
 
