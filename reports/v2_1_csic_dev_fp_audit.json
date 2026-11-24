@@ -1,0 +1,227 @@
+[
+  {
+    "rank": 1,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 2,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 3,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 4,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 5,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 6,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 7,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 8,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 9,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 10,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 11,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 12,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 13,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 14,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 15,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 16,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 17,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 18,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 19,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 20,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 21,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 22,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 23,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 24,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  },
+  {
+    "rank": 25,
+    "score": 0.0428,
+    "request_line": "GET http://localhost:8080/tienda1/miembros/imagenes/zarauz.jpg HTTP/1.1",
+    "feature_snippet": "[METHOD] GET [PATH] /__SEG__/__SEG__/__SEG__/__SEG__ [HEADERS] host=localhost:8080",
+    "causes": [
+      "numeric_id_param"
+    ]
+  }
+]
