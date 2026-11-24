@@ -4,89 +4,89 @@
   "num_epochs": 3,
   "batch_size": 16,
   "learning_rate": 2e-05,
-  "total_training_time_seconds": 260.4,
-  "best_val_f1": 0.9735,
+  "total_training_time_seconds": 226.1,
+  "best_val_f1": 0.9424,
   "history": [
     {
       "epoch": 1,
-      "train_loss": 0.2819,
+      "train_loss": 0.4116,
       "val_metrics": {
-        "accuracy": 0.9713,
-        "precision": 0.969,
-        "recall": 0.9044,
-        "f1": 0.9356,
-        "fpr": 0.0087,
-        "roc_auc": 0.9929,
+        "accuracy": 0.9113,
+        "precision": 0.9114,
+        "recall": 0.8456,
+        "f1": 0.8772,
+        "fpr": 0.0493,
+        "roc_auc": 0.9646,
         "confusion_matrix": [
           [
-            1487,
-            13
+            1426,
+            74
           ],
           [
-            43,
-            407
+            139,
+            761
           ]
         ],
-        "tn": 1487,
-        "fp": 13,
-        "fn": 43,
-        "tp": 407
+        "tn": 1426,
+        "fp": 74,
+        "fn": 139,
+        "tp": 761
       },
-      "duration_s": 102.5
+      "duration_s": 72.0
     },
     {
       "epoch": 2,
-      "train_loss": 0.0977,
+      "train_loss": 0.1899,
       "val_metrics": {
-        "accuracy": 0.9841,
-        "precision": 0.9486,
-        "recall": 0.9844,
-        "f1": 0.9662,
-        "fpr": 0.016,
-        "roc_auc": 0.9984,
+        "accuracy": 0.9496,
+        "precision": 0.9698,
+        "recall": 0.8933,
+        "f1": 0.93,
+        "fpr": 0.0167,
+        "roc_auc": 0.9884,
         "confusion_matrix": [
           [
-            1476,
-            24
+            1475,
+            25
           ],
           [
-            7,
-            443
+            96,
+            804
           ]
         ],
-        "tn": 1476,
-        "fp": 24,
-        "fn": 7,
-        "tp": 443
+        "tn": 1475,
+        "fp": 25,
+        "fn": 96,
+        "tp": 804
       },
-      "duration_s": 88.0
+      "duration_s": 71.5
     },
     {
       "epoch": 3,
-      "train_loss": 0.0511,
+      "train_loss": 0.1272,
       "val_metrics": {
-        "accuracy": 0.9877,
-        "precision": 0.9671,
-        "recall": 0.98,
-        "f1": 0.9735,
-        "fpr": 0.01,
-        "roc_auc": 0.9985,
+        "accuracy": 0.9579,
+        "precision": 0.9683,
+        "recall": 0.9178,
+        "f1": 0.9424,
+        "fpr": 0.018,
+        "roc_auc": 0.9902,
         "confusion_matrix": [
           [
-            1485,
-            15
+            1473,
+            27
           ],
           [
-            9,
-            441
+            74,
+            826
           ]
         ],
-        "tn": 1485,
-        "fp": 15,
-        "fn": 9,
-        "tp": 441
+        "tn": 1473,
+        "fp": 27,
+        "fn": 74,
+        "tp": 826
       },
-      "duration_s": 58.8
+      "duration_s": 72.2
     }
   ]
 }
