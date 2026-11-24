@@ -104,10 +104,10 @@ def freeze_v2_2():
             artifacts_sha256[rel_path] = compute_sha256(p)
 
     manifest = {
-        "model_version": "v2.2",
+        "model_version": "v2.2.0",
         "description": "Transformer WAF v2.2 - Smart Path & Param-Key Normalization + Balanced HttpParams Augmentation",
         "representation": "structured_v2_2",
-        "artifacts": artifacts_sha256
+        "artifacts_sha256": artifacts_sha256
     }
     with open(FROZEN_V2_2_DIR / "model_manifest.json", "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)

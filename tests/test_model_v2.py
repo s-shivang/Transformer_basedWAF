@@ -17,6 +17,9 @@ from src.pipeline.feature_builder import (
     build_representation_d,
     build_representation_d_v2,
     build_representation_d_v2_norm,
+    build_representation_d_v2_2,
+    is_safe_param_key,
+    normalize_json_keys,
     normalize_path_smart,
 )
 from src.ml_service.model_loader import ModelContainer
@@ -27,6 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 V1_DIR = REPO_ROOT / "models/frozen/v1_0"
 V2_DIR = REPO_ROOT / "models/frozen/v2_0"
 V2_1_DIR = REPO_ROOT / "models/frozen/v2_1"
+V2_2_DIR = REPO_ROOT / "models/frozen/v2_2"
 
 
 class TestRepresentationDV2:
@@ -273,4 +277,77 @@ class TestArtifactIntegrityAndManifestV2_1:
         assert container.thresholds["block"] == 0.85
         assert container.thresholds["challenge"] == 0.50
         assert container.thresholds["fast_pass_allow"] == 0.04
+
+
+class TestSmartParamKeyNormalizationV2_2:
+    """Verifies is_safe_param_key and Representation D-v2.2 parameter key normalization."""
+
+    def test_safe_param_keys_identified(self):
+        assert is_safe_param_key("ciudad") is True
+        assert is_safe_param_key("precio") is True
+        assert is_safe_param_key("B1") is True
+        assert is_safe_param_key("id") is True
+        assert is_safe_param_key("search_query") is True
+
+    def test_unsafe_injection_keys_preserved(self):
+        assert is_safe_param_key("$ne") is False
+        assert is_safe_param_key("$gt") is False
+        assert is_safe_param_key("admin' OR 1=1") is False
+        assert is_safe_param_key("<script>") is False
+
+    def test_representation_d_v2_2_normalizes_params(self):
+        raw = "GET /tienda1/miembros/identificate.jsp?ciudad=Madrid&precio=45&B1=Enviar HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        parsed = parse_raw_http(raw)
+        rep = build_representation_d_v2_2(parsed)
+
+        assert "P1=Madrid" in rep
+        assert "P2=45" in rep
+        assert "P3=Enviar" in rep
+        assert "ciudad=" not in rep
+        assert "precio=" not in rep
+
+    def test_representation_d_v2_2_preserves_nosql_keys(self):
+        raw = 'POST /api/filter HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\n\r\n{"user": {"$ne": null}}'
+        parsed = parse_raw_http(raw)
+        rep = build_representation_d_v2_2(parsed)
+
+        assert "$ne" in rep
+        assert "P1" in rep
+
+
+class TestArtifactIntegrityAndManifestV2_2:
+    """Verifies frozen v2_2 artifacts and SHA-256 integrity check."""
+
+    def test_v2_2_manifest_exists_and_hashes_match(self):
+        manifest_path = V2_2_DIR / "model_manifest.json"
+        assert manifest_path.exists(), "v2_2 model_manifest.json missing"
+
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        assert manifest["model_version"] == "v2.2.0"
+        assert manifest["representation"] == "structured_v2_2"
+        assert len(manifest["artifacts_sha256"]) >= 6
+
+        import hashlib
+        for rel_file, expected_hash in manifest["artifacts_sha256"].items():
+            file_path = V2_2_DIR / rel_file
+            assert file_path.exists(), f"Artifact missing: {rel_file}"
+            h = hashlib.sha256()
+            with open(file_path, "rb") as f:
+                while chunk := f.read(65536):
+                    h.update(chunk)
+            assert h.hexdigest() == expected_hash, f"Hash mismatch for {rel_file}"
+
+    def test_model_container_v2_2_initialization(self):
+        container = ModelContainer(model_dir=V2_2_DIR)
+        container.initialize()
+        assert container.is_ready
+        assert container.model_version == "v2.2.0"
+        assert container.representation_mode == "structured_v2_2"
+        assert container.head_tail_chunking is True
+        assert container.thresholds["block"] == 0.85
+        assert container.thresholds["challenge"] == 0.50
+        assert container.thresholds["fast_pass_allow"] == 0.04
+
 

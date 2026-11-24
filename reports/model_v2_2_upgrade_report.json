@@ -1,0 +1,400 @@
+{
+  "benchmark_timestamp": "2026-11-25T02:15:00+05:30",
+  "thresholds": {
+    "block": 0.85,
+    "challenge": 0.5
+  },
+  "models": {
+    "v1_0": {
+      "version": "v1.0.0",
+      "representation": "structured"
+    },
+    "v2_1": {
+      "version": "v2.1.0",
+      "representation": "structured_v2_norm"
+    },
+    "v2_2": {
+      "version": "v2.2.0",
+      "representation": "structured_v2_2"
+    }
+  },
+  "benchmark_1_dev_val": {
+    "v1_0_block": {
+      "accuracy": 0.8956,
+      "precision": 0.9533,
+      "recall": 0.7879,
+      "f1": 0.8628,
+      "fpr": 0.0275,
+      "fnr": 0.2121,
+      "roc_auc": 0.9608,
+      "pr_auc": 0.9582,
+      "confusion_matrix": {
+        "tn": 1626,
+        "fp": 46,
+        "fn": 253,
+        "tp": 940
+      }
+    },
+    "v2_1_block": {
+      "accuracy": 0.8056,
+      "precision": 0.8804,
+      "recall": 0.6169,
+      "f1": 0.7255,
+      "fpr": 0.0598,
+      "fnr": 0.3831,
+      "roc_auc": 0.8911,
+      "pr_auc": 0.8857,
+      "confusion_matrix": {
+        "tn": 1572,
+        "fp": 100,
+        "fn": 457,
+        "tp": 736
+      }
+    },
+    "v2_2_block": {
+      "accuracy": 0.8056,
+      "precision": 0.8804,
+      "recall": 0.6169,
+      "f1": 0.7255,
+      "fpr": 0.0598,
+      "fnr": 0.3831,
+      "roc_auc": 0.832,
+      "pr_auc": 0.8404,
+      "confusion_matrix": {
+        "tn": 1572,
+        "fp": 100,
+        "fn": 457,
+        "tp": 736
+      }
+    },
+    "v1_0_challenge": {
+      "accuracy": 0.9051,
+      "precision": 0.9365,
+      "recall": 0.8282,
+      "f1": 0.879,
+      "fpr": 0.0401,
+      "fnr": 0.1718,
+      "roc_auc": 0.9608,
+      "pr_auc": 0.9582,
+      "confusion_matrix": {
+        "tn": 1605,
+        "fp": 67,
+        "fn": 205,
+        "tp": 988
+      }
+    },
+    "v2_1_challenge": {
+      "accuracy": 0.8168,
+      "precision": 0.8568,
+      "recall": 0.6723,
+      "f1": 0.7534,
+      "fpr": 0.0801,
+      "fnr": 0.3277,
+      "roc_auc": 0.8911,
+      "pr_auc": 0.8857,
+      "confusion_matrix": {
+        "tn": 1538,
+        "fp": 134,
+        "fn": 391,
+        "tp": 802
+      }
+    },
+    "v2_2_challenge": {
+      "accuracy": 0.8112,
+      "precision": 0.8396,
+      "recall": 0.6756,
+      "f1": 0.7487,
+      "fpr": 0.0921,
+      "fnr": 0.3244,
+      "roc_auc": 0.832,
+      "pr_auc": 0.8404,
+      "confusion_matrix": {
+        "tn": 1518,
+        "fp": 154,
+        "fn": 387,
+        "tp": 806
+      }
+    }
+  },
+  "benchmark_2_hard_negatives": {
+    "v1_0": {
+      "fp_count": 114,
+      "fpr": 0.228
+    },
+    "v2_1": {
+      "fp_count": 0,
+      "fpr": 0.0
+    },
+    "v2_2": {
+      "fp_count": 0,
+      "fpr": 0.0
+    }
+  },
+  "benchmark_3_adversarial": [
+    {
+      "description": "Long-Payload Tail SQLi (>200 tokens)",
+      "label": 1,
+      "v1_score": 0.0073,
+      "v1_action": "ALLOW",
+      "v2_1_score": 0.0067,
+      "v2_1_action": "ALLOW",
+      "v2_2_score": 0.0738,
+      "v2_2_action": "ALLOW"
+    },
+    {
+      "description": "Long-Payload Tail XSS (>200 tokens)",
+      "label": 1,
+      "v1_score": 0.0484,
+      "v1_action": "ALLOW",
+      "v2_1_score": 0.0643,
+      "v2_1_action": "ALLOW",
+      "v2_2_score": 0.7572,
+      "v2_2_action": "CHALLENGE"
+    },
+    {
+      "description": "Modern NoSQLi Authentication Bypass",
+      "label": 1,
+      "v1_score": 0.9974,
+      "v1_action": "BLOCK",
+      "v2_1_score": 0.9971,
+      "v2_1_action": "BLOCK",
+      "v2_2_score": 0.9713,
+      "v2_2_action": "BLOCK"
+    },
+    {
+      "description": "SSTI Java/Jinja Execution",
+      "label": 1,
+      "v1_score": 0.9978,
+      "v1_action": "BLOCK",
+      "v2_1_score": 0.9971,
+      "v2_1_action": "BLOCK",
+      "v2_2_score": 0.9739,
+      "v2_2_action": "BLOCK"
+    },
+    {
+      "description": "AWS Metadata SSRF Credential Exfiltration",
+      "label": 1,
+      "v1_score": 0.9978,
+      "v1_action": "BLOCK",
+      "v2_1_score": 0.9967,
+      "v2_1_action": "BLOCK",
+      "v2_2_score": 0.9741,
+      "v2_2_action": "BLOCK"
+    },
+    {
+      "description": "Double-URL-Encoded Path Traversal",
+      "label": 1,
+      "v1_score": 0.9978,
+      "v1_action": "BLOCK",
+      "v2_1_score": 0.9968,
+      "v2_1_action": "BLOCK",
+      "v2_2_score": 0.9734,
+      "v2_2_action": "BLOCK"
+    },
+    {
+      "description": "Polyglot Inline XSS",
+      "label": 1,
+      "v1_score": 0.9979,
+      "v1_action": "BLOCK",
+      "v2_1_score": 0.997,
+      "v2_1_action": "BLOCK",
+      "v2_2_score": 0.9727,
+      "v2_2_action": "BLOCK"
+    },
+    {
+      "description": "Command Injection Semicolon",
+      "label": 1,
+      "v1_score": 0.9977,
+      "v1_action": "BLOCK",
+      "v2_1_score": 0.9971,
+      "v2_1_action": "BLOCK",
+      "v2_2_score": 0.9709,
+      "v2_2_action": "BLOCK"
+    },
+    {
+      "description": "Benign Prose with 'select' keyword",
+      "label": 0,
+      "v1_score": 0.0187,
+      "v1_action": "ALLOW",
+      "v2_1_score": 0.0093,
+      "v2_1_action": "ALLOW",
+      "v2_2_score": 0.0246,
+      "v2_2_action": "ALLOW"
+    },
+    {
+      "description": "Benign Spanish E-Commerce Form",
+      "label": 0,
+      "v1_score": 0.0677,
+      "v1_action": "ALLOW",
+      "v2_1_score": 0.015,
+      "v2_1_action": "ALLOW",
+      "v2_2_score": 0.1435,
+      "v2_2_action": "ALLOW"
+    }
+  ],
+  "benchmark_4_loafo": {
+    "SQLi": {
+      "v1_roc_auc": 1.0,
+      "v1_recall_85": 1.0,
+      "v2_1_roc_auc": 1.0,
+      "v2_1_recall_85": 1.0,
+      "v2_2_roc_auc": 1.0,
+      "v2_2_recall_85": 1.0
+    },
+    "XSS": {
+      "v1_roc_auc": 1.0,
+      "v1_recall_85": 1.0,
+      "v2_1_roc_auc": 1.0,
+      "v2_1_recall_85": 1.0,
+      "v2_2_roc_auc": 1.0,
+      "v2_2_recall_85": 1.0
+    },
+    "Path Traversal": {
+      "v1_roc_auc": 1.0,
+      "v1_recall_85": 1.0,
+      "v2_1_roc_auc": 1.0,
+      "v2_1_recall_85": 1.0,
+      "v2_2_roc_auc": 1.0,
+      "v2_2_recall_85": 1.0
+    },
+    "CMDI": {
+      "v1_roc_auc": 1.0,
+      "v1_recall_85": 1.0,
+      "v2_1_roc_auc": 1.0,
+      "v2_1_recall_85": 1.0,
+      "v2_2_roc_auc": 1.0,
+      "v2_2_recall_85": 0.6667
+    },
+    "NoSQLi": {
+      "v1_roc_auc": 1.0,
+      "v1_recall_85": 1.0,
+      "v2_1_roc_auc": 1.0,
+      "v2_1_recall_85": 1.0,
+      "v2_2_roc_auc": 1.0,
+      "v2_2_recall_85": 1.0
+    }
+  },
+  "benchmark_5_csic_held_out": {
+    "v1_0_block": {
+      "accuracy": 0.8621,
+      "precision": 0.7548,
+      "recall": 0.9836,
+      "f1": 0.8541,
+      "fpr": 0.2225,
+      "fnr": 0.0164,
+      "roc_auc": 0.9801,
+      "pr_auc": 0.9722,
+      "confusion_matrix": {
+        "tn": 13995,
+        "fp": 4005,
+        "fn": 206,
+        "tp": 12326
+      }
+    },
+    "v2_1_block": {
+      "accuracy": 0.7132,
+      "precision": 0.6145,
+      "recall": 0.8083,
+      "f1": 0.6982,
+      "fpr": 0.3531,
+      "fnr": 0.1917,
+      "roc_auc": 0.7234,
+      "pr_auc": 0.5639,
+      "confusion_matrix": {
+        "tn": 11645,
+        "fp": 6355,
+        "fn": 2402,
+        "tp": 10130
+      }
+    },
+    "v2_2_block": {
+      "accuracy": 0.6966,
+      "precision": 0.603,
+      "recall": 0.7638,
+      "f1": 0.6739,
+      "fpr": 0.3501,
+      "fnr": 0.2362,
+      "roc_auc": 0.669,
+      "pr_auc": 0.4966,
+      "confusion_matrix": {
+        "tn": 11698,
+        "fp": 6302,
+        "fn": 2960,
+        "tp": 9572
+      }
+    },
+    "v1_0_challenge": {
+      "accuracy": 0.8611,
+      "precision": 0.7529,
+      "recall": 0.9848,
+      "f1": 0.8534,
+      "fpr": 0.225,
+      "fnr": 0.0152,
+      "roc_auc": 0.9801,
+      "pr_auc": 0.9722,
+      "confusion_matrix": {
+        "tn": 13950,
+        "fp": 4050,
+        "fn": 191,
+        "tp": 12341
+      }
+    },
+    "v2_1_challenge": {
+      "accuracy": 0.7014,
+      "precision": 0.5891,
+      "recall": 0.9007,
+      "f1": 0.7124,
+      "fpr": 0.4373,
+      "fnr": 0.0993,
+      "roc_auc": 0.7234,
+      "pr_auc": 0.5639,
+      "confusion_matrix": {
+        "tn": 10128,
+        "fp": 7872,
+        "fn": 1244,
+        "tp": 11288
+      }
+    },
+    "v2_2_challenge": {
+      "accuracy": 0.6862,
+      "precision": 0.5779,
+      "recall": 0.8735,
+      "f1": 0.6956,
+      "fpr": 0.4443,
+      "fnr": 0.1265,
+      "roc_auc": 0.669,
+      "pr_auc": 0.4966,
+      "confusion_matrix": {
+        "tn": 10003,
+        "fp": 7997,
+        "fn": 1585,
+        "tp": 10947
+      }
+    }
+  },
+  "benchmark_6_latency": {
+    "v1_0_short": {
+      "p50_ms": 7.38,
+      "p95_ms": 10.69,
+      "mean_ms": 7.87
+    },
+    "v2_2_short": {
+      "p50_ms": 7.43,
+      "p95_ms": 9.86,
+      "mean_ms": 7.64
+    },
+    "v2_2_long_2chunk": {
+      "p50_ms": 11.77,
+      "p95_ms": 13.42,
+      "mean_ms": 11.87
+    }
+  },
+  "promotion_gates": {
+    "gate1_csic_fpr_under_1pct": false,
+    "gate2_hard_negative_fpr_under_2pct": true,
+    "gate3_dev_val_recall_over_95pct": false,
+    "gate4_p95_latency_under_35ms": true,
+    "all_gates_pass": false,
+    "final_decision": "HOLD_V1"
+  }
+}
