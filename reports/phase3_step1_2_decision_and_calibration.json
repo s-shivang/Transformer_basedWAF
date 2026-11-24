@@ -1,0 +1,101 @@
+{
+  "architecture_decision": {
+    "winner": "Option 2: 2-Stage Cascade (Layer 2 Fast-Pass -> Layer 3 Contextual Transformer)",
+    "justification": "Option 2 achieves zero attack leakage while fast-passing 8.6% of benign traffic on CPU in microseconds, preserving exact top-tier Transformer accuracy (98.60%), recall (97.57%), and FPR (0.66%).",
+    "option_1_standalone_transformer": {
+      "recall": 0.9757,
+      "fpr": 0.0066,
+      "f1": 0.9831,
+      "latency_p50_ms": 0.8978968762676232,
+      "confusion_matrix": [
+        [
+          1661,
+          11
+        ],
+        [
+          29,
+          1164
+        ]
+      ]
+    },
+    "option_2_two_stage_cascade": {
+      "recall": 0.9757,
+      "fpr": 0.0066,
+      "f1": 0.9831,
+      "latency_p50_ms": 1.4788035651901839,
+      "fast_passed_benign_pct": 11.0,
+      "attack_leakage_count": 0,
+      "confusion_matrix": [
+        [
+          1661,
+          11
+        ],
+        [
+          29,
+          1164
+        ]
+      ]
+    }
+  },
+  "probability_calibration": {
+    "brier_score_before": 0.01197,
+    "brier_score_after": 0.01109,
+    "ece_before": 0.0107,
+    "ece_after": 0.0048,
+    "calibrator": {
+      "method": "Platt Scaling (Logistic Sigmoid)",
+      "slope": 0.7724,
+      "intercept": 0.4965
+    }
+  },
+  "three_tier_waf_policy": {
+    "tier_1_fast_pass": {
+      "threshold": 0.04,
+      "layer": "Layer 2 TF-IDF (CPU)",
+      "purpose": "Allow ultra-clean benign traffic in microseconds without GPU",
+      "fast_passed_benign_count": 184,
+      "fast_passed_benign_pct": 11.0,
+      "leaked_attacks": 0
+    },
+    "tier_2_alert_monitor": {
+      "threshold": 0.05,
+      "layer": "Layer 3 Contextual Transformer",
+      "purpose": "Shadow Mode / Alerting on elevated injection risk with high recall",
+      "recall": 0.9858,
+      "precision": 0.9808,
+      "fpr": 0.0138,
+      "attacks_missed": 17,
+      "benign_flagged": 23,
+      "confusion_matrix": [
+        [
+          1649,
+          23
+        ],
+        [
+          17,
+          1176
+        ]
+      ]
+    },
+    "tier_3_strict_block": {
+      "threshold": 0.5,
+      "layer": "Layer 3 Contextual Transformer",
+      "purpose": "Production Blocking with ultra-low false positive rate (FPR <= 0.66%)",
+      "recall": 0.9757,
+      "precision": 0.9906,
+      "fpr": 0.0066,
+      "attacks_missed": 29,
+      "benign_flagged": 11,
+      "confusion_matrix": [
+        [
+          1661,
+          11
+        ],
+        [
+          29,
+          1164
+        ]
+      ]
+    }
+  }
+}

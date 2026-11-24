@@ -1,0 +1,76 @@
+{
+  "model_version": "v1.0.0",
+  "freeze_timestamp": "2026-11-24T15:50:40Z",
+  "architecture": "2-Stage Cascade (Layer 2 Fast-Pass TF-IDF + Layer 3 Contextual all-MiniLM-L6-v2)",
+  "representation_mode": "structured (Representation D)",
+  "max_length": 192,
+  "special_structural_tokens": [
+    "[METHOD]",
+    "[PATH]",
+    "[PARAM]",
+    "[PAYLOAD]",
+    "[HEADERS]"
+  ],
+  "calibration_policy": {
+    "method": "Platt Scaling (Logistic Sigmoid)",
+    "slope": 0.7724,
+    "intercept": 0.4965,
+    "brier_score": 0.01109,
+    "ece": 0.0048
+  },
+  "threshold_tiers": {
+    "tau_fast_pass": 0.04,
+    "tau_alert": 0.05,
+    "tau_block": 0.5
+  },
+  "environment": {
+    "os": "Windows-10-10.0.26300-SP0",
+    "python_version": "3.11.9",
+    "pytorch_version": "2.6.0+cu124",
+    "transformers_version": "5.24.0",
+    "cuda_available": true,
+    "device_name": "NVIDIA GeForce RTX 2050"
+  },
+  "artifacts_sha256": {
+    "tfidf/tfidf_logistic_baseline.joblib": "287e2e27cd8fcefaa4e3c9f40bb7e5e4586c15558d22085f5b7f88d93c3f3270",
+    "transformer/config.json": "2696a2cc21ac1618b490d1c95b73cbbb4a0a9869ed8171109bf898c6c81fcba3",
+    "transformer/model.safetensors": "fe8dfcb2dd95c35e506958256f52a10052b22af52f209a536c641352c7afb351",
+    "transformer/tokenizer.json": "9652879568b27e984f2e32d8d21f2a8a62eecbcaf7b2fb631cd5869d3ce968c7",
+    "transformer/tokenizer_config.json": "e298c01c26eb67ef91cb29b4fb7427d8fa32ea2595b93d6582a99d59ecd8a8b8"
+  },
+  "diagnostic_held_out_metrics": {
+    "dataset": "csic_held_out_test.parquet (30,532 requests)",
+    "notice": "Previously exposed diagnostic set evaluated strictly post-hoc with zero tuning",
+    "roc_auc": 0.9800965217930987,
+    "pr_auc": 0.9721886401905943,
+    "strict_block_tau_0_50": {
+      "recall": 0.9843,
+      "fpr": 0.2237,
+      "f1": 0.8538,
+      "confusion_matrix": [
+        [
+          13974,
+          4026
+        ],
+        [
+          197,
+          12335
+        ]
+      ]
+    },
+    "alert_monitor_tau_0_05": {
+      "recall": 0.9955,
+      "fpr": 0.2419,
+      "confusion_matrix": [
+        [
+          13645,
+          4355
+        ],
+        [
+          57,
+          12475
+        ]
+      ]
+    }
+  }
+}

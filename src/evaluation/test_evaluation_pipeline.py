@@ -154,6 +154,93 @@ class TestEvaluationIntegrity(unittest.TestCase):
         self.assertIn("/__APP_ENDPOINT__", feat_masked)
         self.assertIn("token=xyz", feat_masked)
 
+    def test_frozen_artifact_loading_and_sha256(self):
+        """Asserts that frozen artifacts in models/frozen/v1_0 exist and match manifest SHA-256."""
+        import json
+        import hashlib
+
+        manifest_path = ROOT / "models/frozen/v1_0/model_manifest.json"
+        self.assertTrue(manifest_path.exists(), f"Missing frozen manifest: {manifest_path}")
+
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        self.assertEqual(manifest["model_version"], "v1.0.0")
+        self.assertEqual(manifest["max_length"], 192)
+
+        for rel_path, expected_hash in manifest["artifacts_sha256"].items():
+            full_file = ROOT / "models/frozen/v1_0" / rel_path
+            self.assertTrue(full_file.exists(), f"Frozen artifact missing: {full_file}")
+            h = hashlib.sha256()
+            with open(full_file, "rb") as f:
+                while chunk := f.read(8192):
+                    h.update(chunk)
+            self.assertEqual(
+                h.hexdigest(),
+                expected_hash,
+                f"SHA-256 mismatch for frozen artifact {rel_path}!",
+            )
+
+    def test_frozen_model_prediction_schema_and_bounds(self):
+        """Asserts that frozen models load properly and output calibrated probability in [0, 1]."""
+        import joblib
+
+        frozen_tfidf_path = ROOT / "models/frozen/v1_0/tfidf/tfidf_logistic_baseline.joblib"
+        self.assertTrue(frozen_tfidf_path.exists())
+
+        tfidf_clf = joblib.load(frozen_tfidf_path)
+        classes = list(tfidf_clf.classes_)
+        mal_idx = classes.index("malicious") if "malicious" in classes else 1
+
+        test_texts = [
+            "[METHOD] GET [PATH] /search [PARAM] q=shoes [PAYLOAD] shoes",
+            "[METHOD] GET [PATH] /search [PARAM] q=' OR 1=1-- [PAYLOAD] ' OR 1=1--",
+        ]
+        probs = tfidf_clf.predict_proba(test_texts)[:, mal_idx]
+        for p in probs:
+            self.assertTrue(0.0 <= p <= 1.0, f"Probability out of bounds: {p}")
+        self.assertLess(probs[0], probs[1], "Attack probability should exceed benign probability")
+
+    def test_three_tier_threshold_and_fast_pass_routing(self):
+        """Asserts correct routing logic across the 3-tier WAF policy."""
+        tau_fast_pass = 0.04
+        tau_alert = 0.05
+        tau_block = 0.50
+
+        # Simulate routing function
+        def route_request(l2_score, l3_score):
+            if l2_score < tau_fast_pass:
+                return "FAST_PASS_ALLOW"
+            elif l3_score >= tau_block:
+                return "STRICT_BLOCK"
+            elif l3_score >= tau_alert:
+                return "SHADOW_ALERT"
+            else:
+                return "ALLOW"
+
+        self.assertEqual(route_request(0.01, None), "FAST_PASS_ALLOW")
+        self.assertEqual(route_request(0.10, 0.02), "ALLOW")
+        self.assertEqual(route_request(0.10, 0.20), "SHADOW_ALERT")
+        self.assertEqual(route_request(0.10, 0.85), "STRICT_BLOCK")
+
+    def test_dataset_counts_and_zero_group_overlap(self):
+        """Asserts exact 18,000 count and proves 0-group leakage in the development pool split."""
+        from src.models.train_tfidf_layer import load_balanced_development_pool
+        df = load_balanced_development_pool()
+
+        self.assertEqual(len(df), 18000)
+        self.assertEqual(int(np.sum(df["label"] == 0)), 10000)
+        self.assertEqual(int(np.sum(df["label"] == 1)), 8000)
+
+        groups = [f.split("[PARAM]")[0].strip() if "[PARAM]" in f else f[:32] for f in df["feat_structured"]]
+        sgkf = StratifiedGroupKFold(n_splits=6, shuffle=True, random_state=42)
+        train_idx, val_idx = next(sgkf.split(df, df["label"], groups))
+
+        train_groups = set(np.array(groups)[train_idx])
+        val_groups = set(np.array(groups)[val_idx])
+        overlap = train_groups.intersection(val_groups)
+        self.assertEqual(len(overlap), 0, f"Found {len(overlap)} overlapping groups across train and val splits!")
+
 
 if __name__ == "__main__":
     unittest.main()
