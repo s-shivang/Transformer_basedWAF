@@ -23,7 +23,7 @@ class ThresholdConfig(BaseModel):
         description="Threshold band start for CAPTCHA/challenge or anomaly escalation."
     )
     block: float = Field(
-        default=0.90,
+        default=0.85,
         ge=0.0,
         le=1.0,
         description="High-confidence low-FPR threshold for automated blocking."

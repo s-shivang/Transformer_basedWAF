@@ -6,7 +6,7 @@ Covers:
 2. Inspection modes: disabled, monitor (safe by default), blocking, strict.
 3. Layer 1 deterministic rules short-circuiting.
 4. Multi-signal fusion: Layer 2/3 ML + Layer 4 behavioral anomaly escalation.
-5. Challenge band (0.50 - 0.90) and anomaly escalation to BLOCK.
+5. Challenge band (0.50 - 0.85) and anomaly escalation to BLOCK.
 6. Degraded mode / ML failure handling: fail_open vs fail_closed and anomaly protection floor.
 7. Decision output schema compliance (WAFDecision).
 """
@@ -183,7 +183,7 @@ def test_blocking_mode_high_risk_attack(in_process_ml_client):
 
 
 def test_challenge_band_without_anomaly():
-    """Mock ML score in [0.50, 0.90) without anomaly triggers CHALLENGE."""
+    """Mock ML score in [0.50, 0.85) without anomaly triggers CHALLENGE."""
     policy = FirewallPolicy(inspection_mode="blocking")
     mock_ml = MagicMock()
     mock_ml.predict.return_value = MLClientResult(
@@ -210,7 +210,7 @@ def test_challenge_band_without_anomaly():
 
 
 def test_challenge_band_escalation_with_anomaly():
-    """Mock ML score in [0.50, 0.90) WITH active behavioral anomaly escalates to BLOCK."""
+    """Mock ML score in [0.50, 0.85) WITH active behavioral anomaly escalates to BLOCK."""
     policy = FirewallPolicy(inspection_mode="blocking")
     mock_ml = MagicMock()
     mock_ml.predict.return_value = MLClientResult(

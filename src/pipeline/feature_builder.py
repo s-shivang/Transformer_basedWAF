@@ -195,11 +195,121 @@ def build_representation_d_v2(req: ParsedRequest, mask_path: bool = False) -> st
     return " ".join(parts)
 
 
+SAFE_ROUTING_RE = re.compile(r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9]{1,5})?$")
+PATH_ATTACK_KEYWORDS = {
+    "etc", "passwd", "win.ini", "cmd", "shell", "admin",
+    "config", ".env", ".git", "script", "select", "union"
+}
+BENIGN_EXTENSIONS = {
+    "jsp", "php", "html", "htm", "json", "asp", "aspx",
+    "xml", "txt", "do", "action", "cgi"
+}
+
+
+def normalize_path_smart(path: str) -> str:
+    """
+    Smart Path Normalization for Representation D-v2-Norm:
+    - Splits path by '/'.
+    - If a segment contains ONLY safe routing characters and no attack keywords,
+      normalizes to '__SEG__' (or '__FILE__.ext' for benign file extensions).
+    - If a segment contains special/encoded/traversal chars (.., %, ', <, >, ;, $, etc.)
+      or attack keywords, preserves the raw segment intact.
+    - Example: '/tienda1/publico/anadir.jsp' -> '/__SEG__/__SEG__/__FILE__.jsp'
+    - Example: '/files/../../etc/passwd'     -> '/__SEG__/../../etc/passwd'
+    """
+    if not path or path == "/":
+        return path or "/"
+
+    segments = path.split("/")
+    norm_segs = []
+    for seg in segments:
+        if not seg:
+            norm_segs.append("")
+            continue
+
+        seg_lower = seg.lower()
+        # If segment contains attack keyword or special/traversal chars, keep raw
+        if any(kw in seg_lower for kw in PATH_ATTACK_KEYWORDS) or not SAFE_ROUTING_RE.match(seg):
+            norm_segs.append(seg)
+        else:
+            if "." in seg:
+                name, ext = seg.rsplit(".", 1)
+                ext_l = ext.lower()
+                if ext_l in BENIGN_EXTENSIONS:
+                    norm_segs.append(f"__FILE__.{ext_l}")
+                else:
+                    norm_segs.append("__SEG__")
+            else:
+                norm_segs.append("__SEG__")
+
+    return "/".join(norm_segs)
+
+
+def build_representation_d_v2_norm(req: ParsedRequest, mask_path: bool = False) -> str:
+    """
+    Representation D-v2-Norm: Structured Serialization with Header Stripping,
+    Payload Prioritization, and Smart Path Normalization (v2.1 format).
+    - Normalizes safe routing segments to '__SEG__' / '__FILE__.ext' to eliminate
+      path memorization while 100% preserving traversal attacks and sensitive targets.
+    - Strips low-value noisy headers while retaining suspicious attack patterns.
+    """
+    norm_path = "/__APP_ENDPOINT__" if mask_path else normalize_path_smart(req.path)
+    parts = [f"[METHOD] {req.method}", f"[PATH] {norm_path}"]
+
+    # Add parameters
+    all_params = []
+    for k, v in req.query_params.items():
+        if isinstance(v, list):
+            for item in v:
+                all_params.append(f"{k}={item}")
+        else:
+            all_params.append(f"{k}={v}")
+
+    if isinstance(req.body_params, dict):
+        for k, v in req.body_params.items():
+            if not k.startswith("_"):
+                all_params.append(f"{k}={v}")
+
+    if all_params:
+        parts.append(f"[PARAM] {' '.join(all_params)}")
+
+    # Add canonical payloads
+    if req.canonical_payloads:
+        payload_str = " ".join(str(p) for p in req.canonical_payloads if p)
+        if payload_str:
+            parts.append(f"[PAYLOAD] {payload_str}")
+
+    # Add security-relevant headers: compact Content-Type or suspicious headers
+    retained_headers = []
+
+    # 1. Compact Content-Type
+    if "content-type" in req.headers:
+        ct = req.headers["content-type"].split(";")[0].strip().lower()
+        if ct:
+            retained_headers.append(f"content-type={ct}")
+
+    # 2. Any header with explicit suspicious attack pattern
+    for hk, hv in req.headers.items():
+        hk_lower = hk.lower()
+        if hk_lower == "content-type":
+            continue
+        hv_str = str(hv)
+        if SUSPICIOUS_HEADER_PATTERNS.search(hv_str) or SUSPICIOUS_HEADER_PATTERNS.search(hk_lower):
+            retained_headers.append(f"{hk_lower}={hv_str}")
+        elif hk_lower not in NOISY_HEADERS and len(hv_str) < 100:
+            retained_headers.append(f"{hk_lower}={hv_str}")
+
+    if retained_headers:
+        parts.append(f"[HEADERS] {' '.join(retained_headers)}")
+
+    return " ".join(parts)
+
+
 def build_features(req: ParsedRequest, representation: str = "structured") -> str:
     """
     Main dispatch function for building feature text from a ParsedRequest.
     Options: 'raw', 'target_payload', 'payload_only', 'structured', 'structured_masked',
-             'structured_v2', 'structured_v2_masked'
+             'structured_v2', 'structured_v2_masked', 'structured_v2_norm'
     """
     rep = representation.lower()
     if rep in ("raw", "full_request", "a"):
@@ -216,8 +326,10 @@ def build_features(req: ParsedRequest, representation: str = "structured") -> st
         return build_representation_d_v2(req, mask_path=False)
     elif rep in ("structured_v2_masked", "d_v2_masked", "v2_masked"):
         return build_representation_d_v2(req, mask_path=True)
+    elif rep in ("structured_v2_norm", "d_v2_norm", "v2_norm", "v2_1", "v2.1", "structured_v2.1"):
+        return build_representation_d_v2_norm(req, mask_path=False)
     else:
         raise ValueError(
-            f"Unknown representation: {representation}. Expected 'a', 'b', 'c', 'd', 'structured_v2', etc."
+            f"Unknown representation: {representation}. Expected 'a', 'b', 'c', 'd', 'structured_v2', 'structured_v2_norm', etc."
         )
 

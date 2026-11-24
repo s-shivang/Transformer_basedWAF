@@ -43,6 +43,7 @@ HTTP_PARAMS_PATH = ROOT / "data/raw/http_params/payload_train.csv"
 HARD_NEG_VAL_PATH = OUTPUT_DIR / "hard_negatives_val_500.parquet"
 HARD_NEG_TRAIN_PATH = OUTPUT_DIR / "hard_negatives_train.parquet"
 DEV_V2_AUGMENTED_PATH = OUTPUT_DIR / "dev_v2_augmented.parquet"
+DEV_V2_1_AUGMENTED_PATH = OUTPUT_DIR / "dev_v2_1_augmented.parquet"
 
 
 # ============================================================================
@@ -254,6 +255,130 @@ def generate_international_ecommerce(n: int, rng: random.Random) -> List[Dict[st
             "category": "international_ecommerce",
             "method": method,
             "path": path,
+            "raw_text": raw,
+            "label": 0,
+            "group_id": group_id,
+        })
+
+    return samples
+
+
+CLASSIC_ENDPOINTS = [
+    "/tienda/registro.jsp",
+    "/portal/cliente.php",
+    "/servicios/contacto.asp",
+    "/usuarios/alta.aspx",
+    "/catalogo/consulta.jsp",
+    "/compras/pedido.php",
+    "/clientes/formulario.asp",
+    "/ventas/presupuesto.aspx",
+    "/facturas/descarga.jsp",
+    "/soporte/incidencia.php",
+]
+
+
+def generate_classic_web_forms(n: int, rng: random.Random) -> List[Dict[str, Any]]:
+    """Generates classic server-rendered web forms (.jsp, .php, .asp, .aspx)
+    with application/x-www-form-urlencoded payloads, standard form fields,
+    multilingual names, dates, addresses, and numbers (~30% of benign hard negatives)."""
+    import urllib.parse
+    samples = []
+
+    first_names = SPANISH_NAMES + FRENCH_NAMES + GERMAN_NAMES + INDIAN_NAMES
+    cities = SPANISH_CITIES + FRENCH_CITIES + GERMAN_CITIES + INDIAN_CITIES
+    streets = SPANISH_STREETS + FRENCH_STREETS + GERMAN_STREETS
+
+    for i in range(n):
+        ep = rng.choice(CLASSIC_ENDPOINTS)
+        method = "POST" if rng.random() > 0.15 else "GET"
+
+        name = rng.choice(first_names)
+        city = rng.choice(cities)
+        street = rng.choice(streets)
+        phone = f"+{rng.randint(33, 91)} {rng.randint(600, 999)} {rng.randint(100, 999)} {rng.randint(100, 999)}"
+        email = f"{name.lower().replace(' ', '.')}@correo.{rng.choice(['es', 'com', 'fr', 'de', 'org'])}"
+        postal = f"{rng.randint(10000, 99999)}"
+        comment = rng.choice(SPANISH_COMMENTS + FRENCH_COMMENTS + GERMAN_COMMENTS)
+
+        form_type = rng.choice(["registration", "order", "search", "contact"])
+
+        if form_type == "registration":
+            params = {
+                "nombre": name,
+                "direccion": street,
+                "ciudad": city,
+                "codigo_postal": postal,
+                "telefono": phone,
+                "email": email,
+                "comentarios": comment,
+                "action": "enviar_formulario",
+                "submit": "Guardar",
+            }
+        elif form_type == "order":
+            params = {
+                "id_cliente": str(rng.randint(1000, 99999)),
+                "id_producto": str(rng.randint(100, 5000)),
+                "cantidad": str(rng.randint(1, 10)),
+                "fecha_entrega": f"2026-{rng.randint(11, 12):02d}-{rng.randint(1, 28):02d}",
+                "direccion_envio": street,
+                "ciudad": city,
+                "codigo_postal": postal,
+                "notas": comment,
+                "modo_pago": rng.choice(["tarjeta", "transferencia", "contra_reembolso"]),
+                "confirmar": "1",
+            }
+        elif form_type == "search":
+            params = {
+                "buscar": rng.choice(["portatil", "mesa", "silla", "pantalla", "teclado", "impresora", "raton"]),
+                "categoria": rng.choice(["electronica", "oficina", "hogar", "informatica"]),
+                "precio_min": str(rng.randint(10, 50)),
+                "precio_max": str(rng.randint(100, 1500)),
+                "orden": rng.choice(["precio_asc", "precio_desc", "relevancia"]),
+                "pagina": str(rng.randint(1, 10)),
+            }
+        else:  # contact
+            params = {
+                "nombre_completo": name,
+                "correo": email,
+                "asunto": rng.choice(["Consulta sobre pedido", "Informacion de envio", "Solicitud de factura", "Estado de garantia"]),
+                "mensaje": comment,
+                "contacto_pref": rng.choice(["email", "telefono"]),
+                "enviar": "Enviar",
+            }
+
+        encoded_body = urllib.parse.urlencode(params)
+
+        headers = {
+            "Host": "servicios.empresa.es",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        }
+
+        if method == "GET":
+            full_path = f"{ep}?{encoded_body}"
+            lines = [f"GET {full_path} HTTP/1.1"]
+            for hk, hv in headers.items():
+                lines.append(f"{hk}: {hv}")
+            lines.append("")
+            raw = "\r\n".join(lines)
+        else:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            headers["Content-Length"] = str(len(encoded_body.encode("utf-8")))
+            lines = [f"POST {ep} HTTP/1.1"]
+            for hk, hv in headers.items():
+                lines.append(f"{hk}: {hv}")
+            lines.append("")
+            lines.append(encoded_body)
+            raw = "\r\n".join(lines)
+
+        param_keys = ",".join(sorted(params.keys()))
+        group_id = f"classic_form::{ep}?{param_keys}"
+
+        samples.append({
+            "category": "classic_form",
+            "method": method,
+            "path": ep,
             "raw_text": raw,
             "label": 0,
             "group_id": group_id,
@@ -513,13 +638,14 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
     print("\n[Step 2] Generating Hard-Negative Benign & Modern Attack Dataset (seed=42)...")
     rng = random.Random(RANDOM_SEED)
 
-    # 1. Generate 5,000 hard-negative benign requests across the 4 categories
-    cat1 = generate_international_ecommerce(1400, rng)
-    cat2 = generate_prose_keywords(1400, rng)
-    cat3 = generate_rest_graphql(1200, rng)
-    cat4 = generate_long_benign(1000, rng)
-    benign_samples = cat1 + cat2 + cat3 + cat4  # Exactly 5,000 benign
-    print(f"  Generated {len(benign_samples):,} Hard-Negative Benign requests across 4 categories.")
+    # 1. Generate 5,000 hard-negative benign requests across the 5 categories
+    cat_classic = generate_classic_web_forms(1500, rng)
+    cat1 = generate_international_ecommerce(1300, rng)
+    cat2 = generate_prose_keywords(1000, rng)
+    cat3 = generate_rest_graphql(700, rng)
+    cat4 = generate_long_benign(500, rng)
+    benign_samples = cat_classic + cat1 + cat2 + cat3 + cat4  # Exactly 5,000 benign
+    print(f"  Generated {len(benign_samples):,} Hard-Negative Benign requests across 5 categories (including {len(cat_classic):,} classic web forms).")
 
     # 2. Generate 400 modern attack payloads
     attack_samples = generate_modern_attacks(400, rng)
@@ -575,14 +701,17 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
     print(f"  [Verification] Hard-Negative Training Pool: {len(df_train_pool):,} samples.")
     print(f"  [Verification] Group Overlap: {len(overlap)} (Strict Zero Leakage Verified!).")
 
-    # 4. Compute Representation D-v2 features
-    print("  Computing Representation D-v2 features for all samples...")
+    # 4. Compute Representation D-v2 and D-v2-norm features
+    print("  Computing Representation D-v2 and D-v2-norm features for all samples...")
     for df in [df_val_500, df_train_pool]:
         v2_feats = []
+        v2_norm_feats = []
         for raw_t, lbl in zip(df["raw_text"], df["label"]):
             p = parse_raw_http(raw_t, label=lbl, source="hard_negative")
             v2_feats.append(build_features(p, representation="structured_v2"))
+            v2_norm_feats.append(build_features(p, representation="structured_v2_norm"))
         df["feat_structured_v2"] = v2_feats
+        df["feat_structured_v2_norm"] = v2_norm_feats
 
     # 5. Save Parquet Files
     df_val_500.to_parquet(HARD_NEG_VAL_PATH, index=False)
@@ -590,7 +719,7 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
     print(f"  Saved pristine val set -> {HARD_NEG_VAL_PATH}")
     print(f"  Saved training portion -> {HARD_NEG_TRAIN_PATH}")
 
-    # 6. Build Combined Augmented Development Pool (v2.0)
+    # 6. Build Combined Augmented Development Pool (v2.1)
     print("  Building combined Augmented Development Pool (Baseline 18k + Hard-Negatives)...")
     records = []
 
@@ -616,6 +745,7 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
                 "source": "ai_waf",
                 "raw_text": t,
                 "feat_structured_v2": build_features(p, "structured_v2"),
+                "feat_structured_v2_norm": build_features(p, "structured_v2_norm"),
                 "label": 0,
                 "group_id": f"ai_waf::{p.path}",
             })
@@ -625,6 +755,7 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
                 "source": "ai_waf",
                 "raw_text": t,
                 "feat_structured_v2": build_features(p, "structured_v2"),
+                "feat_structured_v2_norm": build_features(p, "structured_v2_norm"),
                 "label": 1,
                 "group_id": f"ai_waf::{p.path}",
             })
@@ -644,6 +775,7 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
                 "source": "csic_dev",
                 "raw_text": t,
                 "feat_structured_v2": build_features(p, "structured_v2"),
+                "feat_structured_v2_norm": build_features(p, "structured_v2_norm"),
                 "label": 0,
                 "group_id": f"csic_dev::{p.path}",
             })
@@ -653,6 +785,7 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
                 "source": "csic_dev",
                 "raw_text": t,
                 "feat_structured_v2": build_features(p, "structured_v2"),
+                "feat_structured_v2_norm": build_features(p, "structured_v2_norm"),
                 "label": 1,
                 "group_id": f"csic_dev::{p.path}",
             })
@@ -668,6 +801,7 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
                 "source": "http_params",
                 "raw_text": f"GET /search?q={pl} HTTP/1.1\r\nHost: example.com\r\n\r\n",
                 "feat_structured_v2": feat,
+                "feat_structured_v2_norm": feat,
                 "label": 1,
                 "group_id": "http_params::search",
             })
@@ -678,17 +812,18 @@ def generate_all_hard_negatives() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
             "source": "hard_negative_aug",
             "raw_text": r["raw_text"],
             "feat_structured_v2": r["feat_structured_v2"],
+            "feat_structured_v2_norm": r["feat_structured_v2_norm"],
             "label": r["label"],
             "group_id": r["group_id"],
         })
 
-    df_dev_v2 = pd.DataFrame(records)
-    df_dev_v2.to_parquet(DEV_V2_AUGMENTED_PATH, index=False)
-    print(f"  Combined Augmented Development Pool saved: {len(df_dev_v2):,} records -> {DEV_V2_AUGMENTED_PATH}")
-    print(f"    - Benign: {(df_dev_v2['label']==0).sum():,}")
-    print(f"    - Malicious: {(df_dev_v2['label']==1).sum():,}")
+    df_dev_v2_1 = pd.DataFrame(records)
+    df_dev_v2_1.to_parquet(DEV_V2_1_AUGMENTED_PATH, index=False)
+    print(f"  Combined Augmented Development Pool v2.1 saved: {len(df_dev_v2_1):,} records -> {DEV_V2_1_AUGMENTED_PATH}")
+    print(f"    - Benign: {(df_dev_v2_1['label']==0).sum():,}")
+    print(f"    - Malicious: {(df_dev_v2_1['label']==1).sum():,}")
 
-    return df_val_500, df_train_pool, df_dev_v2
+    return df_val_500, df_train_pool, df_dev_v2_1
 
 
 if __name__ == "__main__":
