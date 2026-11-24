@@ -173,7 +173,7 @@ def main():
     print(f"Loading Held-Out CSIC dataset: {HELD_OUT_PATH}...")
     held_out_df = pd.read_parquet(HELD_OUT_PATH)
     held_out_raw = held_out_df["request_text"].tolist()
-    held_out_labels = [1 if l == "anomalous" else 0 for l in held_out_df["label"]]
+    held_out_labels = [1 if str(l).lower() in ("malicious", "anomalous") else 0 for l in held_out_df["label"]]
 
     held_out_results = evaluate_transformer_on_dataset(
         classifier=classifier,

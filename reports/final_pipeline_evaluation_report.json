@@ -1,0 +1,109 @@
+{
+  "evaluation_name": "Transformer-Based WAF: Final Pipeline Benchmark",
+  "timestamp": "2026-11-24T07:22:02Z",
+  "model_architecture": "all-MiniLM-L6-v2 (Fine-Tuned with Structural Tokens)",
+  "hardware_device": "cuda:0",
+  "post_hoc_held_out_csic_partition": {
+    "dataset": "Post-Hoc Held-Out CSIC Partition (Sealed)",
+    "rows": 30532,
+    "threshold": 0.5,
+    "accuracy": 0.9761,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "false_positive_rate": 0.0239,
+    "pr_auc": 0.5,
+    "roc_auc": 1.0,
+    "confusion_matrix": [
+      [
+        29802,
+        730
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "latency_profile": {
+      "parsing": {
+        "mean_ms": 0.067,
+        "p50_ms": 0.039,
+        "p95_ms": 0.19,
+        "p99_ms": 0.323
+      },
+      "feature_building": {
+        "mean_ms": 0.007,
+        "p50_ms": 0.004,
+        "p95_ms": 0.018,
+        "p99_ms": 0.032
+      },
+      "transformer_inference": {
+        "mean_ms": 0.724,
+        "p50_ms": 0.713,
+        "p95_ms": 0.853,
+        "p99_ms": 0.995
+      }
+    }
+  },
+  "in_domain_ai_waf_validation": {
+    "dataset": "AI WAF Validation (In-Domain)",
+    "rows": 3000,
+    "threshold": 0.5,
+    "accuracy": 0.9867,
+    "precision": 0.9795,
+    "recall": 0.9695,
+    "f1": 0.9745,
+    "false_positive_rate": 0.0072,
+    "pr_auc": 0.9963,
+    "roc_auc": 0.9985,
+    "confusion_matrix": [
+      [
+        2197,
+        16
+      ],
+      [
+        24,
+        763
+      ]
+    ],
+    "latency_profile": {
+      "parsing": {
+        "mean_ms": 0.04,
+        "p50_ms": 0.035,
+        "p95_ms": 0.075,
+        "p99_ms": 0.167
+      },
+      "feature_building": {
+        "mean_ms": 0.005,
+        "p50_ms": 0.005,
+        "p95_ms": 0.009,
+        "p99_ms": 0.017
+      },
+      "transformer_inference": {
+        "mean_ms": 0.798,
+        "p50_ms": 0.791,
+        "p95_ms": 0.899,
+        "p99_ms": 1.012
+      }
+    }
+  },
+  "end_to_end_firewall_benchmark": {
+    "sample_size": 1000,
+    "latency_percentiles": {
+      "mean_ms": 8.565,
+      "p50_ms": 8.297,
+      "p95_ms": 12.984,
+      "p99_ms": 15.263
+    },
+    "actions_distribution": {
+      "BLOCK": 60,
+      "ALLOW": 940,
+      "CHALLENGE": 0,
+      "MONITOR": 0
+    },
+    "layer_triggers": {
+      "Layer3_Transformer": 946,
+      "Layer1_Rules": 54
+    }
+  }
+}

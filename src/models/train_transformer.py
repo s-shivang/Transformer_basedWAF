@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import get_cosine_schedule_with_warmup
+from transformers import get_cosine_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     accuracy_score,
@@ -113,8 +113,8 @@ def load_training_data() -> Tuple[List[str], List[int], List[str], List[int]]:
     if CSIC_DEV_PATH.exists():
         csic_dev = pd.read_parquet(CSIC_DEV_PATH)
         print(f"  CSIC Development Partition available: {len(csic_dev):,}")
-        csic_benign = csic_dev[csic_dev["label"] == "benign"]
-        csic_mal = csic_dev[csic_dev["label"] == "anomalous"]
+        csic_benign = csic_dev[csic_dev["label"].str.lower() == "benign"]
+        csic_mal = csic_dev[csic_dev["label"].str.lower().isin(["malicious", "anomalous"])]
 
         # Sample from CSIC dev to give model exposure to Spanish e-commerce vocabulary
         sample_csic_benign = csic_benign.sample(min(len(csic_benign), 4000), random_state=RANDOM_SEED)
@@ -256,7 +256,7 @@ def train_model(
         num_warmup_steps=warmup_steps,
         num_training_steps=total_steps,
     )
-    scaler = torch.amp.GradScaler(device_type=device.type, enabled=use_fp16)
+    scaler = torch.amp.GradScaler(device.type, enabled=use_fp16)
 
     print(f"\n[Training] Starting fine-tuning: {num_epochs} epochs, {total_steps} steps, lr={learning_rate}")
     best_f1 = 0.0

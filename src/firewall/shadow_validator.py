@@ -60,9 +60,9 @@ def run_shadow_mode_replay(
     layer_attribution = {}
     latencies = []
 
-    for _, row in sample_df.iterrows():
+    for i, (_, row) in enumerate(sample_df.iterrows()):
         raw_text = str(row["request_text"])
-        is_attack = (row["label"] == "anomalous")
+        is_attack = str(row["label"]).lower() in ("malicious", "anomalous")
 
         if is_attack:
             malicious_total += 1
@@ -70,7 +70,8 @@ def run_shadow_mode_replay(
             benign_total += 1
 
         req = parse_raw_http(raw_text)
-        dec = firewall.inspect_request(req, client_id="replay_stream")
+        client_id = f"client_{i % 100}"
+        dec = firewall.inspect_request(req, client_id=client_id)
         latencies.append(dec.latency_ms)
 
         action_counts[dec.action] = action_counts.get(dec.action, 0) + 1

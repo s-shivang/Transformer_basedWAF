@@ -1,0 +1,26 @@
+{
+  "validation_name": "Phase 4.5 Shadow Mode & Replay Validation",
+  "sample_size": 2000,
+  "benign_total": 2000,
+  "benign_disrupted_count": 1985,
+  "shadow_disruption_rate": 0.9925,
+  "malicious_total": 0,
+  "malicious_intercepted_count": 0,
+  "shadow_interception_rate": 0.0,
+  "action_distribution": {
+    "ALLOW": 15,
+    "BLOCK": 1952,
+    "CHALLENGE": 33,
+    "MONITOR": 0
+  },
+  "layer_attribution": {
+    "Layer3_Transformer": 1880,
+    "Layer1_Rules": 120,
+    "Layer4_BehavioralAnomaly": 1865
+  },
+  "latency_percentiles": {
+    "p50_ms": 8.913,
+    "p95_ms": 14.356,
+    "p99_ms": 18.292
+  }
+}
