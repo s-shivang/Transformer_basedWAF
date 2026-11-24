@@ -366,3 +366,135 @@ def test_layer1_rules_protect_during_ml_outage():
     assert decision.action == "BLOCK"
     assert "LAYER1_RULE_SQLI_UNION_SELECT" in decision.reason
     assert mock_ml.predict.call_count == 0
+
+
+# ============================================================================
+# 5. Sensitive Data Redaction & Monitor Mode Outage Safety Tests (Phase 6 Closure)
+# ============================================================================
+
+def test_sensitive_data_redaction():
+    """
+    Verifies that redact_request_for_event strips authorization headers,
+    session cookies, API keys, passwords, and tokens from serialized event logs.
+    """
+    import json
+    from src.pipeline.schema import ParsedRequest
+    from src.firewall.redaction import redact_request_for_event
+
+    secret_auth = "Bearer eyJhbGciOi_SECRET_JWT_TOKEN_9999"
+    secret_pass = "P@ssw0rd!SuperSecret"
+    secret_cookie = "session_token=abcdef1234567890; role=admin"
+    secret_apikey = "ak_live_9876543210zyxwvut"
+
+    raw_text = (
+        f"POST /api/login?ref=123 HTTP/1.1\r\n"
+        f"Host: test.local\r\n"
+        f"Authorization: {secret_auth}\r\n"
+        f"Cookie: {secret_cookie}\r\n"
+        f"X-API-Key: {secret_apikey}\r\n"
+        f"Content-Type: application/json\r\n\r\n"
+        f'{{"user": "alice", "password": "{secret_pass}", "token": "sensitive_refresh_token"}}'
+    )
+
+    req = ParsedRequest(
+        id="req_test_redact",
+        raw_text=raw_text,
+        method="POST",
+        path="/api/login",
+        query_params={"ref": "123", "password": secret_pass},
+        headers={
+            "host": "test.local",
+            "authorization": secret_auth,
+            "cookie": secret_cookie,
+            "x-api-key": secret_apikey,
+        },
+        body_params={"user": "alice", "password": secret_pass, "token": "sensitive_refresh_token"},
+    )
+
+    decision = WAFDecision(
+        request_id="req_test_redact",
+        tenant_id="test_tenant",
+        site_id="test_site",
+        action="MONITOR",
+        would_action="ALLOW",
+        reason="CLEAN_REQUEST",
+        risk_score=0.01,
+        stage_used="fast_pass_tfidf",
+        inspection_mode="monitor",
+        latency_ms=1.5,
+    )
+
+    event = redact_request_for_event(req, decision, client_ip="192.168.1.10")
+    serialized = json.dumps(event)
+
+    # Prove raw secrets NEVER appear anywhere in the serialized security event
+    assert secret_auth not in serialized
+    assert secret_pass not in serialized
+    assert secret_cookie not in serialized
+    assert secret_apikey not in serialized
+    assert "sensitive_refresh_token" not in serialized
+
+    # Confirm redaction placeholders are present
+    assert event["request"]["headers"]["authorization"] == "[REDACTED]"
+    assert event["request"]["headers"]["cookie"] == "[REDACTED]"
+    assert event["request"]["headers"]["x-api-key"] == "[REDACTED]"
+    assert event["request"]["query_params"]["password"] == "[REDACTED]"
+    assert event["request"]["body_params"]["password"] == "[REDACTED]"
+    assert event["request"]["body_params"]["token"] == "[REDACTED]"
+
+
+def test_monitor_mode_outage_safety_fail_closed():
+    """
+    In monitor mode, even if ML service fails under fail_closed, live traffic
+    is NEVER blocked: action remains 'MONITOR' while would_action records 'BLOCK'.
+    """
+    policy = FirewallPolicy(inspection_mode="monitor", ml_failure_mode="fail_closed")
+    mock_ml = MagicMock()
+    mock_ml.predict.return_value = MLClientResult(
+        success=False,
+        failure_domain="connection_refused",
+        error_message="Connection refused to ML service",
+    )
+
+    engine = CentralDecisionEngine(policy=policy, ml_client=mock_ml)
+    req = "GET /index.html HTTP/1.1\r\nHost: test.local\r\n\r\n"
+    decision = engine.inspect_request(req)
+
+    assert decision.action == "MONITOR"
+    assert decision.would_action == "BLOCK"
+    assert decision.degraded_mode is True
+    assert decision.reason == "ML_UNAVAILABLE_FAIL_CLOSED"
+
+
+def test_monitor_mode_outage_safety_with_anomaly():
+    """
+    In monitor mode, even if ML fails AND behavioral anomaly is active,
+    action remains 'MONITOR' (would_action='CHALLENGE') to prevent client disruption.
+    """
+    policy = FirewallPolicy(inspection_mode="monitor", ml_failure_mode="fail_open")
+    mock_ml = MagicMock()
+    mock_ml.predict.return_value = MLClientResult(
+        success=False,
+        failure_domain="timeout",
+        error_message="ML timeout",
+    )
+
+    anomaly_detector = BehavioralAnomalyDetector()
+    client = "scanner_in_monitor_mode"
+    t_now = time.time()
+    for p in ["/.env", "/admin", "/config.php", "/actuator"]:
+        anomaly_detector.record_event(client, p, status_code=404, event_time=t_now)
+
+    engine = CentralDecisionEngine(
+        policy=policy,
+        ml_client=mock_ml,
+        anomaly_detector=anomaly_detector,
+    )
+    req = "GET /dashboard HTTP/1.1\r\nHost: test.local\r\n\r\n"
+    decision = engine.inspect_request(req, client_id=client, event_time=t_now + 1.0)
+
+    assert decision.action == "MONITOR"
+    assert decision.would_action == "CHALLENGE"
+    assert decision.degraded_mode is True
+    assert decision.reason == "ML_DEGRADED_ANOMALY_ACTIVE"
+

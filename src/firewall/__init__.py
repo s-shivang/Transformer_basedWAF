@@ -6,6 +6,7 @@ from src.firewall.rules_engine import RulesEngine, RuleViolation, RuleValidation
 from src.firewall.ml_client import MLClient, MLClientResult
 from src.firewall.anomaly_detector import BehavioralAnomalyDetector, AnomalyEvaluationResult
 from src.firewall.decision_engine import CentralDecisionEngine, WAFDecision
+from src.firewall.redaction import redact_request_for_event, redact_dictionary, redact_raw_text
 
 __all__ = [
     "FirewallPolicy",
@@ -19,4 +20,7 @@ __all__ = [
     "AnomalyEvaluationResult",
     "CentralDecisionEngine",
     "WAFDecision",
+    "redact_request_for_event",
+    "redact_dictionary",
+    "redact_raw_text",
 ]

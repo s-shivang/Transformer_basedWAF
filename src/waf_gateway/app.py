@@ -1,0 +1,328 @@
+"""
+WAF Inspection Reverse-Proxy Gateway Application.
+
+Positioned in the Data Plane between Nginx and Protected Upstream Application:
+Client -> Nginx (80/8080) -> WAF Gateway (8001) -> Protected App (8002)
+
+Coordinates:
+1. Parses incoming requests preserving full POST bodies.
+2. Evaluates via CentralDecisionEngine & ML Inference Service.
+3. Enforces ALLOW, MONITOR, BLOCK (403), or CHALLENGE (429).
+4. Forwards allowed/monitored requests to upstream protected app.
+5. Injects X-WAF-* diagnostic telemetry headers.
+6. Writes privacy-safe security events to JSONL log with credential redaction.
+7. Exposes internal /_waf/ admin endpoints for runtime policy switching.
+"""
+from typing import Optional, Dict, Any, List
+from pathlib import Path
+from contextlib import asynccontextmanager
+import time
+import json
+import httpx
+from fastapi import FastAPI, Request, Response, status, HTTPException
+from fastapi.responses import JSONResponse, Response as FastAPIResponse
+from pydantic import BaseModel
+
+from src.pipeline.schema import ParsedRequest
+from src.pipeline.parser import parse_raw_http
+from src.firewall.policy import FirewallPolicy, ThresholdConfig
+from src.firewall.decision_engine import CentralDecisionEngine, WAFDecision
+from src.firewall.ml_client import MLClient
+from src.firewall.redaction import redact_request_for_event
+
+ROOT = Path(__file__).resolve().parents[2]
+LOGS_DIR = ROOT / "logs"
+DEFAULT_SECURITY_LOG = LOGS_DIR / "waf_security_events.jsonl"
+
+HOP_BY_HOP_HEADERS = {
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+    "content-length",
+}
+
+
+class PolicyUpdateRequest(BaseModel):
+    inspection_mode: Optional[str] = None
+    rules_enabled: Optional[bool] = None
+    ml_enabled: Optional[bool] = None
+    anomaly_enabled: Optional[bool] = None
+    ml_failure_mode: Optional[str] = None
+    thresholds: Optional[Dict[str, float]] = None
+
+
+class WAFGatewayApp:
+    """
+    Manages WAF gateway state, HTTP connection pools to upstream and ML service,
+    and security event logging.
+    """
+
+    def __init__(
+        self,
+        upstream_url: str = "http://127.0.0.1:8002",
+        ml_service_url: str = "http://127.0.0.1:8000",
+        policy: Optional[FirewallPolicy] = None,
+        security_log_path: Optional[Path] = None,
+        in_process_ml_engine: Optional[Any] = None,
+        in_process_upstream_app: Optional[Any] = None,
+    ):
+        self.upstream_url = upstream_url.rstrip("/")
+        self.security_log_path = security_log_path or DEFAULT_SECURITY_LOG
+        self.security_log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        self.policy = policy or FirewallPolicy()
+        self.ml_client = MLClient(
+            base_url=ml_service_url,
+            in_process_engine=in_process_ml_engine,
+        )
+        self.decision_engine = CentralDecisionEngine(
+            policy=self.policy,
+            ml_client=self.ml_client,
+        )
+
+        self.in_process_upstream_app = in_process_upstream_app
+        self.upstream_client: Optional[httpx.AsyncClient] = None
+
+    async def initialize(self):
+        """Initializes async HTTP client for upstream forwarding."""
+        transport = None
+        if self.in_process_upstream_app is not None:
+            transport = httpx.ASGITransport(app=self.in_process_upstream_app)
+
+        self.upstream_client = httpx.AsyncClient(
+            base_url=self.upstream_url,
+            transport=transport,
+            timeout=httpx.Timeout(connect=2.0, read=10.0, write=10.0, pool=10.0),
+            limits=httpx.Limits(max_keepalive_connections=50, max_connections=100),
+        )
+
+    async def shutdown(self):
+        """Closes upstream connection pool."""
+        if self.upstream_client is not None:
+            await self.upstream_client.aclose()
+        self.ml_client.close()
+
+    def log_security_event(self, parsed_req: ParsedRequest, decision: WAFDecision, client_ip: str):
+        """Persists privacy-safe redacted security event to JSONL file."""
+        try:
+            event = redact_request_for_event(parsed_req, decision, client_ip=client_ip)
+            line = json.dumps(event) + "\n"
+            with open(self.security_log_path, "a", encoding="utf-8") as f:
+                f.write(line)
+        except Exception as e:
+            print(f"[WAFGateway] Warning: Failed to write security event log: {e}")
+
+
+# Global Gateway Instance
+gateway = WAFGatewayApp()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await gateway.initialize()
+    yield
+    await gateway.shutdown()
+
+
+app = FastAPI(
+    title="WAF Inspection Reverse-Proxy Gateway",
+    description="Data-plane inspection proxy protecting upstream web applications",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+
+# ============================================================================
+# Admin / Management Endpoints (/_waf/ prefix)
+# ============================================================================
+
+@app.get("/_waf/health", tags=["WAF Admin"])
+async def waf_health():
+    """Returns WAF Gateway status, operational mode, and upstream target."""
+    return {
+        "status": "healthy",
+        "service": "waf-inspection-gateway",
+        "inspection_mode": gateway.policy.inspection_mode,
+        "policy_version": gateway.policy.policy_version,
+        "upstream_url": gateway.upstream_url,
+        "ml_service_url": gateway.ml_client.base_url,
+    }
+
+
+@app.get("/_waf/policy", tags=["WAF Admin"])
+async def get_waf_policy():
+    """Returns active WAF configuration and threshold policy."""
+    return gateway.policy.model_dump()
+
+
+@app.post("/_waf/policy", tags=["WAF Admin"])
+@app.put("/_waf/policy", tags=["WAF Admin"])
+async def update_waf_policy(update: PolicyUpdateRequest):
+    """
+    Updates inspection_mode or operational thresholds dynamically at runtime.
+    """
+    if update.inspection_mode is not None:
+        if update.inspection_mode not in ("monitor", "blocking", "strict", "disabled"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid inspection_mode: {update.inspection_mode}",
+            )
+        gateway.policy.inspection_mode = update.inspection_mode  # type: ignore
+
+    if update.rules_enabled is not None:
+        gateway.policy.rules_enabled = update.rules_enabled
+    if update.ml_enabled is not None:
+        gateway.policy.ml_enabled = update.ml_enabled
+    if update.anomaly_enabled is not None:
+        gateway.policy.anomaly_enabled = update.anomaly_enabled
+    if update.ml_failure_mode is not None:
+        if update.ml_failure_mode not in ("fail_open", "fail_closed"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid ml_failure_mode: {update.ml_failure_mode}",
+            )
+        gateway.policy.ml_failure_mode = update.ml_failure_mode  # type: ignore
+
+    if update.thresholds is not None:
+        for k, v in update.thresholds.items():
+            if hasattr(gateway.policy.thresholds, k):
+                setattr(gateway.policy.thresholds, k, float(v))
+
+    return {
+        "status": "updated",
+        "policy": gateway.policy.model_dump(),
+    }
+
+
+# ============================================================================
+# Main Reverse-Proxy Catch-All Route
+# ============================================================================
+
+@app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
+async def reverse_proxy_handler(request: Request, full_path: str):
+    """
+    Intercepts every incoming HTTP request:
+    1. Parses full request line, headers, and body.
+    2. Runs multi-layer WAF inspection.
+    3. Blocks or Challenges attacks; forwards legitimate/monitored requests.
+    """
+    # Exclude internal /_waf admin routes from proxy forwarding
+    if full_path.startswith("_waf/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    body_bytes = await request.body()
+    body_str = body_bytes.decode("utf-8", errors="replace")
+
+    # Reconstruct raw HTTP text for representation building
+    query_string = request.url.query
+    raw_path = f"/{full_path}" + (f"?{query_string}" if query_string else "")
+
+    lines = [f"{request.method} {raw_path} HTTP/1.1"]
+    for hk, hv in request.headers.items():
+        lines.append(f"{hk}: {hv}")
+    if body_str:
+        lines.append("")
+        lines.append(body_str)
+    raw_http_text = "\r\n".join(lines)
+
+    parsed_req = parse_raw_http(raw_http_text, request_id=f"req_{int(time.time()*1000)}")
+
+    # 2. Central Decision Engine Evaluation
+    decision = gateway.decision_engine.inspect_request(
+        req=parsed_req,
+        client_id=client_ip,
+    )
+
+    # 3. Log Redacted Security Event to JSONL
+    gateway.log_security_event(parsed_req, decision, client_ip=client_ip)
+
+    # 4. Enforce Decision
+    # A. BLOCK -> Return 403 Forbidden immediately (never forward upstream)
+    if decision.action == "BLOCK":
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            headers={
+                "X-WAF-Action": "BLOCK",
+                "X-WAF-Request-ID": decision.request_id,
+                "X-WAF-Mode": decision.inspection_mode,
+                "X-WAF-Reason": decision.reason,
+            },
+            content={
+                "error": "Request blocked by Transformer-Based WAF",
+                "request_id": decision.request_id,
+                "reason": decision.reason,
+                "risk_score": decision.risk_score,
+                "rule_matches": decision.rule_matches,
+            },
+        )
+
+    # B. CHALLENGE -> Return 429 Too Many Requests (never forward upstream)
+    if decision.action == "CHALLENGE":
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            headers={
+                "X-WAF-Action": "CHALLENGE",
+                "X-WAF-Request-ID": decision.request_id,
+                "X-WAF-Mode": decision.inspection_mode,
+                "X-WAF-Reason": decision.reason,
+            },
+            content={
+                "challenge_required": True,
+                "type": "behavioral_rate_challenge",
+                "request_id": decision.request_id,
+                "reason": decision.reason,
+            },
+        )
+
+    # C. ALLOW or MONITOR -> Forward upstream
+    forward_headers = {
+        k: v for k, v in request.headers.items()
+        if k.lower() not in HOP_BY_HOP_HEADERS
+    }
+
+    try:
+        upstream_resp = await gateway.upstream_client.request(
+            method=request.method,
+            url=raw_path,
+            headers=forward_headers,
+            content=body_bytes if body_bytes else None,
+        )
+
+        # Prepare response to client with telemetry headers
+        resp_headers = {
+            k: v for k, v in upstream_resp.headers.items()
+            if k.lower() not in HOP_BY_HOP_HEADERS
+        }
+        resp_headers["X-WAF-Action"] = decision.action
+        resp_headers["X-WAF-Would-Action"] = decision.would_action
+        resp_headers["X-WAF-Request-ID"] = decision.request_id
+        resp_headers["X-WAF-Mode"] = decision.inspection_mode
+        resp_headers["X-WAF-Latency-Ms"] = str(decision.latency_ms)
+        if decision.degraded_mode:
+            resp_headers["X-WAF-Degraded"] = "true"
+
+        return FastAPIResponse(
+            content=upstream_resp.content,
+            status_code=upstream_resp.status_code,
+            headers=resp_headers,
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            headers={
+                "X-WAF-Action": decision.action,
+                "X-WAF-Request-ID": decision.request_id,
+            },
+            content={
+                "error": "Bad Gateway: Upstream protected application unreachable",
+                "upstream_url": gateway.upstream_url,
+                "detail": str(e),
+            },
+        )
