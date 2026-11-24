@@ -7,7 +7,7 @@ SUSPICIOUS_HEADER_PATTERNS = re.compile(
     r"(?:"
     r"union\s+select|select\s+.*\s+from|insert\s+into|drop\s+table|<script|javascript:|onerror=|onload="
     r"|\.\./|\.\.\\|%2e%2e|/etc/passwd|/bin/sh|169\.254\.\d+\.\d+|localhost|127\.0\.0\.1"
-    r"|\{\{.*\}\}|\$\{.*\}|system\(|exec\(|eval\(|`|--|\bOR\s+\d+=\d+|\bAND\s+\d+=\d+"
+    r"|\{\{.*\}\}|\$\{.*\}|system\(|exec\(|eval\(|`|--|\bOR\s+['\"]?\d+['\"]?\s*=\s*['\"]?\d+['\"]?|\bAND\s+['\"]?\d+['\"]?\s*=\s*['\"]?\d+['\"]?"
     r"|\$ne|\$gt|\$where|<svg|<img"
     r")",
     re.IGNORECASE,

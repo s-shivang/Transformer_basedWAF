@@ -95,8 +95,12 @@ class InferenceEngine:
     - Platt calibration: converts raw logits to calibrated probabilities.
     """
 
-    def __init__(self, model_container: Optional[ModelContainer] = None):
-        self.container = model_container or global_container
+    def __init__(
+        self,
+        model_container: Optional[ModelContainer] = None,
+        container: Optional[ModelContainer] = None,
+    ):
+        self.container = container or model_container or global_container
 
     def _validate_payload_size(self, req: PredictRequest):
         """Enforces 64 KB maximum payload limit."""

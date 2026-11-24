@@ -16,7 +16,6 @@ from src.pipeline.feature_builder import (
     build_features,
     build_representation_d,
     build_representation_d_v2,
-    extract_informative_headers,
 )
 from src.ml_service.model_loader import ModelContainer
 from src.ml_service.inference_engine import InferenceEngine
@@ -79,23 +78,25 @@ class TestRepresentationDV2:
         )
         parsed = parse_raw_http(raw_http)
         feat_v2 = build_representation_d_v2(parsed)
-        assert "content-type:application/json" in feat_v2
+        assert "content-type=application/json" in feat_v2
+
+
+@pytest.fixture(scope="module")
+def engine_v2():
+    container = ModelContainer(model_dir=V2_DIR)
+    container.initialize()
+    return InferenceEngine(container=container)
+
+
+@pytest.fixture(scope="module")
+def engine_v1():
+    container = ModelContainer(model_dir=V1_DIR)
+    container.initialize()
+    return InferenceEngine(container=container)
 
 
 class TestHeadTailChunking:
     """Tests 2-chunk scoring for long-payload evasion attacks (>192 tokens)."""
-
-    @pytest.fixture(scope="class")
-    def engine_v2(self):
-        container = ModelContainer(model_dir=V2_DIR)
-        container.initialize()
-        return InferenceEngine(container=container)
-
-    @pytest.fixture(scope="class")
-    def engine_v1(self):
-        container = ModelContainer(model_dir=V1_DIR)
-        container.initialize()
-        return InferenceEngine(container=container)
 
     def test_tail_attack_evasion_caught_by_v2(self, engine_v1, engine_v2):
         """
@@ -137,20 +138,20 @@ class TestArtifactIntegrityAndManifestV2:
             manifest = json.load(f)
 
         assert manifest["model_version"] == "v2.0.0"
-        assert manifest["representation_mode"] == "structured_v2"
-        assert manifest["head_tail_chunking"] is True
-        assert len(manifest["artifacts"]) >= 6
+        assert "structured_v2" in manifest["architecture"]["representation"]
+        assert manifest["architecture"]["head_tail_chunking"] is True
+        assert len(manifest["artifacts_sha256"]) >= 6
 
         # Check each file SHA-256
         import hashlib
-        for artifact in manifest["artifacts"]:
-            file_path = V2_DIR / artifact["file"]
-            assert file_path.exists(), f"Artifact missing: {artifact['file']}"
+        for rel_file, expected_hash in manifest["artifacts_sha256"].items():
+            file_path = V2_DIR / rel_file
+            assert file_path.exists(), f"Artifact missing: {rel_file}"
             h = hashlib.sha256()
             with open(file_path, "rb") as f:
                 while chunk := f.read(65536):
                     h.update(chunk)
-            assert h.hexdigest() == artifact["sha256"], f"Hash mismatch for {artifact['file']}"
+            assert h.hexdigest() == expected_hash, f"Hash mismatch for {rel_file}"
 
     def test_model_container_v2_initialization(self):
         container = ModelContainer(model_dir=V2_DIR)
