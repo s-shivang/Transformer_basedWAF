@@ -52,13 +52,17 @@ def build_representation_c(req: ParsedRequest) -> str:
     return ""
 
 
-def build_representation_d(req: ParsedRequest) -> str:
+def build_representation_d(req: ParsedRequest, mask_path: bool = False) -> str:
     """
     Representation D: Structured Serialization.
     Standardized structural sequence format:
     [METHOD] {method} [PATH] {path} [PARAM] {param_key}={val} [PAYLOAD] {payloads} [HEADERS] {ua_and_cookie}
+
+    If mask_path is True, replaces specific endpoint paths with a standardized abstraction
+    to prevent the model from memorizing endpoint-specific routing tokens.
     """
-    parts = [f"[METHOD] {req.method}", f"[PATH] {req.path}"]
+    display_path = "/__APP_ENDPOINT__" if mask_path else req.path
+    parts = [f"[METHOD] {req.method}", f"[PATH] {display_path}"]
 
     # Add parameters
     all_params = []
@@ -98,7 +102,7 @@ def build_representation_d(req: ParsedRequest) -> str:
 def build_features(req: ParsedRequest, representation: str = "structured") -> str:
     """
     Main dispatch function for building feature text from a ParsedRequest.
-    Options: 'raw', 'target_payload', 'payload_only', 'structured'
+    Options: 'raw', 'target_payload', 'payload_only', 'structured', 'structured_masked'
     """
     rep = representation.lower()
     if rep in ("raw", "full_request", "a"):
@@ -108,7 +112,9 @@ def build_features(req: ParsedRequest, representation: str = "structured") -> st
     elif rep in ("payload_only", "payload", "c"):
         return build_representation_c(req)
     elif rep in ("structured", "d"):
-        return build_representation_d(req)
+        return build_representation_d(req, mask_path=False)
+    elif rep in ("structured_masked", "d_masked", "masked"):
+        return build_representation_d(req, mask_path=True)
     else:
-        raise ValueError(f"Unknown representation: {representation}. Expected 'a', 'b', 'c', or 'd'.")
+        raise ValueError(f"Unknown representation: {representation}. Expected 'a', 'b', 'c', 'd', or 'structured_masked'.")
 

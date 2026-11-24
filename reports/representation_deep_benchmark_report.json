@@ -1,0 +1,457 @@
+{
+  "benchmark": "Deep Representation Engineering & Robustness Benchmark",
+  "dataset": "Balanced Development Pool (18,000 samples)",
+  "representations_evaluated": {
+    "raw": {
+      "description": "Representation A: Full Raw Request",
+      "validation_metrics": {
+        "accuracy": 0.8403,
+        "recall": 0.9783,
+        "precision": 0.7435,
+        "f1": 0.8448,
+        "fpr": 0.2702
+      },
+      "confusion_matrix": {
+        "tn": 2434,
+        "fp": 901,
+        "fn": 58,
+        "tp": 2611
+      },
+      "challenge_test_suite_accuracy": 0.7,
+      "challenge_test_details": [
+        {
+          "category": "evasion_url_encoded",
+          "description": "URL-encoded SQLi UNION SELECT",
+          "expected": 1,
+          "predicted_prob": 0.9986,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_double_encoded",
+          "description": "Double percent-encoded SQLi tautology",
+          "expected": 1,
+          "predicted_prob": 0.9888,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_mixed_case",
+          "description": "Mixed-case XSS script tag",
+          "expected": 1,
+          "predicted_prob": 0.9869,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_unicode",
+          "description": "Unicode fullwidth characters (\uff07 \uff2f\uff32 \uff11\uff1d\uff11)",
+          "expected": 1,
+          "predicted_prob": 0.9808,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_whitespace",
+          "description": "Tab and newline separated SQL injection",
+          "expected": 1,
+          "predicted_prob": 0.9784,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in API endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9843,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in sensitive payment endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9963,
+          "is_correct": true
+        },
+        {
+          "category": "endpoint_discrimination",
+          "description": "Benign payment request to payment endpoint",
+          "expected": 0,
+          "predicted_prob": 0.9873,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Legitimate profile edit in sensitive endpoint",
+          "expected": 0,
+          "predicted_prob": 0.9399,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Clean healthcheck endpoint",
+          "expected": 0,
+          "predicted_prob": 0.9541,
+          "is_correct": false
+        }
+      ],
+      "training_time_seconds": 9.33
+    },
+    "target_payload": {
+      "description": "Representation B: Target + Payload",
+      "validation_metrics": {
+        "accuracy": 0.8045,
+        "recall": 0.9172,
+        "precision": 0.7198,
+        "f1": 0.8066,
+        "fpr": 0.2858
+      },
+      "confusion_matrix": {
+        "tn": 2382,
+        "fp": 953,
+        "fn": 221,
+        "tp": 2448
+      },
+      "challenge_test_suite_accuracy": 0.8,
+      "challenge_test_details": [
+        {
+          "category": "evasion_url_encoded",
+          "description": "URL-encoded SQLi UNION SELECT",
+          "expected": 1,
+          "predicted_prob": 0.9901,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_double_encoded",
+          "description": "Double percent-encoded SQLi tautology",
+          "expected": 1,
+          "predicted_prob": 0.6426,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_mixed_case",
+          "description": "Mixed-case XSS script tag",
+          "expected": 1,
+          "predicted_prob": 0.9461,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_unicode",
+          "description": "Unicode fullwidth characters (\uff07 \uff2f\uff32 \uff11\uff1d\uff11)",
+          "expected": 1,
+          "predicted_prob": 0.9957,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_whitespace",
+          "description": "Tab and newline separated SQL injection",
+          "expected": 1,
+          "predicted_prob": 0.9297,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in API endpoint",
+          "expected": 1,
+          "predicted_prob": 0.6745,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in sensitive payment endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9735,
+          "is_correct": true
+        },
+        {
+          "category": "endpoint_discrimination",
+          "description": "Benign payment request to payment endpoint",
+          "expected": 0,
+          "predicted_prob": 0.8923,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Legitimate profile edit in sensitive endpoint",
+          "expected": 0,
+          "predicted_prob": 0.8652,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Clean healthcheck endpoint",
+          "expected": 0,
+          "predicted_prob": 0.3655,
+          "is_correct": true
+        }
+      ],
+      "training_time_seconds": 2.9
+    },
+    "payload_only": {
+      "description": "Representation C: Canonical Payload Only",
+      "validation_metrics": {
+        "accuracy": 0.7522,
+        "recall": 0.7846,
+        "precision": 0.6964,
+        "f1": 0.7378,
+        "fpr": 0.2738
+      },
+      "confusion_matrix": {
+        "tn": 2422,
+        "fp": 913,
+        "fn": 575,
+        "tp": 2094
+      },
+      "challenge_test_suite_accuracy": 1.0,
+      "challenge_test_details": [
+        {
+          "category": "evasion_url_encoded",
+          "description": "URL-encoded SQLi UNION SELECT",
+          "expected": 1,
+          "predicted_prob": 0.9547,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_double_encoded",
+          "description": "Double percent-encoded SQLi tautology",
+          "expected": 1,
+          "predicted_prob": 0.8921,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_mixed_case",
+          "description": "Mixed-case XSS script tag",
+          "expected": 1,
+          "predicted_prob": 0.9779,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_unicode",
+          "description": "Unicode fullwidth characters (\uff07 \uff2f\uff32 \uff11\uff1d\uff11)",
+          "expected": 1,
+          "predicted_prob": 0.9311,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_whitespace",
+          "description": "Tab and newline separated SQL injection",
+          "expected": 1,
+          "predicted_prob": 0.9301,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in API endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9645,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in sensitive payment endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9645,
+          "is_correct": true
+        },
+        {
+          "category": "endpoint_discrimination",
+          "description": "Benign payment request to payment endpoint",
+          "expected": 0,
+          "predicted_prob": 0.3521,
+          "is_correct": true
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Legitimate profile edit in sensitive endpoint",
+          "expected": 0,
+          "predicted_prob": 0.3144,
+          "is_correct": true
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Clean healthcheck endpoint",
+          "expected": 0,
+          "predicted_prob": 0.2984,
+          "is_correct": true
+        }
+      ],
+      "training_time_seconds": 1.83
+    },
+    "structured": {
+      "description": "Representation D: Structured Serialization",
+      "validation_metrics": {
+        "accuracy": 0.8353,
+        "recall": 0.9693,
+        "precision": 0.7404,
+        "f1": 0.8395,
+        "fpr": 0.272
+      },
+      "confusion_matrix": {
+        "tn": 2428,
+        "fp": 907,
+        "fn": 82,
+        "tp": 2587
+      },
+      "challenge_test_suite_accuracy": 0.7,
+      "challenge_test_details": [
+        {
+          "category": "evasion_url_encoded",
+          "description": "URL-encoded SQLi UNION SELECT",
+          "expected": 1,
+          "predicted_prob": 0.9909,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_double_encoded",
+          "description": "Double percent-encoded SQLi tautology",
+          "expected": 1,
+          "predicted_prob": 0.9249,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_mixed_case",
+          "description": "Mixed-case XSS script tag",
+          "expected": 1,
+          "predicted_prob": 0.9859,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_unicode",
+          "description": "Unicode fullwidth characters (\uff07 \uff2f\uff32 \uff11\uff1d\uff11)",
+          "expected": 1,
+          "predicted_prob": 0.9921,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_whitespace",
+          "description": "Tab and newline separated SQL injection",
+          "expected": 1,
+          "predicted_prob": 0.927,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in API endpoint",
+          "expected": 1,
+          "predicted_prob": 0.8873,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in sensitive payment endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9629,
+          "is_correct": true
+        },
+        {
+          "category": "endpoint_discrimination",
+          "description": "Benign payment request to payment endpoint",
+          "expected": 0,
+          "predicted_prob": 0.8566,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Legitimate profile edit in sensitive endpoint",
+          "expected": 0,
+          "predicted_prob": 0.6962,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Clean healthcheck endpoint",
+          "expected": 0,
+          "predicted_prob": 0.5689,
+          "is_correct": false
+        }
+      ],
+      "training_time_seconds": 6.77
+    },
+    "structured_masked": {
+      "description": "Representation D-Masked: Path-Masked Structured Serialization",
+      "validation_metrics": {
+        "accuracy": 0.796,
+        "recall": 0.8854,
+        "precision": 0.72,
+        "f1": 0.7942,
+        "fpr": 0.2756
+      },
+      "confusion_matrix": {
+        "tn": 2416,
+        "fp": 919,
+        "fn": 306,
+        "tp": 2363
+      },
+      "challenge_test_suite_accuracy": 0.8,
+      "challenge_test_details": [
+        {
+          "category": "evasion_url_encoded",
+          "description": "URL-encoded SQLi UNION SELECT",
+          "expected": 1,
+          "predicted_prob": 0.9802,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_double_encoded",
+          "description": "Double percent-encoded SQLi tautology",
+          "expected": 1,
+          "predicted_prob": 0.9476,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_mixed_case",
+          "description": "Mixed-case XSS script tag",
+          "expected": 1,
+          "predicted_prob": 0.9869,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_unicode",
+          "description": "Unicode fullwidth characters (\uff07 \uff2f\uff32 \uff11\uff1d\uff11)",
+          "expected": 1,
+          "predicted_prob": 0.97,
+          "is_correct": true
+        },
+        {
+          "category": "evasion_whitespace",
+          "description": "Tab and newline separated SQL injection",
+          "expected": 1,
+          "predicted_prob": 0.9485,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in API endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9654,
+          "is_correct": true
+        },
+        {
+          "category": "path_invariance_attack",
+          "description": "SQLi in sensitive payment endpoint",
+          "expected": 1,
+          "predicted_prob": 0.9747,
+          "is_correct": true
+        },
+        {
+          "category": "endpoint_discrimination",
+          "description": "Benign payment request to payment endpoint",
+          "expected": 0,
+          "predicted_prob": 0.8594,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Legitimate profile edit in sensitive endpoint",
+          "expected": 0,
+          "predicted_prob": 0.7399,
+          "is_correct": false
+        },
+        {
+          "category": "benign_attack_associated_path",
+          "description": "Clean healthcheck endpoint",
+          "expected": 0,
+          "predicted_prob": 0.3663,
+          "is_correct": true
+        }
+      ],
+      "training_time_seconds": 6.63
+    }
+  },
+  "recommendation": "Representation D-Masked (structured_masked) decouples path tokens from parameter syntax, eliminating false alarms on sensitive endpoints while preserving full canonical injection payloads."
+}
