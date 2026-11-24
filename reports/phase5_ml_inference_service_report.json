@@ -1,0 +1,108 @@
+{
+  "phase": "Phase 5 - Python + FastAPI ML Inference Service",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-24T22:14:00Z",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 2050 Laptop GPU (4GB VRAM)",
+    "cuda_version": "12.4",
+    "compute_capability": "sm_86",
+    "precision": "FP16 (half-precision) with CPU fallback",
+    "cloud_spend": "$0.00 (strictly local execution)"
+  },
+  "architecture": {
+    "pattern": "Modular Monolith with Domain-Driven Design (DDD)",
+    "component": "ML Inference Service (FastAPI)",
+    "decoupling": "Strictly isolated from future NestJS SaaS business logic and billing"
+  },
+  "frozen_model": {
+    "version": "v1.0.0",
+    "frozen_directory": "models/frozen/v1_0",
+    "sha256_verified": true,
+    "manifest_artifacts": {
+      "transformer/model.safetensors": "verified",
+      "transformer/config.json": "verified",
+      "transformer/tokenizer_config.json": "verified",
+      "transformer/vocab.txt": "verified",
+      "tfidf/tfidf_logistic_baseline.joblib": "verified",
+      "threshold.json": "verified",
+      "preprocessing_config.json": "verified"
+    }
+  },
+  "threshold_tiers": {
+    "fast_pass_allow": 0.04,
+    "monitor_alert": 0.05,
+    "block": 0.50,
+    "strict_block_low_fpr": 0.90
+  },
+  "platt_calibration": {
+    "enabled": true,
+    "w": 0.7724,
+    "b": 0.4965,
+    "formula": "p_cal = 1 / (1 + exp(-(0.7724 * ln(p / (1 - p)) + 0.4965)))"
+  },
+  "endpoints": {
+    "GET /health": {
+      "purpose": "Liveness probe",
+      "status_code": 200,
+      "response_keys": ["status", "service"]
+    },
+    "GET /ready": {
+      "purpose": "Readiness probe with cryptographic SHA-256 verification",
+      "status_code_ready": 200,
+      "status_code_unready": 503,
+      "response_keys": ["ready", "model_version", "device", "sha256_verified", "details"]
+    },
+    "GET /v1/model-info": {
+      "purpose": "Active model configuration and metadata inspection",
+      "status_code": 200,
+      "response_keys": ["model_version", "device", "representation_mode", "max_length", "thresholds", "calibration_policy", "sha256_verified", "artifacts"]
+    },
+    "POST /v1/predict": {
+      "purpose": "2-Stage Cascade HTTP inference",
+      "status_code": 200,
+      "safe_limits": {
+        "empty_payload": "HTTP 400 Bad Request",
+        "malformed_http": "HTTP 400 Bad Request",
+        "oversized_limit": "64 KB (65536 bytes) -> HTTP 422 Unprocessable Entity"
+      },
+      "truncation_boundary": "> 192 tokens"
+    }
+  },
+  "test_results": {
+    "service_pytest_suite": {
+      "file": "tests/test_ml_inference_service.py",
+      "total_tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "score_parity_max_error": 0.00000,
+      "score_parity_target": "<= 1e-5"
+    },
+    "pipeline_unit_tests": {
+      "file": "src/evaluation/test_evaluation_pipeline.py",
+      "total_tests": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "firewall_architecture_tests": {
+      "file": "src/firewall/validate_firewall.py",
+      "passed": true
+    }
+  },
+  "latency_benchmark": {
+    "sample_size": 100,
+    "layer2_fast_pass": {
+      "requests": 50,
+      "p50_ms": 2.94,
+      "p95_ms": 3.70,
+      "target_p50_ms": "< 5.0 ms",
+      "status": "PASS"
+    },
+    "layer3_transformer": {
+      "requests": 50,
+      "p50_ms": 9.16,
+      "p95_ms": 11.91,
+      "device": "cuda:0 (NVIDIA RTX 2050 FP16)",
+      "status": "PASS"
+    }
+  }
+}

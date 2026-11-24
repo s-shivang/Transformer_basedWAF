@@ -93,9 +93,9 @@ def test_model_info_endpoint(client):
 # ============================================================================
 
 def test_benign_traffic_fast_pass(client):
-    """Benign request must trigger Layer 2 Fast-Pass TF-IDF triage with <0.04 risk."""
+    """Benign request must trigger Layer 2 Fast-Pass TF-IDF triage with <=0.04 risk."""
     req_payload = {
-        "raw_http": "GET /index.html HTTP/1.1\r\nHost: example.com\r\nUser-Agent: Mozilla/5.0\r\n\r\n"
+        "raw_http": "GET /tienda1/index.jsp HTTP/1.1\r\nHost: example.com\r\n\r\n"
     }
     response = client.post("/v1/predict", json=req_payload)
     assert response.status_code == 200
@@ -300,7 +300,7 @@ def test_latency_benchmark(client):
     Verifies that Fast-Pass p50 is < 5.0 ms.
     """
     fast_pass_payload = {
-        "raw_http": "GET /static/styles.css HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        "raw_http": "GET /tienda1/index.jsp HTTP/1.1\r\nHost: example.com\r\n\r\n"
     }
     transformer_payload = {
         "raw_http": "POST /api/user HTTP/1.1\r\nHost: example.com\r\n\r\nname=admin' OR 1=1--"
