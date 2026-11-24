@@ -1,0 +1,65 @@
+{
+  "model_version": "v2.2",
+  "representation": "structured_v2_2",
+  "n_train_samples": 20124,
+  "n_val_samples": 4722,
+  "training_time_seconds": 7.55,
+  "roc_auc": 0.9663,
+  "pr_auc": 0.9532,
+  "fpr_at_0_50": 0.0228,
+  "fnr_at_0_50": 0.3755,
+  "recall_at_0_50": 0.6245,
+  "min_malicious_score": 0.010861,
+  "recommended_tau_fast_pass": 0.04,
+  "calibration_grid": [
+    {
+      "threshold": 0.01,
+      "leaked_attacks": 0,
+      "attack_leakage_pct": 0.0,
+      "benign_bypassed": 23,
+      "benign_bypass_rate_pct": 0.8449669360764144
+    },
+    {
+      "threshold": 0.02,
+      "leaked_attacks": 4,
+      "attack_leakage_pct": 0.2,
+      "benign_bypassed": 293,
+      "benign_bypass_rate_pct": 10.764144011756063
+    },
+    {
+      "threshold": 0.03,
+      "leaked_attacks": 6,
+      "attack_leakage_pct": 0.3,
+      "benign_bypassed": 445,
+      "benign_bypass_rate_pct": 16.348273328434974
+    },
+    {
+      "threshold": 0.04,
+      "leaked_attacks": 7,
+      "attack_leakage_pct": 0.35000000000000003,
+      "benign_bypassed": 697,
+      "benign_bypass_rate_pct": 25.606171932402646
+    },
+    {
+      "threshold": 0.05,
+      "leaked_attacks": 7,
+      "attack_leakage_pct": 0.35000000000000003,
+      "benign_bypassed": 885,
+      "benign_bypass_rate_pct": 32.51285819250551
+    },
+    {
+      "threshold": 0.08,
+      "leaked_attacks": 7,
+      "attack_leakage_pct": 0.35000000000000003,
+      "benign_bypassed": 1413,
+      "benign_bypass_rate_pct": 51.910360029390155
+    },
+    {
+      "threshold": 0.1,
+      "leaked_attacks": 9,
+      "attack_leakage_pct": 0.44999999999999996,
+      "benign_bypassed": 1582,
+      "benign_bypass_rate_pct": 58.11903012490816
+    }
+  ]
+}
