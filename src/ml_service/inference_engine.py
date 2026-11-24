@@ -213,7 +213,7 @@ class InferenceEngine:
 
         tau_fast_pass = float(self.container.thresholds.get("fast_pass_allow", 0.04))
 
-        if tfidf_score <= tau_fast_pass:
+        if tfidf_score <= tau_fast_pass and not use_head_tail:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             return PredictResponse(
                 request_id=req_id,

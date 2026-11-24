@@ -48,7 +48,7 @@ class ModelContainer:
     """
 
     def __init__(self, frozen_dir: Optional[Path] = None):
-        self.frozen_dir = frozen_dir or get_frozen_dir()
+        self.frozen_dir = Path(frozen_dir) if frozen_dir is not None else get_frozen_dir()
         self.manifest_path = self.frozen_dir / "model_manifest.json"
         self.is_ready = False
         self.sha256_verified = False
