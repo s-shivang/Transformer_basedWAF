@@ -16,7 +16,7 @@ from fastapi import HTTPException
 from src.ml_service.schemas import PredictRequest, PredictResponse
 from src.ml_service.model_loader import ModelContainer, container as global_container
 from src.pipeline.schema import ParsedRequest
-from src.pipeline.parser import parse_raw_http, parse_body_content, parse_query_string
+from src.pipeline.parser import parse_raw_http, parse_body_content, parse_query_string, REQUEST_LINE_PATTERN
 from src.pipeline.canonicalizer import canonicalize_path, canonicalize_value
 from src.pipeline.feature_builder import build_features
 
@@ -163,6 +163,12 @@ class InferenceEngine:
         # 2. Request Parsing with canonicalization
         try:
             if req.raw_http is not None:
+                first_line = req.raw_http.strip().split("\n")[0].strip()
+                if not REQUEST_LINE_PATTERN.match(first_line):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Malformed HTTP request: missing or invalid request line (expected 'METHOD /path HTTP/x.y').",
+                    )
                 parsed_req = parse_raw_http(req.raw_http, request_id=req_id)
             else:
                 parsed_req = parse_from_structured(
