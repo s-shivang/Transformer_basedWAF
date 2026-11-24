@@ -1,4 +1,9 @@
+import sys
 from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import json
 import time
 import math
@@ -47,7 +52,7 @@ def set_seed(seed: int = RANDOM_SEED):
 class WAFRequestDataset(Dataset):
     """PyTorch Dataset for structured HTTP request representations."""
 
-    def __init__(self, texts: List[str], labels: List[int], tokenizer, max_length: int = 128):
+    def __init__(self, texts: List[str], labels: List[int], tokenizer, max_length: int = 192):
         self.texts = texts
         self.labels = labels
         self.tokenizer = tokenizer
@@ -127,11 +132,12 @@ def load_training_data() -> Tuple[List[str], List[int], List[str], List[int]]:
             p = parse_raw_http(text, label=1, source="csic_dev")
             records.append((build_features(p, "structured"), 1))
 
-    # 3. Load HTTP Params Payloads
+    # 3. Load HTTP Params Payloads (Fixed: correctly parse string 'anom' labels)
     if HTTP_PARAMS_PATH.exists():
         hp_df = pd.read_csv(HTTP_PARAMS_PATH).dropna().copy()
         if "payload" in hp_df.columns and "label" in hp_df.columns:
-            hp_mal = hp_df[hp_df["label"] == 1]
+            is_mal = hp_df["label"].astype(str).str.strip().str.lower().isin(["anom", "1", "malicious"])
+            hp_mal = hp_df[is_mal]
             sample_hp_mal = hp_mal.sample(min(len(hp_mal), 2000), random_state=RANDOM_SEED)
             for pl in sample_hp_mal["payload"]:
                 feat = f"[METHOD] GET [PATH] /search [PARAM] q={pl} [PAYLOAD] {pl}"
@@ -214,7 +220,7 @@ def train_model(
     num_epochs: int = 3,
     batch_size: int = 16,
     learning_rate: float = 2e-5,
-    max_length: int = 128,
+    max_length: int = 192,
 ):
     set_seed(RANDOM_SEED)
 

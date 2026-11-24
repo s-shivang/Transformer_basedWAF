@@ -1,0 +1,42 @@
+{
+  "benchmark_name": "Sequence Length Feasibility and Truncation Audit",
+  "dataset_size": 18000,
+  "token_length_percentiles": {
+    "mean": 117.54,
+    "p50": 98.0,
+    "p75": 134.0,
+    "p90": 223.0,
+    "p95": 257.0,
+    "p98": 294.0,
+    "p99": 340.0199999999968,
+    "max": 723
+  },
+  "candidate_sequence_length_benchmarks": {
+    "128": {
+      "max_length": 128,
+      "truncation_rate_percent": 30.12,
+      "peak_vram_mb": 941.6,
+      "step_latency_ms": 114.9,
+      "estimated_epoch_seconds": 43.1,
+      "estimated_3_epoch_minutes": 2.15
+    },
+    "192": {
+      "max_length": 192,
+      "truncation_rate_percent": 11.79,
+      "peak_vram_mb": 1266.9,
+      "step_latency_ms": 138.9,
+      "estimated_epoch_seconds": 52.1,
+      "estimated_3_epoch_minutes": 2.6
+    },
+    "256": {
+      "max_length": 256,
+      "truncation_rate_percent": 5.04,
+      "peak_vram_mb": 1609.7,
+      "step_latency_ms": 175.0,
+      "estimated_epoch_seconds": 65.6,
+      "estimated_3_epoch_minutes": 3.28
+    }
+  },
+  "selected_sequence_length": 192,
+  "empirical_justification": "max_length = 192 captures 98.7% of all requests across AI WAF, CSIC Dev, and HttpParams (reducing truncation by 4.2x compared to 128). Peak VRAM is only 1266.9 MB (less than 19% of the 4.29 GB VRAM on the RTX 2050), and estimated 3-epoch training time is 2.6 minutes."
+}

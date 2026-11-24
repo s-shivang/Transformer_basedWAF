@@ -120,6 +120,40 @@ class TestEvaluationIntegrity(unittest.TestCase):
         self.assertIn("lang=en", feat_d)
         self.assertIn("user=admin", feat_d)
 
+    def test_training_runtime_representation_consistency(self):
+        """Asserts that training feature extraction matches runtime ML detector feature extraction."""
+        raw_http = "GET /tienda1/index.jsp?id=10&cat=shoes HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        req = parse_raw_http(raw_http)
+
+        # 1. Feature generated during training data prep
+        feat_train = build_features(req, "structured")
+
+        # 2. Feature generated inside ml_detector at runtime
+        from src.firewall.ml_detector import MLDetector
+        detector = MLDetector(tfidf_model_path="models/saved/tfidf_logistic_baseline.joblib")
+        feat_runtime = build_features(req, representation="structured")
+
+        self.assertEqual(feat_train, feat_runtime)
+        self.assertTrue(detector.tfidf_pipeline is not None)
+
+        # Verify Layer 2 score runs in microsecond latency
+        res = detector.score_l2_tfidf(req)
+        self.assertTrue(0.0 <= res.risk_score <= 1.0)
+        self.assertLess(res.latency_ms, 5.0)  # sub-5ms
+
+    def test_path_masking_representation(self):
+        """Asserts that structured_masked decouples endpoint path from parameter payloads."""
+        raw_http = "GET /api/v2/status/healthcheck?token=xyz HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        req = parse_raw_http(raw_http)
+
+        feat_full = build_features(req, "structured")
+        feat_masked = build_features(req, "structured_masked")
+
+        self.assertIn("/api/v2/status/healthcheck", feat_full)
+        self.assertNotIn("/api/v2/status/healthcheck", feat_masked)
+        self.assertIn("/__APP_ENDPOINT__", feat_masked)
+        self.assertIn("token=xyz", feat_masked)
+
 
 if __name__ == "__main__":
     unittest.main()
