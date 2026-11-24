@@ -1,0 +1,433 @@
+{
+  "split_comparison": {
+    "split_1_3folds": {
+      "total": 6004,
+      "benign": 3335,
+      "malicious": 2669,
+      "csic_benign": 1331,
+      "ai_benign": 2004,
+      "tfidf_fpr": 0.2723,
+      "tfidf_recall": 0.9693,
+      "csic_fpr": 0.6687,
+      "ai_fpr": 0.009
+    },
+    "split_2_6folds": {
+      "total": 2865,
+      "benign": 1672,
+      "malicious": 1193,
+      "csic_benign": 653,
+      "ai_benign": 1019,
+      "tfidf_fpr": 0.0054,
+      "tfidf_recall": 0.9489,
+      "csic_fpr": 0.0,
+      "ai_fpr": 0.0088
+    },
+    "root_cause_explanation": "Discrepancy is purely driven by CSIC Dev representation ratio in the validation fold. In Split 1 (n_splits=3), the validation set contained 2,292 CSIC samples (1,348 benign CSIC), where TF-IDF's Spanish vocabulary memorization yielded 65.28% FPR on CSIC benign requests. In Split 2 (n_splits=6), the validation fold contained 2,865 total samples where 1,659 were AI WAF benign requests (where TF-IDF achieves 0.42% FPR) and only 13 CSIC benign requests were assigned to that fold due to group clustering. There was zero data leakage or hyperparameter change; linear TF-IDF's FPR is domain-dependent."
+  },
+  "exact_threshold_curves_2865": {
+    "transformer": {
+      "0.01": {
+        "tau": 0.01,
+        "accuracy": 0.9825,
+        "recall": 0.9933,
+        "precision": 0.9658,
+        "f1": 0.9793,
+        "fpr": 0.0251,
+        "attacks_missed": 8,
+        "benign_flagged": 42,
+        "confusion_matrix": [
+          [
+            1630,
+            42
+          ],
+          [
+            8,
+            1185
+          ]
+        ]
+      },
+      "0.03": {
+        "tau": 0.03,
+        "accuracy": 0.985,
+        "recall": 0.9883,
+        "precision": 0.976,
+        "f1": 0.9821,
+        "fpr": 0.0173,
+        "attacks_missed": 14,
+        "benign_flagged": 29,
+        "confusion_matrix": [
+          [
+            1643,
+            29
+          ],
+          [
+            14,
+            1179
+          ]
+        ]
+      },
+      "0.05": {
+        "tau": 0.05,
+        "accuracy": 0.986,
+        "recall": 0.9858,
+        "precision": 0.9808,
+        "f1": 0.9833,
+        "fpr": 0.0138,
+        "attacks_missed": 17,
+        "benign_flagged": 23,
+        "confusion_matrix": [
+          [
+            1649,
+            23
+          ],
+          [
+            17,
+            1176
+          ]
+        ]
+      },
+      "0.1": {
+        "tau": 0.1,
+        "accuracy": 0.986,
+        "recall": 0.9832,
+        "precision": 0.9832,
+        "f1": 0.9832,
+        "fpr": 0.012,
+        "attacks_missed": 20,
+        "benign_flagged": 20,
+        "confusion_matrix": [
+          [
+            1652,
+            20
+          ],
+          [
+            20,
+            1173
+          ]
+        ]
+      },
+      "0.2": {
+        "tau": 0.2,
+        "accuracy": 0.9867,
+        "recall": 0.9807,
+        "precision": 0.9873,
+        "f1": 0.984,
+        "fpr": 0.009,
+        "attacks_missed": 23,
+        "benign_flagged": 15,
+        "confusion_matrix": [
+          [
+            1657,
+            15
+          ],
+          [
+            23,
+            1170
+          ]
+        ]
+      },
+      "0.3": {
+        "tau": 0.3,
+        "accuracy": 0.9867,
+        "recall": 0.979,
+        "precision": 0.989,
+        "f1": 0.984,
+        "fpr": 0.0078,
+        "attacks_missed": 25,
+        "benign_flagged": 13,
+        "confusion_matrix": [
+          [
+            1659,
+            13
+          ],
+          [
+            25,
+            1168
+          ]
+        ]
+      },
+      "0.5": {
+        "tau": 0.5,
+        "accuracy": 0.986,
+        "recall": 0.9757,
+        "precision": 0.9906,
+        "f1": 0.9831,
+        "fpr": 0.0066,
+        "attacks_missed": 29,
+        "benign_flagged": 11,
+        "confusion_matrix": [
+          [
+            1661,
+            11
+          ],
+          [
+            29,
+            1164
+          ]
+        ]
+      },
+      "0.7": {
+        "tau": 0.7,
+        "accuracy": 0.9857,
+        "recall": 0.9732,
+        "precision": 0.9923,
+        "f1": 0.9826,
+        "fpr": 0.0054,
+        "attacks_missed": 32,
+        "benign_flagged": 9,
+        "confusion_matrix": [
+          [
+            1663,
+            9
+          ],
+          [
+            32,
+            1161
+          ]
+        ]
+      },
+      "0.8": {
+        "tau": 0.8,
+        "accuracy": 0.9853,
+        "recall": 0.9723,
+        "precision": 0.9923,
+        "f1": 0.9822,
+        "fpr": 0.0054,
+        "attacks_missed": 33,
+        "benign_flagged": 9,
+        "confusion_matrix": [
+          [
+            1663,
+            9
+          ],
+          [
+            33,
+            1160
+          ]
+        ]
+      },
+      "0.9": {
+        "tau": 0.9,
+        "accuracy": 0.9846,
+        "recall": 0.9698,
+        "precision": 0.9931,
+        "f1": 0.9813,
+        "fpr": 0.0048,
+        "attacks_missed": 36,
+        "benign_flagged": 8,
+        "confusion_matrix": [
+          [
+            1664,
+            8
+          ],
+          [
+            36,
+            1157
+          ]
+        ]
+      }
+    },
+    "tfidf": {
+      "0.01": {
+        "tau": 0.01,
+        "accuracy": 0.4199,
+        "recall": 1.0,
+        "precision": 0.4179,
+        "f1": 0.5894,
+        "fpr": 0.994,
+        "attacks_missed": 0,
+        "benign_flagged": 1662,
+        "confusion_matrix": [
+          [
+            10,
+            1662
+          ],
+          [
+            0,
+            1193
+          ]
+        ]
+      },
+      "0.03": {
+        "tau": 0.03,
+        "accuracy": 0.4464,
+        "recall": 1.0,
+        "precision": 0.4293,
+        "f1": 0.6007,
+        "fpr": 0.9486,
+        "attacks_missed": 0,
+        "benign_flagged": 1586,
+        "confusion_matrix": [
+          [
+            86,
+            1586
+          ],
+          [
+            0,
+            1193
+          ]
+        ]
+      },
+      "0.05": {
+        "tau": 0.05,
+        "accuracy": 0.5668,
+        "recall": 0.9992,
+        "precision": 0.4901,
+        "f1": 0.6577,
+        "fpr": 0.7416,
+        "attacks_missed": 1,
+        "benign_flagged": 1240,
+        "confusion_matrix": [
+          [
+            432,
+            1240
+          ],
+          [
+            1,
+            1192
+          ]
+        ]
+      },
+      "0.1": {
+        "tau": 0.1,
+        "accuracy": 0.7494,
+        "recall": 0.9992,
+        "precision": 0.6244,
+        "f1": 0.7685,
+        "fpr": 0.4288,
+        "attacks_missed": 1,
+        "benign_flagged": 717,
+        "confusion_matrix": [
+          [
+            955,
+            717
+          ],
+          [
+            1,
+            1192
+          ]
+        ]
+      },
+      "0.2": {
+        "tau": 0.2,
+        "accuracy": 0.9344,
+        "recall": 0.9966,
+        "precision": 0.866,
+        "f1": 0.9267,
+        "fpr": 0.11,
+        "attacks_missed": 4,
+        "benign_flagged": 184,
+        "confusion_matrix": [
+          [
+            1488,
+            184
+          ],
+          [
+            4,
+            1189
+          ]
+        ]
+      },
+      "0.3": {
+        "tau": 0.3,
+        "accuracy": 0.9752,
+        "recall": 0.9916,
+        "precision": 0.951,
+        "f1": 0.9709,
+        "fpr": 0.0365,
+        "attacks_missed": 10,
+        "benign_flagged": 61,
+        "confusion_matrix": [
+          [
+            1611,
+            61
+          ],
+          [
+            10,
+            1183
+          ]
+        ]
+      },
+      "0.5": {
+        "tau": 0.5,
+        "accuracy": 0.9756,
+        "recall": 0.9489,
+        "precision": 0.9921,
+        "f1": 0.97,
+        "fpr": 0.0054,
+        "attacks_missed": 61,
+        "benign_flagged": 9,
+        "confusion_matrix": [
+          [
+            1663,
+            9
+          ],
+          [
+            61,
+            1132
+          ]
+        ]
+      },
+      "0.7": {
+        "tau": 0.7,
+        "accuracy": 0.9455,
+        "recall": 0.8701,
+        "precision": 0.999,
+        "f1": 0.9301,
+        "fpr": 0.0006,
+        "attacks_missed": 155,
+        "benign_flagged": 1,
+        "confusion_matrix": [
+          [
+            1671,
+            1
+          ],
+          [
+            155,
+            1038
+          ]
+        ]
+      },
+      "0.8": {
+        "tau": 0.8,
+        "accuracy": 0.8988,
+        "recall": 0.7578,
+        "precision": 0.9989,
+        "f1": 0.8618,
+        "fpr": 0.0006,
+        "attacks_missed": 289,
+        "benign_flagged": 1,
+        "confusion_matrix": [
+          [
+            1671,
+            1
+          ],
+          [
+            289,
+            904
+          ]
+        ]
+      },
+      "0.9": {
+        "tau": 0.9,
+        "accuracy": 0.799,
+        "recall": 0.5172,
+        "precision": 1.0,
+        "f1": 0.6818,
+        "fpr": 0.0,
+        "attacks_missed": 576,
+        "benign_flagged": 0,
+        "confusion_matrix": [
+          [
+            1672,
+            0
+          ],
+          [
+            576,
+            617
+          ]
+        ]
+      }
+    }
+  }
+}
