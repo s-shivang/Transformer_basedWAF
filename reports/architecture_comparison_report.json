@@ -1,0 +1,116 @@
+{
+  "benchmark": "Phase 2B Multi-Architecture Controlled Comparison",
+  "validation_samples_count": 2865,
+  "benign_count": 1672,
+  "malicious_count": 1193,
+  "models_evaluated": {
+    "candidate_a_tfidf": {
+      "architecture": "Character TF-IDF (3-5 ngrams, 150k vocab) + Logistic Regression",
+      "runtime_platform": "CPU",
+      "metrics_tau_0_50": {
+        "accuracy": 0.9756,
+        "recall": 0.9489,
+        "precision": 0.9921,
+        "f1": 0.97,
+        "fpr": 0.0054,
+        "fnr": 0.0511,
+        "roc_auc": 0.9971,
+        "pr_auc": 0.9969,
+        "confusion_matrix": {
+          "tn": 1663,
+          "fp": 9,
+          "fn": 61,
+          "tp": 1132
+        }
+      },
+      "latency_profile": {
+        "p50_ms": 1.537,
+        "p95_ms": 1.973,
+        "throughput_req_per_sec": 689
+      },
+      "model_size_mb": 6.05,
+      "training_time_seconds": 6.3
+    },
+    "candidate_b_fasttext": {
+      "architecture": "FastText-Equivalent Supervised EmbeddingBag (Embedding dim 64)",
+      "runtime_platform": "cuda / CPU",
+      "metrics_tau_0_50": {
+        "accuracy": 0.7284,
+        "recall": 0.891,
+        "precision": 0.6213,
+        "f1": 0.7321,
+        "fpr": 0.3876,
+        "fnr": 0.109,
+        "roc_auc": 0.9095,
+        "pr_auc": 0.9029,
+        "confusion_matrix": {
+          "tn": 1024,
+          "fp": 648,
+          "fn": 130,
+          "tp": 1063
+        }
+      },
+      "latency_profile": {
+        "p50_ms": 0.543,
+        "p95_ms": 0.927,
+        "throughput_req_per_sec": 1969
+      },
+      "model_size_mb": 7.46,
+      "training_time_seconds": 9.7
+    },
+    "candidate_c_1d_cnn": {
+      "architecture": "1D-CNN Multi-Scale Convolutional (Kernels: 3, 5, 7; Filters: 64 each)",
+      "runtime_platform": "cuda / CPU",
+      "metrics_tau_0_50": {
+        "accuracy": 0.7627,
+        "recall": 0.9698,
+        "precision": 0.6424,
+        "f1": 0.7729,
+        "fpr": 0.3852,
+        "fnr": 0.0302,
+        "roc_auc": 0.9672,
+        "pr_auc": 0.9661,
+        "confusion_matrix": {
+          "tn": 1028,
+          "fp": 644,
+          "fn": 36,
+          "tp": 1157
+        }
+      },
+      "latency_profile": {
+        "p50_ms": 1.394,
+        "p95_ms": 2.429,
+        "throughput_req_per_sec": 685
+      },
+      "model_size_mb": 7.74,
+      "training_time_seconds": 18.1
+    },
+    "candidate_d_transformer": {
+      "architecture": "Contextual Transformer (all-MiniLM-L6-v2, 6-layer BERT, 384 hidden, max_length=192)",
+      "runtime_platform": "cuda (FP16)",
+      "metrics_tau_0_50": {
+        "accuracy": 0.986,
+        "recall": 0.9757,
+        "precision": 0.9906,
+        "f1": 0.9831,
+        "fpr": 0.0066,
+        "fnr": 0.0243,
+        "roc_auc": 0.9993,
+        "pr_auc": 0.999,
+        "confusion_matrix": {
+          "tn": 1661,
+          "fp": 11,
+          "fn": 29,
+          "tp": 1164
+        }
+      },
+      "latency_profile": {
+        "p50_ms": 16.078,
+        "p95_ms": 43.356,
+        "throughput_req_per_sec": 48
+      },
+      "model_size_mb": 87.35,
+      "training_time_seconds": 252.8
+    }
+  }
+}

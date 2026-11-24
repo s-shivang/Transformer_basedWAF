@@ -1,92 +1,92 @@
 {
-  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "model_name": "C:\\Users\\ptssh\\Desktop\\transformer-waf\\models\\saved\\transformer_waf",
   "device": "cuda:0",
   "num_epochs": 3,
-  "batch_size": 16,
-  "learning_rate": 2e-05,
-  "total_training_time_seconds": 226.1,
-  "best_val_f1": 0.9424,
+  "batch_size": 32,
+  "learning_rate": 3e-05,
+  "total_training_time_seconds": 252.8,
+  "best_val_f1": 0.9831,
   "history": [
     {
       "epoch": 1,
-      "train_loss": 0.4116,
+      "train_loss": 0.1347,
       "val_metrics": {
-        "accuracy": 0.9113,
-        "precision": 0.9114,
-        "recall": 0.8456,
-        "f1": 0.8772,
-        "fpr": 0.0493,
-        "roc_auc": 0.9646,
+        "accuracy": 0.9661,
+        "precision": 0.9937,
+        "recall": 0.9246,
+        "f1": 0.9579,
+        "fpr": 0.0042,
+        "roc_auc": 0.9877,
         "confusion_matrix": [
           [
-            1426,
-            74
+            1665,
+            7
           ],
           [
-            139,
-            761
+            90,
+            1103
           ]
         ],
-        "tn": 1426,
-        "fp": 74,
-        "fn": 139,
-        "tp": 761
+        "tn": 1665,
+        "fp": 7,
+        "fn": 90,
+        "tp": 1103
       },
-      "duration_s": 72.0
+      "duration_s": 80.9
     },
     {
       "epoch": 2,
-      "train_loss": 0.1899,
+      "train_loss": 0.0783,
       "val_metrics": {
-        "accuracy": 0.9496,
-        "precision": 0.9698,
-        "recall": 0.8933,
-        "f1": 0.93,
-        "fpr": 0.0167,
-        "roc_auc": 0.9884,
+        "accuracy": 0.9798,
+        "precision": 0.9939,
+        "recall": 0.9573,
+        "f1": 0.9752,
+        "fpr": 0.0042,
+        "roc_auc": 0.999,
         "confusion_matrix": [
           [
-            1475,
-            25
+            1665,
+            7
           ],
           [
-            96,
-            804
+            51,
+            1142
           ]
         ],
-        "tn": 1475,
-        "fp": 25,
-        "fn": 96,
-        "tp": 804
+        "tn": 1665,
+        "fp": 7,
+        "fn": 51,
+        "tp": 1142
       },
-      "duration_s": 71.5
+      "duration_s": 79.5
     },
     {
       "epoch": 3,
-      "train_loss": 0.1272,
+      "train_loss": 0.0498,
       "val_metrics": {
-        "accuracy": 0.9579,
-        "precision": 0.9683,
-        "recall": 0.9178,
-        "f1": 0.9424,
-        "fpr": 0.018,
-        "roc_auc": 0.9902,
+        "accuracy": 0.986,
+        "precision": 0.9906,
+        "recall": 0.9757,
+        "f1": 0.9831,
+        "fpr": 0.0066,
+        "roc_auc": 0.9993,
         "confusion_matrix": [
           [
-            1473,
-            27
+            1661,
+            11
           ],
           [
-            74,
-            826
+            29,
+            1164
           ]
         ],
-        "tn": 1473,
-        "fp": 27,
-        "fn": 74,
-        "tp": 826
+        "tn": 1661,
+        "fp": 11,
+        "fn": 29,
+        "tp": 1164
       },
-      "duration_s": 72.2
+      "duration_s": 78.2
     }
   ]
 }

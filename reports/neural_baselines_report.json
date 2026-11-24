@@ -1,0 +1,49 @@
+{
+  "candidate_b_fasttext": {
+    "model_type": "FastText-Equivalent Supervised EmbeddingBag",
+    "vocab_size": 30527,
+    "embed_dim": 64,
+    "validation_metrics": {
+      "accuracy": 0.8,
+      "precision": 0.7399,
+      "recall": 0.8013,
+      "f1": 0.7694,
+      "fpr": 0.201,
+      "roc_auc": 0.8968,
+      "pr_auc": 0.8883,
+      "confusion_matrix": {
+        "tn": 1336,
+        "fp": 336,
+        "fn": 237,
+        "tp": 956
+      }
+    },
+    "training_time_seconds": 9.74,
+    "step_latency_us": 548.8,
+    "model_size_mb": 7.46
+  },
+  "candidate_c_1d_cnn": {
+    "model_type": "1D-CNN Multi-Scale Convolutional (Kernels: 3, 5, 7)",
+    "vocab_size": 30527,
+    "embed_dim": 64,
+    "num_filters": 64,
+    "validation_metrics": {
+      "accuracy": 0.9257,
+      "precision": 0.9757,
+      "recall": 0.8424,
+      "f1": 0.9042,
+      "fpr": 0.015,
+      "roc_auc": 0.9535,
+      "pr_auc": 0.9565,
+      "confusion_matrix": {
+        "tn": 1647,
+        "fp": 25,
+        "fn": 188,
+        "tp": 1005
+      }
+    },
+    "training_time_seconds": 18.06,
+    "step_latency_us": 2104.3,
+    "model_size_mb": 7.74
+  }
+}

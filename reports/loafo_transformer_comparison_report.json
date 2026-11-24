@@ -1,0 +1,90 @@
+{
+  "benchmark_name": "Contextual Transformer LOAFO Attack Family Generalization",
+  "model": "all-MiniLM-L6-v2 (Fine-Tuned with max_length=192)",
+  "results_by_family": {
+    "sqli": {
+      "attack_family": "sqli",
+      "attack_samples_count": 10852,
+      "benign_samples_count": 6435,
+      "metrics": {
+        "recall": 0.9999,
+        "precision": 0.6306,
+        "f1": 0.7734,
+        "fpr": 0.9879,
+        "roc_auc": 0.9933,
+        "pr_auc": 0.995
+      },
+      "confusion_matrix": {
+        "tn": 78,
+        "fp": 6357,
+        "fn": 1,
+        "tp": 10851
+      },
+      "mean_attack_confidence": 0.9992,
+      "mean_benign_confidence": 0.986
+    },
+    "xss": {
+      "attack_family": "xss",
+      "attack_samples_count": 532,
+      "benign_samples_count": 6435,
+      "metrics": {
+        "recall": 0.9981,
+        "precision": 0.0771,
+        "f1": 0.1431,
+        "fpr": 0.9879,
+        "roc_auc": 0.9579,
+        "pr_auc": 0.8675
+      },
+      "confusion_matrix": {
+        "tn": 78,
+        "fp": 6357,
+        "fn": 1,
+        "tp": 531
+      },
+      "mean_attack_confidence": 0.9977,
+      "mean_benign_confidence": 0.986
+    },
+    "path-traversal": {
+      "attack_family": "path-traversal",
+      "attack_samples_count": 290,
+      "benign_samples_count": 6435,
+      "metrics": {
+        "recall": 1.0,
+        "precision": 0.0436,
+        "f1": 0.0836,
+        "fpr": 0.9879,
+        "roc_auc": 0.9688,
+        "pr_auc": 0.6486
+      },
+      "confusion_matrix": {
+        "tn": 78,
+        "fp": 6357,
+        "fn": 0,
+        "tp": 290
+      },
+      "mean_attack_confidence": 0.9991,
+      "mean_benign_confidence": 0.986
+    },
+    "cmdi": {
+      "attack_family": "cmdi",
+      "attack_samples_count": 89,
+      "benign_samples_count": 6435,
+      "metrics": {
+        "recall": 1.0,
+        "precision": 0.0138,
+        "f1": 0.0272,
+        "fpr": 0.9879,
+        "roc_auc": 0.9382,
+        "pr_auc": 0.4783
+      },
+      "confusion_matrix": {
+        "tn": 78,
+        "fp": 6357,
+        "fn": 0,
+        "tp": 89
+      },
+      "mean_attack_confidence": 0.9993,
+      "mean_benign_confidence": 0.986
+    }
+  }
+}
