@@ -1,0 +1,189 @@
+{
+  "study": "Path Memorization Controlled Ablation Study",
+  "sample_counts": {
+    "train": 10665,
+    "validation": 5335
+  },
+  "representations_evaluated": {
+    "full_structured": {
+      "description": "Full Structured Request (Baseline)",
+      "metrics": {
+        "accuracy": 0.7771,
+        "recall": 0.8906,
+        "precision": 0.6475,
+        "f1": 0.7498,
+        "fpr": 0.2909
+      },
+      "confusion_matrix": {
+        "tn": 2364,
+        "fp": 970,
+        "fn": 219,
+        "tp": 1782
+      },
+      "train_time_seconds": 2.93
+    },
+    "path_excluded": {
+      "description": "Path Excluded ([METHOD] + [PARAM])",
+      "metrics": {
+        "accuracy": 0.7222,
+        "recall": 0.7316,
+        "precision": 0.6077,
+        "f1": 0.6639,
+        "fpr": 0.2834
+      },
+      "confusion_matrix": {
+        "tn": 2389,
+        "fp": 945,
+        "fn": 537,
+        "tp": 1464
+      },
+      "train_time_seconds": 2.44
+    },
+    "path_masked": {
+      "description": "Path Masked ([METHOD] + /__MASKED__ + [PARAM])",
+      "metrics": {
+        "accuracy": 0.7245,
+        "recall": 0.7361,
+        "precision": 0.6099,
+        "f1": 0.6671,
+        "fpr": 0.2825
+      },
+      "confusion_matrix": {
+        "tn": 2392,
+        "fp": 942,
+        "fn": 528,
+        "tp": 1473
+      },
+      "train_time_seconds": 2.59
+    },
+    "payload_only": {
+      "description": "Payload Only ([PAYLOAD])",
+      "metrics": {
+        "accuracy": 0.713,
+        "recall": 0.7306,
+        "precision": 0.5958,
+        "f1": 0.6563,
+        "fpr": 0.2975
+      },
+      "confusion_matrix": {
+        "tn": 2342,
+        "fp": 992,
+        "fn": 539,
+        "tp": 1462
+      },
+      "train_time_seconds": 2.18
+    },
+    "path_only": {
+      "description": "Path-Only Diagnostic Baseline ([METHOD] + [PATH])",
+      "metrics": {
+        "accuracy": 0.6963,
+        "recall": 0.8241,
+        "precision": 0.5653,
+        "f1": 0.6706,
+        "fpr": 0.3803
+      },
+      "confusion_matrix": {
+        "tn": 2066,
+        "fp": 1268,
+        "fn": 352,
+        "tp": 1649
+      },
+      "train_time_seconds": 0.9
+    }
+  },
+  "path_memorization_evidence": {
+    "false_positives_caused_by_path_bias_count": 56,
+    "representative_examples": [
+      {
+        "path": "/api/v2/status/healthcheck",
+        "method": "GET",
+        "params": {},
+        "p_full_structured": 0.6061,
+        "p_path_excluded": 0.2913,
+        "p_path_only": 0.5325
+      },
+      {
+        "path": "/settings/account/security",
+        "method": "GET",
+        "params": {},
+        "p_full_structured": 0.5299,
+        "p_path_excluded": 0.2913,
+        "p_path_only": 0.3301
+      },
+      {
+        "path": "/dashboard/overview",
+        "method": "GET",
+        "params": {
+          "cmd": "status_check"
+        },
+        "p_full_structured": 0.6235,
+        "p_path_excluded": 0.4346,
+        "p_path_only": 0.3731
+      },
+      {
+        "path": "/api/v3/items/search",
+        "method": "GET",
+        "params": {
+          "id": "prod_code_TX91"
+        },
+        "p_full_structured": 0.6761,
+        "p_path_excluded": 0.3596,
+        "p_path_only": 0.7503
+      },
+      {
+        "path": "/store/checkout/cart",
+        "method": "GET",
+        "params": {},
+        "p_full_structured": 0.5383,
+        "p_path_excluded": 0.2913,
+        "p_path_only": 0.5569
+      },
+      {
+        "path": "/checkout/cart/view",
+        "method": "GET",
+        "params": {},
+        "p_full_structured": 0.5875,
+        "p_path_excluded": 0.2913,
+        "p_path_only": 0.5096
+      },
+      {
+        "path": "/admin/toolkit",
+        "method": "GET",
+        "params": {
+          "cmd": "view_details",
+          "user": "guest"
+        },
+        "p_full_structured": 0.5863,
+        "p_path_excluded": 0.2819,
+        "p_path_only": 0.7209
+      },
+      {
+        "path": "/app/user/profile/view",
+        "method": "GET",
+        "params": {
+          "id": "9824"
+        },
+        "p_full_structured": 0.8616,
+        "p_path_excluded": 0.4222,
+        "p_path_only": 0.8764
+      },
+      {
+        "path": "/blog/article/view/982",
+        "method": "GET",
+        "params": {},
+        "p_full_structured": 0.5461,
+        "p_path_excluded": 0.2913,
+        "p_path_only": 0.505
+      },
+      {
+        "path": "/dashboard/user/settings",
+        "method": "GET",
+        "params": {},
+        "p_full_structured": 0.7063,
+        "p_path_excluded": 0.2913,
+        "p_path_only": 0.5627
+      }
+    ],
+    "scientific_conclusion": "The path-only diagnostic baseline demonstrates significant predictive power on its own, proving that models exposed to full URL paths suffer from endpoint memorization. Stripping or masking the path reduces false alarms on sensitive endpoints while isolating payload syntax detection."
+  }
+}

@@ -1,26 +1,33 @@
 {
-  "validation_name": "Phase 4.5 Shadow Mode & Replay Validation",
+  "validation_name": "Task G Shadow Mode Replay Validation",
+  "dataset_source": "held_out_post_hoc",
+  "partition_name": "Post-Hoc Held-Out CSIC Partition (Sealed from training weights)",
   "sample_size": 2000,
-  "benign_total": 1161,
-  "benign_disrupted_count": 30,
-  "shadow_disruption_rate": 0.0258,
-  "malicious_total": 839,
-  "malicious_intercepted_count": 795,
-  "shadow_interception_rate": 0.9476,
+  "benign_total": 1170,
+  "benign_disrupted_count": 211,
+  "benign_disruption_rate": 0.1803,
+  "malicious_total": 830,
+  "malicious_intercepted_count": 781,
+  "attack_interception_rate": 0.941,
   "action_distribution": {
-    "ALLOW": 1171,
-    "BLOCK": 805,
-    "CHALLENGE": 18,
-    "MONITOR": 6
+    "ALLOW": 1008,
+    "BLOCK": 987,
+    "CHALLENGE": 5,
+    "MONITOR": 0
   },
   "layer_attribution": {
-    "Layer3_Transformer": 1880,
-    "Layer1_Rules": 120,
-    "Layer4_BehavioralAnomaly": 21
+    "Layer1_Rules": 105,
+    "Layer3_Transformer": 1895,
+    "Layer4_BehavioralAnomaly": 74
+  },
+  "service_failures": 0,
+  "firewall_policy": {
+    "tau_block": 0.95,
+    "tau_monitor": 0.95
   },
   "latency_percentiles": {
-    "p50_ms": 7.744,
-    "p95_ms": 12.13,
-    "p99_ms": 14.346
+    "p50_ms": 5.55,
+    "p95_ms": 8.321,
+    "p99_ms": 9.338
   }
 }

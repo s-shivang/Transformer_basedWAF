@@ -1,6 +1,12 @@
 """
 Validation and test suite for the 4-Layer Firewall Architecture.
 """
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import time
 from src.pipeline.parser import parse_raw_http
 from src.firewall.rules_engine import RulesEngine
