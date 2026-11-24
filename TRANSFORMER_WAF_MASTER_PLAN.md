@@ -205,6 +205,23 @@ flowchart TD
 
 ---
 
+### Phase 5: Python + FastAPI ML Inference Service & Config Hygiene
+*Goal: Provide a decoupled, high-performance, non-blocking HTTP inference microservice adhering to Modular Monolith and DDD principles.*
+
+- [x] **5.1 Frozen Artifact Configuration Hygiene (`models/frozen/v1_0/`)**:
+  - `threshold.json`: Dynamic operating points (`fast_pass_allow=0.04`, `monitor_alert=0.05`, `block=0.50`, `strict_block_low_fpr=0.90`) and Platt calibration parameters ($w = 0.7724, b = 0.4965$).
+  - `preprocessing_config.json`: Representation D specifications, `max_length=192`, special tokens, and canonicalizer settings.
+  - `model_manifest.json`: Cryptographic SHA-256 digests across all 7 frozen files.
+- [x] **5.2 Modular FastAPI Service (`src/ml_service/`)**:
+  - `schemas.py`: Pydantic v2 schemas for `/v1/predict`, `/health`, `/ready`, and `/v1/model-info`.
+  - `model_loader.py`: `ModelContainer` singleton enforcing SHA-256 verification on startup, dynamic config loading, GPU FP16 execution (RTX 2050) with CPU fallback, and startup warmup.
+  - `inference_engine.py`: Full Representation D parity via `src/pipeline/`, 2-Stage Cascade triage (microsecond TF-IDF triage $\to$ deep Transformer contextual scoring), Platt scaling calibration, truncation detection (> 192 tokens), and safe payload limits (400 for empty/malformed, 422 for > 64 KB).
+  - `app.py`: FastAPI application mounting all endpoints with structured exception handlers.
+- [x] **5.3 Comprehensive PyTest Suite (`tests/test_ml_inference_service.py`)**:
+  - 14/14 tests passing in 10.19s: health/readiness probes, benign fast-pass triage, SQLi/XSS attack blocking, exact score parity ($\Delta \le 10^{-5}$) with offline pipeline, payload limit enforcement, 20 concurrent parallel requests, and live 100-request latency benchmark ($p50 = 2.94\text{ ms}$ for fast-pass, $p50 = 9.16\text{ ms}$ for Transformer).
+
+---
+
 ## 6. Performance Targets as Empirical Hypotheses
 
 | Metric | Target Hypothesis | Measured Result (Laptop RTX 2050) | Status |
@@ -227,6 +244,13 @@ transformer-waf/
 │   ├── raw/ (ai_waf, csic2010, http_params)
 │   └── processed/ (csic_dev.parquet, csic_held_out_test.parquet, waf_requests.csv)
 ├── models/
+│   ├── frozen/
+│   │   └── v1_0/                          [COMPLETED: Frozen Release v1.0.0 Artifacts & Manifest]
+│   │       ├── transformer/               [COMPLETED: Fine-Tuned all-MiniLM-L6-v2, L=192, FP16]
+│   │       ├── tfidf/                     [COMPLETED: Layer 2 Rep D Fast-Pass tau=0.04]
+│   │       ├── model_manifest.json        [COMPLETED: Cryptographic SHA-256 Hashes]
+│   │       ├── threshold.json             [COMPLETED: Dynamic Thresholds & Platt Params]
+│   │       └── preprocessing_config.json  [COMPLETED: Representation D Specs & Tokenizer]
 │   └── saved/
 │       ├── transformer_waf/               [COMPLETED: Fine-Tuned all-MiniLM-L6-v2, L=192, FP16]
 │       ├── tfidf_logistic_baseline.joblib [COMPLETED: Layer 2 Rep D Fast-Pass tau=0.04]
@@ -234,6 +258,8 @@ transformer-waf/
 │       ├── cnn_waf_baseline.pt            [COMPLETED: Candidate C 1D-CNN Baseline]
 │       └── calibrated_thresholds.json     [COMPLETED: Isolated Dev Fold Calibration]
 ├── reports/
+│   ├── phase5_ml_inference_service_report.md  [COMPLETED: Phase 5 Service Engineering Report]
+│   ├── phase5_ml_inference_service_report.json[COMPLETED: Phase 5 Benchmark & Spec Deliverable]
 │   ├── project_reproducibility_audit.md       [COMPLETED: Forensic Audit Deliverable]
 │   ├── phase1_evaluation_integrity_report.md  [COMPLETED: Phase 1 Deliverable]
 │   ├── phase2a_representation_engineering_report.md [COMPLETED: Phase 2A Deliverable]
@@ -258,6 +284,12 @@ transformer-waf/
 │   │   ├── loafo_transformer_benchmark.py [COMPLETED: Leave-One-Attack-Family-Out]
 │   │   ├── evaluate_held_out.py    [COMPLETED: 30,532 Held-Out Benchmark]
 │   │   └── test_evaluation_pipeline.py [COMPLETED: 7/7 Unit Tests Passing]
+│   ├── ml_service/
+│   │   ├── __init__.py             [COMPLETED: Package exports app, container, InferenceEngine]
+│   │   ├── schemas.py              [COMPLETED: Pydantic v2 schemas: predict, probes, model-info]
+│   │   ├── model_loader.py         [COMPLETED: SHA-256 Startup Verification & Warmup Loader]
+│   │   ├── inference_engine.py     [COMPLETED: 2-Stage Cascade, Platt Calibration & Limits]
+│   │   └── app.py                  [COMPLETED: FastAPI ASGI endpoints & Exception Handlers]
 │   ├── models/
 │   │   ├── transformer_waf.py      [COMPLETED: Structural Tokens & PyTorch Classifier]
 │   │   ├── train_transformer.py    [COMPLETED: 3-epoch FP16 fine-tuning]
@@ -269,4 +301,6 @@ transformer-waf/
 │       ├── anomaly_detector.py     [COMPLETED: Layer 4 Sliding-Window Behavioral Engine]
 │       ├── decision_engine.py      [COMPLETED: Central Multi-Tier Decision Engine]
 │       └── shadow_validator.py     [COMPLETED: Multi-Client Traffic Replay Harness]
+└── tests/
+    └── test_ml_inference_service.py [COMPLETED: 14/14 PyTest Suite, Parity & Latency Benchmark]
 ```
