@@ -1,0 +1,15 @@
+{
+  "representation_mode": "structured_v2_2",
+  "max_length": 192,
+  "head_tail_chunking": true,
+  "strip_noisy_headers": true,
+  "normalize_path": true,
+  "normalize_parameter_keys": true,
+  "special_tokens": [
+    "[METHOD]",
+    "[PATH]",
+    "[PARAM]",
+    "[PAYLOAD]",
+    "[HEADERS]"
+  ]
+}

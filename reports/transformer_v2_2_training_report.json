@@ -1,0 +1,61 @@
+{
+  "model_version": "v2.2",
+  "representation": "structured_v2_2",
+  "train_samples": 20124,
+  "val_samples": 4722,
+  "training_time_seconds": 195.73,
+  "platt_w": 0.657,
+  "platt_b": -0.1031,
+  "roc_auc": 0.965,
+  "pr_auc": 0.9692,
+  "brier_score_raw": 0.0498,
+  "brier_score_calibrated": 0.0492,
+  "ece_raw": 0.038,
+  "ece_calibrated": 0.0281,
+  "threshold_performance": {
+    "tau_0.04": {
+      "threshold": 0.04,
+      "fpr": 0.4361,
+      "fnr": 0.0365,
+      "recall": 0.9635,
+      "precision": 0.6188,
+      "tp": 1927,
+      "fp": 1187,
+      "tn": 1535,
+      "fn": 73
+    },
+    "tau_0.05": {
+      "threshold": 0.05,
+      "fpr": 0.4001,
+      "fnr": 0.048,
+      "recall": 0.952,
+      "precision": 0.6362,
+      "tp": 1904,
+      "fp": 1089,
+      "tn": 1633,
+      "fn": 96
+    },
+    "tau_0.5": {
+      "threshold": 0.5,
+      "fpr": 0.0268,
+      "fnr": 0.0925,
+      "recall": 0.9075,
+      "precision": 0.9613,
+      "tp": 1815,
+      "fp": 73,
+      "tn": 2649,
+      "fn": 185
+    },
+    "tau_0.85": {
+      "threshold": 0.85,
+      "fpr": 0.0187,
+      "fnr": 0.121,
+      "recall": 0.879,
+      "precision": 0.9718,
+      "tp": 1758,
+      "fp": 51,
+      "tn": 2671,
+      "fn": 242
+    }
+  }
+}

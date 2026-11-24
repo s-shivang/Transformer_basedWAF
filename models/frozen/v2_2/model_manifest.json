@@ -1,0 +1,14 @@
+{
+  "model_version": "v2.2",
+  "description": "Transformer WAF v2.2 - Smart Path & Param-Key Normalization + Balanced HttpParams Augmentation",
+  "representation": "structured_v2_2",
+  "artifacts": {
+    "preprocessing_config.json": "7faab0a895c77cad421afa870332a883faf3ef31089a20b59cb93b2c22941463",
+    "tfidf/tfidf_logistic_baseline.joblib": "7fef7d905d079fce00cdba7262e9bdb62334f70a9bc4e84e21a7363fc3fb43c9",
+    "threshold.json": "d2aea6f9fa5e6a730b1a449bd1dfcc2686c68ae00c4c70b8147b0691b44512fa",
+    "transformer/config.json": "5d91b9571cd1cb22d0386078b8dd984fc2194749d58559d482dc9cded47d8841",
+    "transformer/model.safetensors": "50704ab719aed43799cd22507301524277d9f653999172396ceeae680e5080ac",
+    "transformer/tokenizer.json": "f83a7f24eee69f73e1a5cad5a09dac6e3c6731c461540cb3498b22285d3ca6ed",
+    "transformer/tokenizer_config.json": "1708c8fd1f21729199161088664b0a1e5f59980a9a6dd7825f915880fddeb13e"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "fast_pass_allow": 0.04,
+  "monitor_alert": 0.05,
+  "challenge": 0.5,
+  "block": 0.85,
+  "strict_block_low_fpr": 0.9,
+  "platt_calibration": {
+    "enabled": true,
+    "w": 0.657,
+    "b": -0.1031
+  }
+}
