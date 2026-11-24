@@ -1,11 +1,16 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
+from pathlib import Path
+import json
 import time
 
 from src.pipeline.schema import ParsedRequest
 from src.firewall.rules_engine import RulesEngine, RuleValidationResult
 from src.firewall.ml_detector import MLDetector, MLScoringResult
 from src.firewall.anomaly_detector import BehavioralAnomalyDetector, AnomalyEvaluationResult
+
+ROOT = Path(__file__).resolve().parents[2]
+FROZEN_MANIFEST_PATH = ROOT / "models/frozen/v1_0/model_manifest.json"
 
 
 @dataclass
@@ -36,14 +41,34 @@ class CentralDecisionEngine:
         rules_engine: Optional[RulesEngine] = None,
         ml_detector: Optional[MLDetector] = None,
         anomaly_detector: Optional[BehavioralAnomalyDetector] = None,
-        tau_block: float = 0.80,
-        tau_monitor: float = 0.40,
+        tau_block: Optional[float] = None,
+        tau_monitor: Optional[float] = None,
     ):
+        manifest_cfg = {}
+        if FROZEN_MANIFEST_PATH.exists():
+            try:
+                with open(FROZEN_MANIFEST_PATH, "r", encoding="utf-8") as f:
+                    manifest_cfg = json.load(f).get("threshold_tiers", {})
+            except Exception:
+                pass
+
         self.rules_engine = rules_engine or RulesEngine()
         self.ml_detector = ml_detector or MLDetector()
         self.anomaly_detector = anomaly_detector or BehavioralAnomalyDetector()
-        self.tau_block = tau_block
-        self.tau_monitor = tau_monitor
+
+        if tau_block is not None:
+            self.tau_block = tau_block
+        elif "tau_block" in manifest_cfg:
+            self.tau_block = float(manifest_cfg["tau_block"])
+        else:
+            self.tau_block = 0.50
+
+        if tau_monitor is not None:
+            self.tau_monitor = tau_monitor
+        elif "tau_alert" in manifest_cfg:
+            self.tau_monitor = float(manifest_cfg["tau_alert"])
+        else:
+            self.tau_monitor = 0.05
 
     def inspect_request(
         self,

@@ -32,6 +32,8 @@
     "device_name": "NVIDIA GeForce RTX 2050"
   },
   "artifacts_sha256": {
+    "threshold.json": "2f6ff59ab341b249db161f086034e885d091c31fb856acf1dfc083f042b25574",
+    "preprocessing_config.json": "dbddd25dabab2190f6d619796e431ce4629b1efd04ecfc7eeb6ba6d436dc8a4e",
     "tfidf/tfidf_logistic_baseline.joblib": "287e2e27cd8fcefaa4e3c9f40bb7e5e4586c15558d22085f5b7f88d93c3f3270",
     "transformer/config.json": "2696a2cc21ac1618b490d1c95b73cbbb4a0a9869ed8171109bf898c6c81fcba3",
     "transformer/model.safetensors": "fe8dfcb2dd95c35e506958256f52a10052b22af52f209a536c641352c7afb351",

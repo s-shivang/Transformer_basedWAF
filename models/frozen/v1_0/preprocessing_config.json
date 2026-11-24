@@ -1,0 +1,17 @@
+{
+  "representation_mode": "structured",
+  "representation_code": "Representation D",
+  "max_length": 192,
+  "special_structural_tokens": [
+    "[METHOD]",
+    "[PATH]",
+    "[PARAM]",
+    "[PAYLOAD]",
+    "[HEADERS]"
+  ],
+  "canonicalizer_settings": {
+    "max_decode_depth": 2,
+    "normalize_unicode": "NFKC",
+    "track_obfuscation_flags": true
+  }
+}

@@ -45,7 +45,16 @@ class MLDetector:
         max_length: int = 192,
         use_fp16: bool = True,
     ):
-        # Load calibrated thresholds if available
+        # Load calibrated thresholds from frozen manifest or calibrated config
+        manifest_cfg = {}
+        if FROZEN_MANIFEST_PATH.exists():
+            try:
+                with open(FROZEN_MANIFEST_PATH, "r", encoding="utf-8") as f:
+                    manifest_data = json.load(f)
+                    manifest_cfg = manifest_data.get("threshold_tiers", {})
+            except Exception:
+                pass
+
         calibrated_cfg = {}
         if DEFAULT_CALIBRATED_PATH.exists():
             try:
@@ -56,11 +65,15 @@ class MLDetector:
 
         if fast_pass_threshold is not None:
             self.fast_pass_threshold = fast_pass_threshold
+        elif "tau_fast_pass" in manifest_cfg:
+            self.fast_pass_threshold = float(manifest_cfg["tau_fast_pass"])
         else:
-            self.fast_pass_threshold = float(calibrated_cfg.get("tau_fast_pass", 0.05))
+            self.fast_pass_threshold = float(calibrated_cfg.get("tau_fast_pass", 0.04))
 
         if transformer_block_threshold is not None:
             self.transformer_block_threshold = transformer_block_threshold
+        elif "tau_block" in manifest_cfg:
+            self.transformer_block_threshold = float(manifest_cfg["tau_block"])
         else:
             self.transformer_block_threshold = float(calibrated_cfg.get("tau_strict_block", 0.50))
 
