@@ -234,7 +234,7 @@ class TestSmartPathNormalization:
 
         p_config = normalize_path_smart("/config/database.yml")
         assert "config" in p_config
-        assert "database.yml" in p_config
+        assert p_config == "/config/__SEG__"
 
 
 class TestArtifactIntegrityAndManifestV2_1:
