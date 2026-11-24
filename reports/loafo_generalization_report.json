@@ -1,0 +1,149 @@
+{
+  "benchmark": "Leave-One-Attack-Family-Out (LOAFO) Generalization Benchmark",
+  "description": "Measures zero-exposure attack generalization across SQLi, XSS, Path Traversal, and Command Injection. Evaluates whether a model trained strictly on other attack families can recognize an entirely unseen attack family syntax.",
+  "scientific_disclaimer": "This benchmark evaluates unseen attack-family generalization on the HttpParams dataset. It does NOT claim proof of generalized zero-day detection in arbitrary wild environments.",
+  "attack_families": [
+    "sqli",
+    "xss",
+    "path-traversal",
+    "cmdi"
+  ],
+  "results": {
+    "sqli": {
+      "held_out_family": "sqli",
+      "trained_families": [
+        "xss",
+        "path-traversal",
+        "cmdi"
+      ],
+      "train_counts": {
+        "total": 13780,
+        "benign": 12869,
+        "malicious": 911
+      },
+      "test_counts": {
+        "total": 17287,
+        "benign": 6435,
+        "held_out_attacks": 10852
+      },
+      "metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0003,
+        "roc_auc": 0.8477,
+        "pr_auc": 0.8969
+      },
+      "confusion_matrix": {
+        "tn": 6433,
+        "fp": 2,
+        "fn": 10852,
+        "tp": 0
+      },
+      "fit_time_seconds": 0.55,
+      "generalization_diagnosis": "Severe Generalization Failure (<40% Recall)"
+    },
+    "xss": {
+      "held_out_family": "xss",
+      "trained_families": [
+        "sqli",
+        "path-traversal",
+        "cmdi"
+      ],
+      "train_counts": {
+        "total": 24100,
+        "benign": 12869,
+        "malicious": 11231
+      },
+      "test_counts": {
+        "total": 6967,
+        "benign": 6435,
+        "held_out_attacks": 532
+      },
+      "metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0003,
+        "roc_auc": 0.5987,
+        "pr_auc": 0.1573
+      },
+      "confusion_matrix": {
+        "tn": 6433,
+        "fp": 2,
+        "fn": 532,
+        "tp": 0
+      },
+      "fit_time_seconds": 2.0,
+      "generalization_diagnosis": "Severe Generalization Failure (<40% Recall)"
+    },
+    "path-traversal": {
+      "held_out_family": "path-traversal",
+      "trained_families": [
+        "sqli",
+        "xss",
+        "cmdi"
+      ],
+      "train_counts": {
+        "total": 24342,
+        "benign": 12869,
+        "malicious": 11473
+      },
+      "test_counts": {
+        "total": 6725,
+        "benign": 6435,
+        "held_out_attacks": 290
+      },
+      "metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0003,
+        "roc_auc": 0.7568,
+        "pr_auc": 0.1219
+      },
+      "confusion_matrix": {
+        "tn": 6433,
+        "fp": 2,
+        "fn": 290,
+        "tp": 0
+      },
+      "fit_time_seconds": 2.06,
+      "generalization_diagnosis": "Severe Generalization Failure (<40% Recall)"
+    },
+    "cmdi": {
+      "held_out_family": "cmdi",
+      "trained_families": [
+        "sqli",
+        "xss",
+        "path-traversal"
+      ],
+      "train_counts": {
+        "total": 24543,
+        "benign": 12869,
+        "malicious": 11674
+      },
+      "test_counts": {
+        "total": 6524,
+        "benign": 6435,
+        "held_out_attacks": 89
+      },
+      "metrics": {
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0003,
+        "roc_auc": 0.9247,
+        "pr_auc": 0.1898
+      },
+      "confusion_matrix": {
+        "tn": 6433,
+        "fp": 2,
+        "fn": 89,
+        "tp": 0
+      },
+      "fit_time_seconds": 2.22,
+      "generalization_diagnosis": "Severe Generalization Failure (<40% Recall)"
+    }
+  }
+}

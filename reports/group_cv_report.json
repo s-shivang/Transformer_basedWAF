@@ -1,0 +1,226 @@
+{
+  "tfidf_structured": {
+    "folds": [
+      {
+        "accuracy": 0.8197,
+        "precision": 0.6825,
+        "recall": 0.971,
+        "f1": 0.8016,
+        "fpr": 0.2711,
+        "fnr": 0.029,
+        "roc_auc": 0.8736,
+        "pr_auc": 0.7674,
+        "confusion_matrix": {
+          "tn": 2430,
+          "fp": 904,
+          "fn": 58,
+          "tp": 1943
+        },
+        "fold": 0,
+        "train_size": 10665,
+        "val_size": 5335,
+        "val_benign": 3334,
+        "val_malicious": 2001,
+        "train_time_seconds": 8.15,
+        "eval_time_seconds": 2.13
+      },
+      {
+        "accuracy": 0.7734,
+        "precision": 0.6277,
+        "recall": 0.973,
+        "f1": 0.7631,
+        "fpr": 0.3464,
+        "fnr": 0.027,
+        "roc_auc": 0.8394,
+        "pr_auc": 0.7432,
+        "confusion_matrix": {
+          "tn": 2179,
+          "fp": 1155,
+          "fn": 54,
+          "tp": 1947
+        },
+        "fold": 1,
+        "train_size": 10665,
+        "val_size": 5335,
+        "val_benign": 3334,
+        "val_malicious": 2001,
+        "train_time_seconds": 6.02,
+        "eval_time_seconds": 2.38
+      },
+      {
+        "accuracy": 0.9131,
+        "precision": 0.9475,
+        "recall": 0.8133,
+        "f1": 0.8753,
+        "fpr": 0.027,
+        "fnr": 0.1867,
+        "roc_auc": 0.9571,
+        "pr_auc": 0.9453,
+        "confusion_matrix": {
+          "tn": 3242,
+          "fp": 90,
+          "fn": 373,
+          "tp": 1625
+        },
+        "fold": 2,
+        "train_size": 10670,
+        "val_size": 5330,
+        "val_benign": 3332,
+        "val_malicious": 1998,
+        "train_time_seconds": 6.65,
+        "eval_time_seconds": 1.51
+      }
+    ],
+    "aggregate": {
+      "accuracy": {
+        "mean": 0.8354,
+        "std": 0.0581
+      },
+      "precision": {
+        "mean": 0.7526,
+        "std": 0.1396
+      },
+      "recall": {
+        "mean": 0.9191,
+        "std": 0.0748
+      },
+      "f1": {
+        "mean": 0.8133,
+        "std": 0.0466
+      },
+      "fpr": {
+        "mean": 0.2148,
+        "std": 0.1363
+      },
+      "fnr": {
+        "mean": 0.0809,
+        "std": 0.0748
+      },
+      "roc_auc": {
+        "mean": 0.89,
+        "std": 0.0494
+      },
+      "pr_auc": {
+        "mean": 0.8186,
+        "std": 0.0901
+      }
+    }
+  },
+  "tfidf_raw": {
+    "folds": [
+      {
+        "accuracy": 0.824,
+        "precision": 0.6846,
+        "recall": 0.984,
+        "f1": 0.8075,
+        "fpr": 0.272,
+        "fnr": 0.016,
+        "roc_auc": 0.9075,
+        "pr_auc": 0.8274,
+        "confusion_matrix": {
+          "tn": 2427,
+          "fp": 907,
+          "fn": 32,
+          "tp": 1969
+        },
+        "fold": 0,
+        "train_size": 10665,
+        "val_size": 5335,
+        "val_benign": 3334,
+        "val_malicious": 2001,
+        "train_time_seconds": 7.29,
+        "eval_time_seconds": 2.69
+      },
+      {
+        "accuracy": 0.7796,
+        "precision": 0.6325,
+        "recall": 0.984,
+        "f1": 0.77,
+        "fpr": 0.3431,
+        "fnr": 0.016,
+        "roc_auc": 0.8654,
+        "pr_auc": 0.7916,
+        "confusion_matrix": {
+          "tn": 2190,
+          "fp": 1144,
+          "fn": 32,
+          "tp": 1969
+        },
+        "fold": 1,
+        "train_size": 10665,
+        "val_size": 5335,
+        "val_benign": 3334,
+        "val_malicious": 2001,
+        "train_time_seconds": 7.77,
+        "eval_time_seconds": 3.32
+      },
+      {
+        "accuracy": 0.9321,
+        "precision": 0.9817,
+        "recall": 0.8343,
+        "f1": 0.9021,
+        "fpr": 0.0093,
+        "fnr": 0.1657,
+        "roc_auc": 0.9783,
+        "pr_auc": 0.969,
+        "confusion_matrix": {
+          "tn": 3301,
+          "fp": 31,
+          "fn": 331,
+          "tp": 1667
+        },
+        "fold": 2,
+        "train_size": 10670,
+        "val_size": 5330,
+        "val_benign": 3332,
+        "val_malicious": 1998,
+        "train_time_seconds": 8.48,
+        "eval_time_seconds": 2.45
+      }
+    ],
+    "aggregate": {
+      "accuracy": {
+        "mean": 0.8452,
+        "std": 0.064
+      },
+      "precision": {
+        "mean": 0.7663,
+        "std": 0.1538
+      },
+      "recall": {
+        "mean": 0.9341,
+        "std": 0.0706
+      },
+      "f1": {
+        "mean": 0.8265,
+        "std": 0.0556
+      },
+      "fpr": {
+        "mean": 0.2081,
+        "std": 0.1436
+      },
+      "fnr": {
+        "mean": 0.0659,
+        "std": 0.0706
+      },
+      "roc_auc": {
+        "mean": 0.9171,
+        "std": 0.0466
+      },
+      "pr_auc": {
+        "mean": 0.8627,
+        "std": 0.0766
+      }
+    }
+  },
+  "transformer_cv_pilot_estimate": {
+    "hardware_device": "cuda",
+    "gpu_name": "NVIDIA GeForce RTX 2050",
+    "batch_size": 32,
+    "seconds_per_batch_32": 0.2152,
+    "seconds_per_epoch_est": 71.65,
+    "seconds_per_fold_est": 214.94,
+    "total_3_fold_hours_est": 0.179,
+    "staging_rationale": "Full 3-fold cross-validation of all-MiniLM-L6-v2 takes approx. 10.7 minutes on the local RTX 2050 GPU. Staging full transformer retraining for Phase 3 preserves local compute budget while group-aware traditional ML baselines provide immediate rigorous leakage bounds."
+  }
+}
