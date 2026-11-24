@@ -203,6 +203,56 @@ flowchart TD
   - Tested entire pipeline on replayed historical traffic (2,000 requests):
   - Achieved **94.76% attack interception rate** and **2.58% shadow disruption rate (FPR)** with **7.74 ms p50 latency**.
 
+---
+
+### Phase 5: Python + FastAPI ML Inference Service
+*Goal: Standalone, production-grade microservice serving frozen Transformer and TF-IDF models with cryptographic verification, health probes, and sub-10 ms latency.*
+
+- [x] **5.1 SHA-256 Tamper Verification & Container Warmup (`src/ml_service/model_loader.py`)**:
+  - Startup integrity validation of frozen artifacts against `model_manifest.json`.
+  - Warmup inference on startup to eliminate cold-start latency spikes.
+- [x] **5.2 Inference Engine & Dynamic Calibration (`src/ml_service/inference_engine.py`)**:
+  - Two-stage cascade: Layer 2 TF-IDF fast-pass ($\tau \le 0.04$) and Layer 3 MiniLM Transformer deep analysis.
+  - Platt scaling calibration ($w=0.7724, b=0.4965$) applied dynamically.
+- [x] **5.3 FastAPI Service Endpoints & Error Handling (`src/ml_service/app.py`)**:
+  - `GET /health`, `GET /ready`, `GET /v1/model-info`, `POST /v1/predict`.
+  - Comprehensive PyTest coverage: 17/17 tests passing including CPU fallback, tamper detection, and concurrency.
+
+---
+
+### Phase 6: WAF Core & Central Decision Engine
+*Goal: Decoupled, multi-tenant capable firewall core coordinating all 4 layers with privacy-safe redaction and degraded-mode resilience.*
+
+- [x] **6.1 Multi-Layer Decision Engine (`src/firewall/decision_engine.py`)**:
+  - Orchestrates Layer 1 RFC rules, Layer 2 TF-IDF fast-pass, Layer 3 Transformer scoring, and Layer 4 behavioral tracking.
+  - Fail-open and fail-closed operational modes with automatic anomaly escalation under ML outages.
+- [x] **6.2 Sensitive-Data Redaction Engine (`src/firewall/redaction.py`)**:
+  - Scrubs authentication tokens, cookies, API keys, and sensitive body fields before logging security audit records.
+- [x] **6.3 Monitor-Mode Safety & Degraded Resilience (`tests/test_waf_core.py`)**:
+  - Verified live traffic protection in monitor mode under ML failures and active attacks (20/20 tests passing).
+
+---
+
+### Phase 7: Nginx Reverse Proxy Integration & Local Protected Test App
+*Goal: End-to-end WAF Data Plane integrating Nginx Gateway, async WAF Reverse-Proxy Gateway, ML service, and a vulnerable test application.*
+
+- [x] **7.1 Local Protected Testbed Application (`src/protected_app/app.py`)**:
+  - Strictly bound to `127.0.0.1:8002` (localhost only) with warning banner.
+  - Endpoints reflecting SQLi, XSS, Path Traversal, credential submission, and benign REST.
+- [x] **7.2 WAF Reverse-Proxy Gateway (`src/waf_gateway/app.py`)**:
+  - Reverse-proxy gateway running on `127.0.0.1:8001` preserving full POST bodies up to 64 KB.
+  - Full request evaluation via `CentralDecisionEngine` and pooled `MLClient`.
+  - Enforces `BLOCK` (403), `CHALLENGE` (429), and proxies `ALLOW`/`MONITOR` with diagnostic telemetry headers (`X-WAF-*`).
+  - Privacy-safe logging to `logs/waf_security_events.jsonl` with credential redaction.
+  - Runtime admin API (`GET /_waf/health`, `GET /_waf/policy`, `POST /_waf/policy`) for instant mode switching.
+- [x] **7.3 Production Nginx Configuration (`nginx/waf_reverse_proxy.conf`)**:
+  - Front-facing proxy on `127.0.0.1:8080` buffering client payloads and forwarding to the WAF gateway.
+- [x] **7.4 Data Plane Integration Test Suite (`tests/test_waf_data_plane.py`)**:
+  - 7/7 comprehensive integration scenarios passing.
+  - End-to-end data plane proxy latency: **p50 = 16.20 ms**, **p95 = 23.13 ms** (Target SLA < 25 ms).
+
+---
+
 
 
 
@@ -244,11 +294,13 @@ transformer-waf/
 │       ├── fasttext_waf_baseline.pt       [COMPLETED: Candidate B FastText Baseline]
 │       ├── cnn_waf_baseline.pt            [COMPLETED: Candidate C 1D-CNN Baseline]
 │       └── calibrated_thresholds.json     [COMPLETED: Isolated Dev Fold Calibration]
+├── nginx/
+│   └── waf_reverse_proxy.conf         [COMPLETED: Front-Facing Reverse Proxy Port 8080 Config]
 ├── reports/
+│   ├── phase7_nginx_reverse_proxy_integration_report.md [COMPLETED: Phase 7 Data Plane Integration Report]
+│   ├── phase7_nginx_reverse_proxy_integration_report.json [COMPLETED: Phase 7 Benchmark Deliverable]
 │   ├── phase6_waf_core_decision_engine_report.md  [COMPLETED: Phase 6 Core & Decision Engine Report]
 │   ├── phase6_waf_core_decision_engine_report.json[COMPLETED: Phase 6 Benchmark & Matrix Deliverable]
-│   ├── phase5_ml_inference_service_report.md  [COMPLETED: Phase 5 Service Engineering Report]
-│   ├── phase5_ml_inference_service_report.json[COMPLETED: Phase 5 Benchmark & Spec Deliverable]
 │   ├── phase5_ml_inference_service_report.md  [COMPLETED: Phase 5 Service Engineering Report]
 │   ├── phase5_ml_inference_service_report.json[COMPLETED: Phase 5 Benchmark & Spec Deliverable]
 │   ├── project_reproducibility_audit.md       [COMPLETED: Forensic Audit Deliverable]
@@ -274,7 +326,7 @@ transformer-waf/
 │   │   ├── benchmark_architectures.py [COMPLETED: 4-Candidate Comparison]
 │   │   ├── loafo_transformer_benchmark.py [COMPLETED: Leave-One-Attack-Family-Out]
 │   │   ├── evaluate_held_out.py    [COMPLETED: 30,532 Held-Out Benchmark]
-│   │   └── test_evaluation_pipeline.py [COMPLETED: 7/7 Unit Tests Passing]
+│   │   └── test_evaluation_pipeline.py [COMPLETED: 11/11 Unit Tests Passing]
 │   ├── ml_service/
 │   │   ├── __init__.py             [COMPLETED: Package exports app, container, InferenceEngine]
 │   │   ├── schemas.py              [COMPLETED: Pydantic v2 schemas: predict, probes, model-info]
@@ -286,19 +338,24 @@ transformer-waf/
 │   │   ├── train_transformer.py    [COMPLETED: 3-epoch FP16 fine-tuning]
 │   │   ├── train_tfidf_layer.py    [COMPLETED: Fast-pass Layer 2 training]
 │   │   └── train_neural_baselines.py [COMPLETED: FastText + 1D-CNN Baselines]
-│   └── firewall/
-│       ├── __init__.py             [COMPLETED: Package exports policy, rules, ml_client, anomaly, decision]
-│       ├── policy.py               [COMPLETED: Tenant-Ready FirewallPolicy & ThresholdConfig Schemas]
-│       ├── rules_engine.py         [COMPLETED: Layer 1 RFC & Path Traversal Validator]
-│       ├── ml_client.py            [COMPLETED: Connection-Pooled ML API Client & In-Process Adapter]
-│       ├── ml_detector.py          [COMPLETED: Layer 2 & 3 Hierarchical ML Middleware]
-│       ├── anomaly_detector.py     [COMPLETED: Layer 4 Sliding-Window Behavioral Engine]
-│       ├── decision_engine.py      [COMPLETED: Central Multi-Tier Multi-Signal Decision Engine]
-│       └── shadow_validator.py     [COMPLETED: Multi-Client Traffic Replay Harness]
+│   ├── firewall/
+│   │   ├── __init__.py             [COMPLETED: Package exports policy, rules, ml_client, anomaly, decision, redaction]
+│   │   ├── policy.py               [COMPLETED: Tenant-Ready FirewallPolicy & ThresholdConfig Schemas]
+│   │   ├── rules_engine.py         [COMPLETED: Layer 1 RFC & Path Traversal Validator]
+│   │   ├── ml_client.py            [COMPLETED: Connection-Pooled ML API Client & In-Process Adapter]
+│   │   ├── ml_detector.py          [COMPLETED: Layer 2 & 3 Hierarchical ML Middleware]
+│   │   ├── anomaly_detector.py     [COMPLETED: Layer 4 Sliding-Window Behavioral Engine]
+│   │   ├── decision_engine.py      [COMPLETED: Central Multi-Tier Multi-Signal Decision Engine]
+│   │   ├── redaction.py            [COMPLETED: Privacy-Safe Credential & Header Redaction Engine]
+│   │   └── shadow_validator.py     [COMPLETED: Multi-Client Traffic Replay Harness]
+│   ├── protected_app/
+│   │   ├── __init__.py             [COMPLETED: Protected App Package]
+│   │   └── app.py                  [COMPLETED: Local Testbed App Bound Strictly to 127.0.0.1:8002]
+│   └── waf_gateway/
+│       ├── __init__.py             [COMPLETED: WAF Gateway Package]
+│       └── app.py                  [COMPLETED: Reverse-Proxy Gateway Port 8001 with Decision Engine]
 └── tests/
     ├── test_ml_inference_service.py [COMPLETED: 17/17 PyTest Suite: Probes, Parity, Tamper, CPU]
-    └── test_waf_core.py             [COMPLETED: 17/17 PyTest Suite: Policy, Rules, Fusion, Degraded]
-└── tests/
-    ├── test_ml_inference_service.py [COMPLETED: 17/17 PyTest Suite: Probes, Parity, Tamper, CPU]
-    └── test_waf_core.py             [COMPLETED: 17/17 PyTest Suite: Policy, Rules, Fusion, Degraded]
+    ├── test_waf_core.py             [COMPLETED: 20/20 PyTest Suite: Policy, Rules, Fusion, Redaction, Degraded]
+    └── test_waf_data_plane.py       [COMPLETED: 7/7 PyTest Suite: Proxying, Blocking, Monitor, Redaction, Latency]
 ```
