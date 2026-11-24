@@ -1,0 +1,21 @@
+{
+  "model_version": "v2.1.0",
+  "created_timestamp": "2026-11-25T01:30:00+05:30",
+  "description": "Transformer-Based WAF Frozen Release v2.1 with Smart Path Normalization, Balanced Loss, Hard-Negative Augmentation, and Head+Tail Chunking",
+  "architecture": {
+    "tier1_fast_pass": "TF-IDF (Char n-gram 3-5) + Logistic Regression",
+    "tier2_contextual": "sentence-transformers/all-MiniLM-L6-v2 (FP16)",
+    "representation": "structured_v2_norm (Smart Path Normalization + Header Stripping)",
+    "head_tail_chunking": true,
+    "max_length": 192
+  },
+  "artifacts_sha256": {
+    "preprocessing_config.json": "5a51ec7eb50e00f7d2041f5aa6dc3b5fae84636393972965e6909188f06f0995",
+    "tfidf/tfidf_logistic_baseline.joblib": "07dc5790bbaa0980fd6826cd0a8ac2103d7bd8924278d586cf5995178521efdb",
+    "threshold.json": "1958d012268d5ac00969f4ed05b892fe095f4163e782d48f87f89ac18f30c404",
+    "transformer/config.json": "955367c67d55b359a6ba29f4ab9478b9de1adbbc9629bb9365c3b1c91401f875",
+    "transformer/model.safetensors": "8c39f2ba2f6894bdc70f9926e1bf6b126c541d3c920a75774cc1c4d03fccfd33",
+    "transformer/tokenizer.json": "9652879568b27e984f2e32d8d21f2a8a62eecbcaf7b2fb631cd5869d3ce968c7",
+    "transformer/tokenizer_config.json": "ce34fce75b8cd03184351c8cd8ec112ae1145c2cce11450433c2b17cf03de16f"
+  }
+}

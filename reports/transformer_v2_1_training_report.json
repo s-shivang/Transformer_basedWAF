@@ -1,0 +1,53 @@
+{
+  "model_architecture": "sentence-transformers/all-MiniLM-L6-v2 (FP16)",
+  "representation": "structured_v2_norm",
+  "device": "cuda:0",
+  "peak_vram_gb": 0.99,
+  "total_training_time_s": 193.5,
+  "best_val_f1": 0.9724,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.3194,
+      "val_f1": 0.9617,
+      "val_fpr": 0.0251,
+      "val_recall": 0.954,
+      "duration_s": 90.4
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.1233,
+      "val_f1": 0.9724,
+      "val_fpr": 0.0126,
+      "val_recall": 0.9605,
+      "duration_s": 89.7
+    }
+  ],
+  "platt_calibration": {
+    "w": 0.9409,
+    "b": 0.2075,
+    "raw_brier_score": 0.0207,
+    "calibrated_brier_score": 0.0205,
+    "raw_ece": 0.0099,
+    "calibrated_ece": 0.009
+  },
+  "operating_thresholds": {
+    "fast_pass_allow": 0.04,
+    "monitor_alert": 0.05,
+    "challenge": 0.5,
+    "block": 0.85,
+    "strict_block_low_fpr": 0.9,
+    "metrics_at_block": {
+      "recall": 0.943,
+      "fpr": 0.0067,
+      "precision": 0.9916,
+      "f1": 0.9667,
+      "confusion_matrix": {
+        "tn": 2372,
+        "fp": 16,
+        "fn": 114,
+        "tp": 1886
+      }
+    }
+  }
+}
