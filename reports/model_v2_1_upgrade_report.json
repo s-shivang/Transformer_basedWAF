@@ -1,0 +1,318 @@
+{
+  "benchmark_timestamp": "2026-11-25T01:35:00+05:30",
+  "models": {
+    "v1_0": {
+      "version": "v1.0.0",
+      "representation": "structured",
+      "tau_block": 0.5
+    },
+    "v2_0": {
+      "version": "v2.0.0",
+      "representation": "structured_v2",
+      "tau_block": 0.43
+    },
+    "v2_1": {
+      "version": "v2.1.0",
+      "representation": "structured_v2_norm",
+      "tau_block": 0.85
+    }
+  },
+  "benchmark_1_dev_val": {
+    "v1_0": {
+      "accuracy": 0.7899,
+      "precision": 0.8174,
+      "recall": 0.6379,
+      "f1": 0.7166,
+      "fpr": 0.1017,
+      "fnr": 0.3621,
+      "roc_auc": 0.8932,
+      "pr_auc": 0.8755,
+      "confusion_matrix": {
+        "tn": 1502,
+        "fp": 170,
+        "fn": 432,
+        "tp": 761
+      }
+    },
+    "v2_0": {
+      "accuracy": 0.8168,
+      "precision": 0.8576,
+      "recall": 0.6714,
+      "f1": 0.7532,
+      "fpr": 0.0795,
+      "fnr": 0.3286,
+      "roc_auc": 0.9031,
+      "pr_auc": 0.8901,
+      "confusion_matrix": {
+        "tn": 1539,
+        "fp": 133,
+        "fn": 392,
+        "tp": 801
+      }
+    },
+    "v2_1_at_0_85": {
+      "accuracy": 0.7689,
+      "precision": 0.8274,
+      "recall": 0.5624,
+      "f1": 0.6697,
+      "fpr": 0.0837,
+      "fnr": 0.4376,
+      "roc_auc": 0.7772,
+      "pr_auc": 0.8032,
+      "confusion_matrix": {
+        "tn": 1532,
+        "fp": 140,
+        "fn": 522,
+        "tp": 671
+      }
+    },
+    "v2_1_at_0_50": {
+      "accuracy": 0.7752,
+      "precision": 0.8102,
+      "recall": 0.601,
+      "f1": 0.6901,
+      "fpr": 0.1005,
+      "fnr": 0.399,
+      "roc_auc": 0.7772,
+      "pr_auc": 0.8032,
+      "confusion_matrix": {
+        "tn": 1504,
+        "fp": 168,
+        "fn": 476,
+        "tp": 717
+      }
+    }
+  },
+  "benchmark_2_hard_negatives": {
+    "v1_0": {
+      "fp_count": 127,
+      "fpr": 0.254
+    },
+    "v2_0": {
+      "fp_count": 7,
+      "fpr": 0.014
+    },
+    "v2_1": {
+      "fp_count": 0,
+      "fpr": 0.0
+    }
+  },
+  "benchmark_3_adversarial": [
+    {
+      "description": "Long padding (>200 tokens) with tail SQLi",
+      "expected_label": 1,
+      "v1_score": 0.01034,
+      "v1_correct": false,
+      "v2_score": 0.01925,
+      "v2_correct": false,
+      "v2_1_score": 0.01436,
+      "v2_1_correct": false
+    },
+    {
+      "description": "Long padding (>200 tokens) with tail SSTI",
+      "expected_label": 1,
+      "v1_score": 0.00959,
+      "v1_correct": false,
+      "v2_score": 0.01321,
+      "v2_correct": false,
+      "v2_1_score": 0.01495,
+      "v2_1_correct": false
+    },
+    {
+      "description": "NoSQL injection in JSON body",
+      "expected_label": 1,
+      "v1_score": 0.99766,
+      "v1_correct": true,
+      "v2_score": 0.99797,
+      "v2_correct": true,
+      "v2_1_score": 0.99704,
+      "v2_1_correct": true
+    },
+    {
+      "description": "SSRF AWS cloud metadata probe",
+      "expected_label": 1,
+      "v1_score": 0.9978,
+      "v1_correct": true,
+      "v2_score": 0.99794,
+      "v2_correct": true,
+      "v2_1_score": 0.99697,
+      "v2_1_correct": true
+    },
+    {
+      "description": "Double-encoded path traversal",
+      "expected_label": 1,
+      "v1_score": 0.99783,
+      "v1_correct": true,
+      "v2_score": 0.99786,
+      "v2_correct": true,
+      "v2_1_score": 0.997,
+      "v2_1_correct": true
+    },
+    {
+      "description": "Classic path traversal on .jsp endpoint",
+      "expected_label": 1,
+      "v1_score": 0.99778,
+      "v1_correct": true,
+      "v2_score": 0.99777,
+      "v2_correct": true,
+      "v2_1_score": 0.99685,
+      "v2_1_correct": true
+    },
+    {
+      "description": "Benign long prose essay (>200 tokens)",
+      "expected_label": 0,
+      "v1_score": 0.00868,
+      "v1_correct": true,
+      "v2_score": 0.01142,
+      "v2_correct": true,
+      "v2_1_score": 0.0137,
+      "v2_1_correct": true
+    },
+    {
+      "description": "Benign prose containing 'select', 'from', 'union'",
+      "expected_label": 0,
+      "v1_score": 0.06431,
+      "v1_correct": true,
+      "v2_score": 0.00819,
+      "v2_correct": true,
+      "v2_1_score": 0.01198,
+      "v2_1_correct": true
+    },
+    {
+      "description": "Benign Spanish e-commerce on /tienda1/publico/anadir.jsp",
+      "expected_label": 0,
+      "v1_score": 0.94887,
+      "v1_correct": false,
+      "v2_score": 0.00147,
+      "v2_correct": true,
+      "v2_1_score": 0.00594,
+      "v2_1_correct": true
+    }
+  ],
+  "benchmark_4_loafo": {
+    "SQLi": {
+      "v1_mean": 0.9978,
+      "v2_mean": 0.9977,
+      "v2_1_mean": 0.9961
+    },
+    "XSS": {
+      "v1_mean": 0.9979,
+      "v2_mean": 0.9978,
+      "v2_1_mean": 0.9971
+    },
+    "Path Traversal": {
+      "v1_mean": 0.9977,
+      "v2_mean": 0.9977,
+      "v2_1_mean": 0.9969
+    },
+    "CMDI": {
+      "v1_mean": 0.9976,
+      "v2_mean": 0.9977,
+      "v2_1_mean": 0.9956
+    }
+  },
+  "benchmark_5_csic_held_out": {
+    "v1_0": {
+      "metrics": {
+        "accuracy": 0.8611,
+        "precision": 0.7529,
+        "recall": 0.9848,
+        "f1": 0.8534,
+        "fpr": 0.225,
+        "fnr": 0.0152,
+        "roc_auc": 0.9801,
+        "pr_auc": 0.9722,
+        "confusion_matrix": {
+          "tn": 13950,
+          "fp": 4050,
+          "fn": 191,
+          "tp": 12341
+        }
+      },
+      "eval_time_s": 36.6
+    },
+    "v2_0": {
+      "metrics": {
+        "accuracy": 0.6662,
+        "precision": 0.5575,
+        "recall": 0.9046,
+        "f1": 0.6899,
+        "fpr": 0.4999,
+        "fnr": 0.0954,
+        "roc_auc": 0.7329,
+        "pr_auc": 0.5703,
+        "confusion_matrix": {
+          "tn": 9002,
+          "fp": 8998,
+          "fn": 1195,
+          "tp": 11337
+        }
+      },
+      "eval_time_s": 54.2
+    },
+    "v2_1": {
+      "metrics": {
+        "accuracy": 0.7132,
+        "precision": 0.6145,
+        "recall": 0.8083,
+        "f1": 0.6982,
+        "fpr": 0.3531,
+        "fnr": 0.1917,
+        "roc_auc": 0.7234,
+        "pr_auc": 0.5639,
+        "confusion_matrix": {
+          "tn": 11645,
+          "fp": 6355,
+          "fn": 2402,
+          "tp": 10130
+        }
+      },
+      "eval_time_s": 60.0
+    }
+  },
+  "benchmark_6_latency": {
+    "v1_0_short": {
+      "p50_ms": 9.78,
+      "p95_ms": 13.44,
+      "mean_ms": 10.04
+    },
+    "v2_0_short": {
+      "p50_ms": 10.44,
+      "p95_ms": 13.88,
+      "mean_ms": 11.04
+    },
+    "v2_1_short": {
+      "p50_ms": 8.95,
+      "p95_ms": 11.69,
+      "mean_ms": 9.13
+    },
+    "v2_1_long_2chunk": {
+      "p50_ms": 13.01,
+      "p95_ms": 17.82,
+      "mean_ms": 13.49
+    }
+  },
+  "promotion_gate": {
+    "gate_1_csic_fpr_below_10_pct": {
+      "target": "< 10.0%",
+      "actual": "35.31%",
+      "passed": false
+    },
+    "gate_2_hard_neg_fpr_below_2_pct": {
+      "target": "< 2.0%",
+      "actual": "0.00%",
+      "passed": true
+    },
+    "gate_3_indomain_recall_above_95_pct": {
+      "target": ">= 95.0%",
+      "actual": "56.24%",
+      "passed": false
+    },
+    "gate_4_gpu_p50_latency_below_15_ms": {
+      "target": "< 15.0 ms",
+      "actual": "8.95 ms",
+      "passed": true
+    },
+    "final_recommendation": "HOLD_V1"
+  }
+}

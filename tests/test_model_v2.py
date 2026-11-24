@@ -16,6 +16,8 @@ from src.pipeline.feature_builder import (
     build_features,
     build_representation_d,
     build_representation_d_v2,
+    build_representation_d_v2_norm,
+    normalize_path_smart,
 )
 from src.ml_service.model_loader import ModelContainer
 from src.ml_service.inference_engine import InferenceEngine
@@ -24,6 +26,7 @@ from src.ml_service.schemas import PredictRequest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 V1_DIR = REPO_ROOT / "models/frozen/v1_0"
 V2_DIR = REPO_ROOT / "models/frozen/v2_0"
+V2_1_DIR = REPO_ROOT / "models/frozen/v2_1"
 
 
 class TestRepresentationDV2:
@@ -182,3 +185,92 @@ class TestModelDirEnvVarSwitching:
         assert c2.model_version == "v2.0.0"
         assert c2.representation_mode == "structured_v2"
         assert c2.head_tail_chunking is True
+
+        # 3. Point to v2_1
+        monkeypatch.setenv("WAF_MODEL_DIR", str(V2_1_DIR))
+        c2_1 = ModelContainer()
+        c2_1.initialize()
+        assert c2_1.model_version == "v2.1.0"
+        assert c2_1.representation_mode == "structured_v2_norm"
+        assert c2_1.head_tail_chunking is True
+        assert c2_1.thresholds["block"] == 0.85
+        assert c2_1.thresholds["challenge"] == 0.50
+
+
+class TestSmartPathNormalization:
+    """Verifies normalize_path_smart behaves safely across benign endpoints and attacks."""
+
+    def test_benign_classic_paths_normalized(self):
+        """Benign endpoints without attack tokens normalize to generic placeholders."""
+        assert normalize_path_smart("/tienda1/publico/anadir.jsp") == "/__SEG__/__SEG__/__FILE__.jsp"
+        assert normalize_path_smart("/catalogo/buscar.asp") == "/__SEG__/__FILE__.asp"
+        assert normalize_path_smart("/portal/usuario/perfil.php") == "/__SEG__/__SEG__/__FILE__.php"
+        assert normalize_path_smart("/default.aspx") == "/__FILE__.aspx"
+        assert normalize_path_smart("/api/v1/items") == "/__SEG__/__SEG__/__SEG__"
+
+    def test_traversal_paths_preserve_attacks(self):
+        """Path traversal patterns (..) must NEVER be masked."""
+        trav1 = normalize_path_smart("/files/../../etc/passwd")
+        assert ".." in trav1
+        assert "passwd" in trav1
+        assert "/__SEG__/../../etc/passwd" == trav1
+
+        trav2 = normalize_path_smart("/app/..%2f..%2fwin.ini")
+        assert ".." in trav2
+        assert "win.ini" in trav2
+
+    def test_sensitive_attack_keywords_preserved(self):
+        """Admin, shell, config, env paths must retain their sensitive tokens."""
+        p_admin = normalize_path_smart("/admin/login.php")
+        assert "admin" in p_admin
+        assert "/admin/__FILE__.php" == p_admin
+
+        p_shell = normalize_path_smart("/uploads/shell.php")
+        assert "shell" in p_shell
+        assert "/__SEG__/shell.php" == p_shell
+
+        p_env = normalize_path_smart("/.env")
+        assert ".env" in p_env
+
+        p_config = normalize_path_smart("/config/database.yml")
+        assert "config" in p_config
+        assert "database.yml" in p_config
+
+
+class TestArtifactIntegrityAndManifestV2_1:
+    """Verifies frozen v2_1 artifacts and SHA-256 integrity check."""
+
+    def test_v2_1_manifest_exists_and_hashes_match(self):
+        manifest_path = V2_1_DIR / "model_manifest.json"
+        assert manifest_path.exists(), "v2_1 model_manifest.json missing"
+
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        assert manifest["model_version"] == "v2.1.0"
+        assert "structured_v2_norm" in manifest["architecture"]["representation"]
+        assert manifest["architecture"]["head_tail_chunking"] is True
+        assert len(manifest["artifacts_sha256"]) >= 6
+
+        # Check each file SHA-256
+        import hashlib
+        for rel_file, expected_hash in manifest["artifacts_sha256"].items():
+            file_path = V2_1_DIR / rel_file
+            assert file_path.exists(), f"Artifact missing: {rel_file}"
+            h = hashlib.sha256()
+            with open(file_path, "rb") as f:
+                while chunk := f.read(65536):
+                    h.update(chunk)
+            assert h.hexdigest() == expected_hash, f"Hash mismatch for {rel_file}"
+
+    def test_model_container_v2_1_initialization(self):
+        container = ModelContainer(model_dir=V2_1_DIR)
+        container.initialize()
+        assert container.is_ready
+        assert container.model_version == "v2.1.0"
+        assert container.representation_mode == "structured_v2_norm"
+        assert container.head_tail_chunking is True
+        assert container.thresholds["block"] == 0.85
+        assert container.thresholds["challenge"] == 0.50
+        assert container.thresholds["fast_pass_allow"] == 0.04
+
