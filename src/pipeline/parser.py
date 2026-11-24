@@ -11,7 +11,7 @@ from src.pipeline.canonicalizer import (
 )
 
 REQUEST_LINE_PATTERN = re.compile(
-    r"^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(\S+)(?:\s+HTTP/\d\.\d)?",
+    r"^([A-Za-z_-]+)\s+(.+?)(?:\s+HTTP/\d\.\d)?$",
     re.IGNORECASE,
 )
 
