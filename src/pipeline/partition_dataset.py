@@ -40,7 +40,7 @@ def extract_request_signatures(df: pd.DataFrame) -> pd.DataFrame:
             param_keys.update(k for k in parsed.body_params.keys() if not k.startswith("_"))
 
         sorted_param_keys = sorted(list(param_keys))
-        template_sig = f"{parsed.method}:{parsed.path}:{','.join(sorted_param_keys)}"
+        template_sig = f"{parsed.path}:{','.join(sorted_param_keys)}"
 
         methods.append(parsed.method)
         canonical_paths.append(parsed.path)
