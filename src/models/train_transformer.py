@@ -8,7 +8,7 @@ import json
 import time
 import math
 import random
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 import numpy as np
 
@@ -148,14 +148,29 @@ def load_training_data() -> Tuple[List[str], List[int], List[str], List[int]]:
     texts, labels = zip(*records)
     print(f"[DataPrep] Total combined training records: {len(texts):,} (Benign: {labels.count(0):,}, Malicious: {labels.count(1):,})")
 
-    # Train / Val Split (85% train, 15% validation)
-    X_train, X_val, y_train, y_val = train_test_split(
-        list(texts),
-        list(labels),
-        test_size=0.15,
-        random_state=RANDOM_SEED,
-        stratify=list(labels),
-    )
+    # Train / Val Split (Group-Aware: 6-fold StratifiedGroupKFold gives ~16.6% validation without group crossing)
+    from sklearn.model_selection import StratifiedGroupKFold
+    groups = []
+    for r in records:
+        # group by endpoint/template
+        feat_str = r[0]
+        # extract method and path from feature
+        grp = feat_str.split("[PARAM]")[0].strip() if "[PARAM]" in feat_str else feat_str[:32]
+        groups.append(grp)
+
+    sgkf = StratifiedGroupKFold(n_splits=6, shuffle=True, random_state=RANDOM_SEED)
+    tr_idx, val_idx = next(sgkf.split(np.zeros(len(texts)), labels, groups))
+
+    X_train = [texts[i] for i in tr_idx]
+    y_train = [labels[i] for i in tr_idx]
+    X_val = [texts[i] for i in val_idx]
+    y_val = [labels[i] for i in val_idx]
+
+    # Verify zero group overlap
+    tr_grps = set([groups[i] for i in tr_idx])
+    val_grps = set([groups[i] for i in val_idx])
+    overlap = tr_grps.intersection(val_grps)
+    print(f"  Group-Aware Split: Train={len(X_train):,}, Val={len(X_val):,} (Group overlap: {len(overlap)})")
 
     print(f"  Train set: {len(X_train):,}, Validation set: {len(X_val):,}")
     return X_train, y_train, X_val, y_val
@@ -216,13 +231,16 @@ def evaluate_dataset(
 
 
 def train_model(
-    model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+    model_name: Optional[str] = None,
     num_epochs: int = 3,
-    batch_size: int = 16,
-    learning_rate: float = 2e-5,
+    batch_size: int = 32,
+    learning_rate: float = 3e-5,
     max_length: int = 192,
 ):
     set_seed(RANDOM_SEED)
+
+    if model_name is None:
+        model_name = str(OUTPUT_MODEL_DIR) if OUTPUT_MODEL_DIR.exists() else "sentence-transformers/all-MiniLM-L6-v2"
 
     if torch.cuda.is_available():
         device = torch.device("cuda:0")

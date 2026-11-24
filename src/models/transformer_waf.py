@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict, Any, Tuple
+from pathlib import Path
 import os
 import torch
 import torch.nn as nn
@@ -37,17 +38,20 @@ def initialize_transformer_model(
     device = device or get_optimal_device()
 
     print(f"[ModelInit] Loading base model & tokenizer: {model_name_or_path}...")
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+    local_only = Path(model_name_or_path).exists()
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, local_files_only=local_only)
 
     # Register special structural tokens
     num_added = tokenizer.add_special_tokens(
         {"additional_special_tokens": SPECIAL_STRUCTURAL_TOKENS}
     )
-    print(f"[ModelInit] Added {num_added} special structural tokens: {SPECIAL_STRUCTURAL_TOKENS}")
+    if num_added > 0:
+        print(f"[ModelInit] Added {num_added} special structural tokens: {SPECIAL_STRUCTURAL_TOKENS}")
 
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name_or_path,
         num_labels=num_labels,
+        local_files_only=local_only,
     )
 
     if num_added > 0:
