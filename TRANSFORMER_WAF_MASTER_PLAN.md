@@ -218,7 +218,25 @@ flowchart TD
   - `inference_engine.py`: Full Representation D parity via `src/pipeline/`, 2-Stage Cascade triage (microsecond TF-IDF triage $\to$ deep Transformer contextual scoring), Platt scaling calibration, truncation detection (> 192 tokens), and safe payload limits (400 for empty/malformed, 422 for > 64 KB).
   - `app.py`: FastAPI application mounting all endpoints with structured exception handlers.
 - [x] **5.3 Comprehensive PyTest Suite (`tests/test_ml_inference_service.py`)**:
-  - 14/14 tests passing in 10.19s: health/readiness probes, benign fast-pass triage, SQLi/XSS attack blocking, exact score parity ($\Delta \le 10^{-5}$) with offline pipeline, payload limit enforcement, 20 concurrent parallel requests, and live 100-request latency benchmark ($p50 = 2.94\text{ ms}$ for fast-pass, $p50 = 9.16\text{ ms}$ for Transformer).
+  - 17/17 tests passing in 11.92s: health/readiness probes, benign fast-pass triage, SQLi/XSS attack blocking, exact score parity ($\Delta \le 10^{-5}$) with offline pipeline, payload limit enforcement, 20 concurrent parallel requests, live 100-request latency benchmark ($p50 = 2.94\text{ ms}$ for fast-pass, $p50 = 9.16\text{ ms}$ for Transformer), real SHA-256 tamper abort, tokenizer exception resilience, and CPU-fallback execution.
+
+---
+
+### Phase 6: WAF Core & Multi-Signal Decision Engine
+*Goal: Provide a tenant-ready, multi-layer firewall decision engine coordinating protocol rules, pooled ML inference, and behavioral anomaly tracking with advisory safety by default.*
+
+- [x] **6.1 Tenant-Ready Policy Model (`src/firewall/policy.py`)**:
+  - Multi-tenant schema with `tenant_id`, `site_id`, `inspection_mode` (`"monitor"` by default, `"blocking"`, `"strict"`, `"disabled"`), granular thresholds (`monitor=0.05`, `challenge=0.50`, `block=0.90`, `strict_block=0.50`), size limits (64 KB), allowed methods, path exclusions (`/healthcheck`), and explicit failure modes (`"fail_open"` vs `"fail_closed"`).
+- [x] **6.2 Pooled ML API Client (`src/firewall/ml_client.py`)**:
+  - Connection-pooled client (`httpx.Client`) with granular timeouts (connect 100 ms, read 250 ms, pool 500 ms) and an in-process engine adapter for high-speed hermetic testing.
+  - Categorizes ML failures into explicit domains (`"timeout"`, `"connection_refused"`, `"service_unready"`, `"invalid_response"`).
+- [x] **6.3 Central Decision Engine & Signal Fusion (`src/firewall/decision_engine.py`)**:
+  - Full multi-layer pipeline: Request Validation -> Layer 1 Rules -> Path Exclusions -> Layer 4 Anomaly -> Layer 2/3 ML -> Central Fusion.
+  - Short-circuits on high-severity Layer 1 rules without waiting on ML.
+  - Multi-signal fusion: fast-pass triage clean shortcut, challenge band ($[0.50, 0.90)$) with anomaly escalation to `BLOCK`, monitor mode safety guarantee (never blocks live traffic), and explicit degraded mode (`degraded_mode=True`) with local rule/anomaly floor.
+  - Standardized, privacy-safe `WAFDecision` output schema.
+- [x] **6.4 Comprehensive PyTest Suite (`tests/test_waf_core.py`)**:
+  - 17/17 tests passing in 9.38s: default monitor safety, inspection disabled mode, size/method constraints, path exclusions, Layer 1 short-circuit, ML+anomaly escalation, degraded fail-open/fail-closed handling. Total pytest suite: 34/34 passing.
 
 ---
 
@@ -258,6 +276,8 @@ transformer-waf/
 │       ├── cnn_waf_baseline.pt            [COMPLETED: Candidate C 1D-CNN Baseline]
 │       └── calibrated_thresholds.json     [COMPLETED: Isolated Dev Fold Calibration]
 ├── reports/
+│   ├── phase6_waf_core_decision_engine_report.md  [COMPLETED: Phase 6 Core & Decision Engine Report]
+│   ├── phase6_waf_core_decision_engine_report.json[COMPLETED: Phase 6 Benchmark & Matrix Deliverable]
 │   ├── phase5_ml_inference_service_report.md  [COMPLETED: Phase 5 Service Engineering Report]
 │   ├── phase5_ml_inference_service_report.json[COMPLETED: Phase 5 Benchmark & Spec Deliverable]
 │   ├── project_reproducibility_audit.md       [COMPLETED: Forensic Audit Deliverable]

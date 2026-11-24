@@ -1,0 +1,91 @@
+{
+  "phase": "Phase 6 - WAF Core & Decision Engine (Including Phase 5 Test Closure)",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-24T22:30:00Z",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 2050 Laptop GPU (4GB VRAM)",
+    "cuda_version": "12.4",
+    "cloud_spend": "$0.00 (strictly local execution)"
+  },
+  "architecture": {
+    "pattern": "Modular Monolith with Domain-Driven Design (DDD)",
+    "package": "src/firewall/",
+    "inspection_pipeline": "Incoming Request -> Parser -> Canonicalizer -> Request Validation -> Layer 1 Rules -> Layer 2/3 ML Client -> Layer 4 Behavioral Anomaly -> Central Decision Engine -> Action",
+    "default_inspection_mode": "monitor"
+  },
+  "phase5_test_closure": {
+    "sha256_tamper_detection": "VERIFIED (Corrupted manifest aborts startup with RuntimeError, /ready returns HTTP 503)",
+    "tokenizer_exception_safety": "VERIFIED (Tokenizer error returns HTTP 500 structured JSON without server crash or stack trace leak)",
+    "cpu_fallback_execution": "VERIFIED (Forces device='cpu', executes PyTorch forward pass, returns valid PredictResponse with malicious >= 0.50)"
+  },
+  "policy_configuration": {
+    "schema_file": "src/firewall/policy.py",
+    "policy_version": "1.0.0",
+    "inspection_modes": ["monitor", "blocking", "strict", "disabled"],
+    "default_mode": "monitor",
+    "thresholds": {
+      "monitor": 0.05,
+      "challenge": 0.50,
+      "block": 0.90,
+      "strict_block": 0.50
+    },
+    "max_request_size_bytes": 65536,
+    "allowed_methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    "path_exclusions": ["/healthcheck", "/health", "/ready", "/robots.txt"],
+    "ml_failure_modes": ["fail_open", "fail_closed"]
+  },
+  "ml_client": {
+    "file": "src/firewall/ml_client.py",
+    "connection_pooling": "httpx.Client with max_keepalive=20, max_connections=50, keepalive_expiry=30s",
+    "granular_timeouts": {
+      "connect_timeout_ms": 100.0,
+      "read_timeout_ms": 250.0,
+      "pool_timeout_ms": 500.0
+    },
+    "adapters": ["Network HTTP (/v1/predict)", "In-Process InferenceEngine"],
+    "failure_domains": ["timeout", "connection_refused", "service_unready", "invalid_response"]
+  },
+  "decision_engine": {
+    "file": "src/firewall/decision_engine.py",
+    "enforcement_matrix": {
+      "disabled_mode": "ALLOW (reason: INSPECTION_DISABLED)",
+      "layer1_rule_violation": "BLOCK in blocking/strict, MONITOR in monitor (short-circuits ML)",
+      "request_size_or_method_violation": "BLOCK in blocking/strict, MONITOR in monitor",
+      "path_exclusion": "ALLOW (reason: PATH_EXCLUDED_FROM_ML)",
+      "fast_pass_clean": "ALLOW (risk <= 0.04, stage: fast_pass_tfidf)",
+      "blocking_mode_high_risk": "BLOCK (ml_score >= 0.90)",
+      "blocking_mode_challenge_band": "CHALLENGE (0.50 <= ml_score < 0.90, no anomaly)",
+      "blocking_mode_anomaly_escalation": "BLOCK (0.50 <= ml_score < 0.90 + Layer 4 anomaly active)",
+      "blocking_mode_monitor_alert": "MONITOR (0.05 <= ml_score < 0.50)",
+      "strict_mode_block": "BLOCK (ml_score >= 0.50)",
+      "monitor_mode_guarantee": "Never blocks or challenges live traffic; sets action=MONITOR and records would_action",
+      "ml_degraded_fail_open": "ALLOW with degraded_mode=true (reason: ML_UNAVAILABLE_FAIL_OPEN)",
+      "ml_degraded_fail_closed": "BLOCK with degraded_mode=true in blocking/strict (reason: ML_UNAVAILABLE_FAIL_CLOSED)",
+      "ml_degraded_with_anomaly": "CHALLENGE with degraded_mode=true (reason: ML_DEGRADED_ANOMALY_ACTIVE)"
+    }
+  },
+  "test_results": {
+    "pytest_ml_inference_service": {
+      "file": "tests/test_ml_inference_service.py",
+      "total_tests": 17,
+      "passed": 17,
+      "failed": 0
+    },
+    "pytest_waf_core": {
+      "file": "tests/test_waf_core.py",
+      "total_tests": 17,
+      "passed": 17,
+      "failed": 0
+    },
+    "pipeline_unit_tests": {
+      "file": "src/evaluation/test_evaluation_pipeline.py",
+      "total_tests": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "firewall_unit_tests": {
+      "file": "src/firewall/validate_firewall.py",
+      "passed": true
+    }
+  }
+}

@@ -71,14 +71,51 @@ class CentralDecisionEngine:
         policy: Optional[FirewallPolicy] = None,
         rules_engine: Optional[RulesEngine] = None,
         ml_client: Optional[MLClient] = None,
+        ml_detector: Optional[Any] = None,
         anomaly_detector: Optional[BehavioralAnomalyDetector] = None,
+        tau_block: Optional[float] = None,
+        tau_monitor: Optional[float] = None,
     ):
-        self.policy = policy or FirewallPolicy()
+        if policy is not None:
+            self.policy = policy
+        elif tau_block is not None:
+            # Legacy constructor explicitly setting block threshold implies active blocking
+            self.policy = FirewallPolicy(inspection_mode="blocking")
+            self.policy.thresholds.block = tau_block
+            if tau_monitor is not None:
+                self.policy.thresholds.monitor = tau_monitor
+        else:
+            self.policy = FirewallPolicy(inspection_mode="monitor")
+
         self.rules_engine = rules_engine or RulesEngine(
             max_body_size=self.policy.max_request_size_bytes,
             allowed_methods=set(self.policy.allowed_methods),
         )
-        self.ml_client = ml_client or MLClient()
+
+        if ml_client is not None:
+            self.ml_client = ml_client
+        elif ml_detector is not None:
+            # Wrap MLDetector as a clean adapter
+            class _DetectorAdapter:
+                def __init__(self, detector):
+                    self.detector = detector
+                def predict(self, raw_http=None, request_id=None, **kwargs):
+                    from src.pipeline.parser import parse_raw_http
+                    p = parse_raw_http(raw_http, request_id=request_id or "req_adapt")
+                    res = self.detector.evaluate_hierarchical(p)
+                    stage = "fast_pass_tfidf" if res.layer == "L2_FAST_PASS" else "transformer"
+                    return MLClientResult(
+                        success=True,
+                        risk_score=res.risk_score,
+                        raw_probability=res.risk_score,
+                        stage_used=stage,
+                        model_version="v1.0.0",
+                        latency_ms=res.latency_ms,
+                    )
+            self.ml_client = _DetectorAdapter(ml_detector)
+        else:
+            self.ml_client = MLClient()
+
         self.anomaly_detector = anomaly_detector or BehavioralAnomalyDetector()
 
     def inspect_request(
