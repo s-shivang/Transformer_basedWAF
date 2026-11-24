@@ -162,9 +162,6 @@ class ModelContainer:
 
     def initialize(self, preferred_device: Optional[str] = None):
         """Complete startup sequence: Verify hashes -> Load configs -> Load models -> Warmup."""
-        if self.is_ready:
-            return
-
         verified, details = self.verify_checksums()
         if not verified:
             self.is_ready = False
@@ -178,3 +175,4 @@ class ModelContainer:
 
 # Global singleton instance
 container = ModelContainer()
+
