@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 
 from src.ml_service.schemas import (
     PredictRequest,
@@ -64,7 +65,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={
             "status": "validation_error",
             "status_code": 422,
-            "detail": exc.errors(),
+            "detail": jsonable_encoder(exc.errors()),
         },
     )
 
@@ -154,4 +155,12 @@ async def predict_request(req: PredictRequest):
     2. Deep Tier 2 Contextual Transformer forward pass on GPU/CPU.
     3. Platt scaling calibration and tier assignment.
     """
-    return engine.predict(req)
+    try:
+        return engine.predict(req)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Inference error: {str(e)}",
+        )

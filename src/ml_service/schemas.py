@@ -41,13 +41,7 @@ class PredictRequest(BaseModel):
         description="Optional runtime block threshold override in range [0.0, 1.0]."
     )
 
-    @model_validator(mode="after")
-    def check_at_least_one_input(self) -> "PredictRequest":
-        has_raw = bool(self.raw_http and self.raw_http.strip())
-        has_fields = bool(self.method or self.path or self.query_params or self.body)
-        if not has_raw and not has_fields:
-            raise ValueError("Must provide either 'raw_http' string or decomposed fields ('method' / 'path').")
-        return self
+
 
 
 class PredictResponse(BaseModel):

@@ -339,3 +339,102 @@ def test_latency_benchmark(client):
 
     # Fast-pass tier must be < 5.0 ms p50
     assert fp_p50 < 5.0, f"Fast-pass p50 ({fp_p50:.2f} ms) exceeded 5.0 ms target!"
+
+
+# ============================================================================
+# 9. Step 0 Resilience & Integrity Gap Closure Tests
+# ============================================================================
+
+def test_sha256_tamper_detection(client, tmp_path):
+    """
+    Simulates a tampered model manifest with a corrupted hash.
+    Verifies that ModelContainer aborts startup with RuntimeError,
+    and /ready returns HTTP 503 when SHA-256 verification fails.
+    """
+    import json
+    import shutil
+    from src.ml_service.model_loader import ModelContainer, FROZEN_DIR
+
+    # 1. Create temporary directory with a corrupted manifest
+    tampered_dir = tmp_path / "tampered_frozen"
+    shutil.copytree(str(FROZEN_DIR), str(tampered_dir))
+
+    manifest_file = tampered_dir / "model_manifest.json"
+    with open(manifest_file, "r", encoding="utf-8") as f:
+        manifest_data = json.load(f)
+
+    # Corrupt one hash
+    manifest_data["artifacts_sha256"]["threshold.json"] = "0000000000000000000000000000000000000000000000000000000000000000"
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        json.dump(manifest_data, f)
+
+    tampered_container = ModelContainer(frozen_dir=tampered_dir)
+    verified, details = tampered_container.verify_checksums()
+    assert verified is False
+    assert "SHA-256 mismatch" in details.get("error", "")
+
+    with pytest.raises(RuntimeError, match="Startup verification failed"):
+        tampered_container.initialize()
+
+    # 2. Verify /ready returns 503 when container is not verified
+    original_verified = container.sha256_verified
+    try:
+        container.sha256_verified = False
+        res = client.get("/ready")
+        assert res.status_code == 503
+        assert res.json()["sha256_verified"] is False
+    finally:
+        container.sha256_verified = original_verified
+
+
+def test_tokenizer_inference_exception_safety(client, monkeypatch):
+    """
+    Simulates an unexpected tokenizer/inference runtime exception.
+    Verifies that the FastAPI service catches it cleanly and returns
+    structured JSON error response (HTTP 500) without crashing the process.
+    """
+    def _mock_failing_encode(*args, **kwargs):
+        raise RuntimeError("Simulated tokenizer memory corruption error")
+
+    monkeypatch.setattr(container.transformer_tokenizer, "encode", _mock_failing_encode)
+
+    response = client.post(
+        "/v1/predict",
+        json={"raw_http": "GET /api/test HTTP/1.1\r\nHost: example.com\r\n\r\n"}
+    )
+    assert response.status_code == 500
+    data = response.json()
+    assert data["status"] == "error"
+    assert data["status_code"] == 500
+    assert "Inference error" in data["detail"]
+    assert "Simulated tokenizer memory corruption error" in data["detail"]
+
+
+def test_cpu_fallback_execution():
+    """
+    Forces device='cpu' simulating a host environment without CUDA support.
+    Verifies that ModelContainer initializes on CPU and InferenceEngine
+    successfully evaluates a request and returns a valid PredictResponse.
+    """
+    from src.ml_service.model_loader import ModelContainer
+    from src.ml_service.inference_engine import InferenceEngine
+    from src.ml_service.schemas import PredictRequest
+
+    cpu_container = ModelContainer()
+    cpu_container.initialize(preferred_device="cpu")
+
+    assert cpu_container.device == "cpu"
+    assert cpu_container.is_ready is True
+    assert cpu_container.sha256_verified is True
+
+    cpu_engine = InferenceEngine(cpu_container)
+    req = PredictRequest(
+        raw_http="GET /search?id=1%20UNION%20SELECT%201-- HTTP/1.1\r\nHost: example.com\r\n\r\n"
+    )
+    resp = cpu_engine.predict(req)
+
+    assert resp.status == "ok"
+    assert resp.prediction == "malicious"
+    assert resp.stage_used == "transformer"
+    assert resp.malicious_probability >= 0.50
+
