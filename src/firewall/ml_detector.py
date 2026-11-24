@@ -9,8 +9,12 @@ from src.pipeline.schema import ParsedRequest
 from src.pipeline.feature_builder import build_features
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_TFIDF_PATH = ROOT / "models/saved/tfidf_logistic_baseline.joblib"
-DEFAULT_TRANSFORMER_DIR = ROOT / "models/saved/transformer_waf"
+FROZEN_MANIFEST_PATH = ROOT / "models/frozen/v1_0/model_manifest.json"
+FROZEN_TFIDF_PATH = ROOT / "models/frozen/v1_0/tfidf/tfidf_logistic_baseline.joblib"
+FROZEN_TRANSFORMER_DIR = ROOT / "models/frozen/v1_0/transformer"
+
+DEFAULT_TFIDF_PATH = FROZEN_TFIDF_PATH if FROZEN_TFIDF_PATH.exists() else (ROOT / "models/saved/tfidf_logistic_baseline.joblib")
+DEFAULT_TRANSFORMER_DIR = FROZEN_TRANSFORMER_DIR if FROZEN_TRANSFORMER_DIR.exists() else (ROOT / "models/saved/transformer_waf")
 DEFAULT_CALIBRATED_PATH = ROOT / "models/saved/calibrated_thresholds.json"
 
 
