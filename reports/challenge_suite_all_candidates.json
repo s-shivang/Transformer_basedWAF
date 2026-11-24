@@ -1,0 +1,22 @@
+{
+  "candidate_a_tfidf": {
+    "accuracy": 0.7,
+    "correct": 7,
+    "total": 10
+  },
+  "candidate_b_fasttext": {
+    "accuracy": 0.8,
+    "correct": 8,
+    "total": 10
+  },
+  "candidate_c_1d_cnn": {
+    "accuracy": 0.8,
+    "correct": 8,
+    "total": 10
+  },
+  "candidate_d_transformer": {
+    "accuracy": 0.9,
+    "correct": 9,
+    "total": 10
+  }
+}
