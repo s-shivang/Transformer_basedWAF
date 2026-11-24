@@ -45,10 +45,10 @@ def load_calibrated_thresholds() -> Tuple[float, float]:
     if CALIBRATED_CONFIG_PATH.exists():
         with open(CALIBRATED_CONFIG_PATH, "r", encoding="utf-8") as f:
             cfg = json.load(f)
-            tau_block = cfg.get("tau_standard_block", 0.95)
-            tau_monitor = cfg.get("tau_monitor", 0.70)
-            return tau_block, tau_monitor
-    return 0.95, 0.70
+            tau_block = cfg.get("tau_strict_block", 0.20)
+            tau_monitor = cfg.get("tau_monitor", 0.26)
+            return float(tau_block), float(tau_monitor)
+    return 0.50, 0.26
 
 
 def run_shadow_mode_replay(

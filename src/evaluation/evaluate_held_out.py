@@ -1,4 +1,9 @@
+import sys
 from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import json
 import time
 from typing import Dict, Any, List
@@ -23,8 +28,6 @@ from src.firewall.rules_engine import RulesEngine
 from src.firewall.decision_engine import CentralDecisionEngine
 from src.firewall.ml_detector import MLDetector
 from src.firewall.anomaly_detector import BehavioralAnomalyDetector
-
-ROOT = Path(__file__).resolve().parents[2]
 HELD_OUT_PATH = ROOT / "data/processed/csic_held_out_test.parquet"
 AI_WAF_PATH = ROOT / "data/raw/ai_waf/train-00000-of-00001.parquet"
 MODEL_DIR = ROOT / "models/saved/transformer_waf"
@@ -79,40 +82,58 @@ def evaluate_transformer_on_dataset(
         infer_times.extend([dur / len(batch)] * len(batch))
         all_probs.extend(probs)
 
-    # 3. Metrics at threshold
-    preds = [1 if p >= threshold else 0 for p in all_probs]
+    # 3. Metrics at thresholds
+    def get_metrics_at_tau(tau: float) -> Dict[str, Any]:
+        p_arr = [1 if p >= tau else 0 for p in all_probs]
+        acc_val = float(accuracy_score(labels, p_arr))
+        prec_val = float(precision_score(labels, p_arr, pos_label=1, zero_division=0))
+        rec_val = float(recall_score(labels, p_arr, pos_label=1, zero_division=0))
+        f1_val = float(f1_score(labels, p_arr, pos_label=1, zero_division=0))
+        cm_val = confusion_matrix(labels, p_arr, labels=[0, 1])
+        c_tn, c_fp, c_fn, c_tp = cm_val.ravel()
+        fpr_val = float(c_fp / (c_fp + c_tn)) if (c_fp + c_tn) > 0 else 0.0
+        return {
+            "threshold": tau,
+            "accuracy": round(acc_val, 4),
+            "precision": round(prec_val, 4),
+            "recall": round(rec_val, 4),
+            "f1": round(f1_val, 4),
+            "false_positive_rate": round(fpr_val, 4),
+            "confusion_matrix": [[int(c_tn), int(c_fp)], [int(c_fn), int(c_tp)]],
+        }
 
-    acc = float(accuracy_score(labels, preds))
-    prec = float(precision_score(labels, preds, pos_label=1, zero_division=0))
-    rec = float(recall_score(labels, preds, pos_label=1, zero_division=0))
-    f1 = float(f1_score(labels, preds, pos_label=1, zero_division=0))
-    
-    # PR-AUC
+    metrics_default = get_metrics_at_tau(threshold)
+    metrics_strict = get_metrics_at_tau(0.20)
+    metrics_standard = get_metrics_at_tau(0.03)
+
+    # PR-AUC & ROC-AUC
     precision_vals, recall_vals, _ = precision_recall_curve(labels, all_probs)
     pr_auc = float(auc(recall_vals, precision_vals))
     roc_auc = float(roc_auc_score(labels, all_probs)) if len(set(labels)) > 1 else 1.0
 
-    cm = confusion_matrix(labels, preds, labels=[0, 1])
-    tn, fp, fn, tp = cm.ravel()
-    fpr = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
-
     print(f"  Results for {dataset_name} at threshold {threshold}:")
-    print(f"    Accuracy:  {acc:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | F1: {f1:.4f} | FPR: {fpr:.4f}")
+    print(f"    Accuracy:  {metrics_default['accuracy']:.4f} | Precision: {metrics_default['precision']:.4f} | Recall: {metrics_default['recall']:.4f} | F1: {metrics_default['f1']:.4f} | FPR: {metrics_default['false_positive_rate']:.4f}")
     print(f"    PR-AUC:    {pr_auc:.4f} | ROC-AUC:   {roc_auc:.4f}")
-    print(f"    Confusion Matrix: [[TN: {tn:,}, FP: {fp:,}], [FN: {fn:,}, TP: {tp:,}]]")
+    print(f"    Confusion Matrix: {metrics_default['confusion_matrix']}")
+    print(f"  At Calibrated Strict Threshold (tau=0.20):")
+    print(f"    Accuracy:  {metrics_strict['accuracy']:.4f} | Precision: {metrics_strict['precision']:.4f} | Recall: {metrics_strict['recall']:.4f} | F1: {metrics_strict['f1']:.4f} | FPR: {metrics_strict['false_positive_rate']:.4f}")
 
     return {
         "dataset": dataset_name,
         "rows": len(labels),
         "threshold": threshold,
-        "accuracy": round(acc, 4),
-        "precision": round(prec, 4),
-        "recall": round(rec, 4),
-        "f1": round(f1, 4),
-        "false_positive_rate": round(fpr, 4),
+        "accuracy": metrics_default["accuracy"],
+        "precision": metrics_default["precision"],
+        "recall": metrics_default["recall"],
+        "f1": metrics_default["f1"],
+        "false_positive_rate": metrics_default["false_positive_rate"],
         "pr_auc": round(pr_auc, 4),
         "roc_auc": round(roc_auc, 4),
-        "confusion_matrix": [[int(tn), int(fp)], [int(fn), int(tp)]],
+        "confusion_matrix": metrics_default["confusion_matrix"],
+        "calibrated_evaluations": {
+            "strict_tau_0_20": metrics_strict,
+            "standard_tau_0_03": metrics_standard,
+        },
         "latency_profile": {
             "parsing": measure_percentile_latencies(parse_times),
             "feature_building": measure_percentile_latencies(feat_times),
@@ -198,21 +219,24 @@ def main():
         )
 
     # 3. Benchmark End-to-End Firewall Engine
+    tfidf_path = ROOT / "models/saved/tfidf_logistic_baseline.joblib"
     ml_detector = MLDetector(
+        tfidf_model_path=str(tfidf_path) if tfidf_path.exists() else None,
         transformer_model_dir=str(MODEL_DIR),
-        transformer_block_threshold=0.75,
+        fast_pass_threshold=0.05,
+        transformer_block_threshold=0.20,
     )
     firewall_engine = CentralDecisionEngine(
         ml_detector=ml_detector,
-        tau_block=0.75,
-        tau_monitor=0.40,
+        tau_block=0.20,
+        tau_monitor=0.26,
     )
 
     firewall_profile = evaluate_end_to_end_firewall(
         engine=firewall_engine,
         requests_raw=held_out_raw,
         labels=held_out_labels,
-        sample_size=1000,
+        sample_size=2000,
     )
 
     # 4. Save Final Report

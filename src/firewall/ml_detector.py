@@ -1,11 +1,17 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from pathlib import Path
+import json
 import time
 import joblib
 
 from src.pipeline.schema import ParsedRequest
 from src.pipeline.feature_builder import build_features
+
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_TFIDF_PATH = ROOT / "models/saved/tfidf_logistic_baseline.joblib"
+DEFAULT_TRANSFORMER_DIR = ROOT / "models/saved/transformer_waf"
+DEFAULT_CALIBRATED_PATH = ROOT / "models/saved/calibrated_thresholds.json"
 
 
 @dataclass
@@ -29,17 +35,46 @@ class MLDetector:
         self,
         tfidf_model_path: Optional[str] = None,
         transformer_model_dir: Optional[str] = None,
-        fast_pass_threshold: float = 0.08,    # Below this, L2 considers it definitively benign
-        transformer_block_threshold: float = 0.75,
+        fast_pass_threshold: Optional[float] = None,    # Below this, L2 considers it definitively benign
+        transformer_block_threshold: Optional[float] = None,
         device: Optional[str] = None,
+        max_length: int = 192,
+        use_fp16: bool = True,
     ):
-        self.fast_pass_threshold = fast_pass_threshold
-        self.transformer_block_threshold = transformer_block_threshold
+        # Load calibrated thresholds if available
+        calibrated_cfg = {}
+        if DEFAULT_CALIBRATED_PATH.exists():
+            try:
+                with open(DEFAULT_CALIBRATED_PATH, "r", encoding="utf-8") as f:
+                    calibrated_cfg = json.load(f)
+            except Exception:
+                pass
+
+        if fast_pass_threshold is not None:
+            self.fast_pass_threshold = fast_pass_threshold
+        else:
+            self.fast_pass_threshold = float(calibrated_cfg.get("tau_fast_pass", 0.05))
+
+        if transformer_block_threshold is not None:
+            self.transformer_block_threshold = transformer_block_threshold
+        else:
+            self.transformer_block_threshold = float(calibrated_cfg.get("tau_strict_block", 0.50))
+
         self.device = device
+        self.max_length = max_length
+        self.use_fp16 = use_fp16
+
+        # Auto-detect TFIDF path
+        if tfidf_model_path is None and DEFAULT_TFIDF_PATH.exists():
+            tfidf_model_path = str(DEFAULT_TFIDF_PATH)
 
         self.tfidf_pipeline = None
         if tfidf_model_path and Path(tfidf_model_path).exists():
             self.tfidf_pipeline = joblib.load(tfidf_model_path)
+
+        # Auto-detect Transformer dir
+        if transformer_model_dir is None and DEFAULT_TRANSFORMER_DIR.exists():
+            transformer_model_dir = str(DEFAULT_TRANSFORMER_DIR)
 
         self.transformer_model = None
         self.transformer_tokenizer = None
@@ -55,10 +90,13 @@ class MLDetector:
             if self.device is None:
                 self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            self.transformer_tokenizer = AutoTokenizer.from_pretrained(model_dir)
-            self.transformer_model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+            self.transformer_tokenizer = AutoTokenizer.from_pretrained(model_dir, local_files_only=Path(model_dir).exists())
+            self.transformer_model = AutoModelForSequenceClassification.from_pretrained(model_dir, local_files_only=Path(model_dir).exists())
             self.transformer_model.to(self.device)
             self.transformer_model.eval()
+
+            if self.use_fp16 and self.device.startswith("cuda"):
+                self.transformer_model = self.transformer_model.half()
         except Exception as e:
             print(f"[MLDetector] Warning: Could not load transformer from {model_dir}: {e}")
             self.transformer_model = None
@@ -116,7 +154,7 @@ class MLDetector:
 
         inputs = self.transformer_tokenizer(
             feat,
-            max_length=128,
+            max_length=self.max_length,
             padding=True,
             truncation=True,
             return_tensors="pt",
@@ -125,6 +163,8 @@ class MLDetector:
         with torch.inference_mode():
             outputs = self.transformer_model(**inputs)
             logits = outputs.logits
+            if self.use_fp16 and self.device.startswith("cuda"):
+                logits = logits.float()
             probs = torch.softmax(logits, dim=-1).squeeze().tolist()
             # Assumes class 1 is malicious
             risk = float(probs[1]) if isinstance(probs, list) and len(probs) > 1 else float(probs)

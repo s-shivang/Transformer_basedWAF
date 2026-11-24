@@ -72,7 +72,7 @@ class TransformerWAFClassifier:
         self,
         model_dir: str,
         device: Optional[torch.device] = None,
-        max_length: int = 128,
+        max_length: int = 192,
         use_fp16: bool = True,
     ):
         self.device = device or get_optimal_device()
