@@ -316,11 +316,15 @@ transformer-waf/
 │   │   ├── train_tfidf_layer.py    [COMPLETED: Fast-pass Layer 2 training]
 │   │   └── train_neural_baselines.py [COMPLETED: FastText + 1D-CNN Baselines]
 │   └── firewall/
+│       ├── __init__.py             [COMPLETED: Package exports policy, rules, ml_client, anomaly, decision]
+│       ├── policy.py               [COMPLETED: Tenant-Ready FirewallPolicy & ThresholdConfig Schemas]
 │       ├── rules_engine.py         [COMPLETED: Layer 1 RFC & Path Traversal Validator]
+│       ├── ml_client.py            [COMPLETED: Connection-Pooled ML API Client & In-Process Adapter]
 │       ├── ml_detector.py          [COMPLETED: Layer 2 & 3 Hierarchical ML Middleware]
 │       ├── anomaly_detector.py     [COMPLETED: Layer 4 Sliding-Window Behavioral Engine]
-│       ├── decision_engine.py      [COMPLETED: Central Multi-Tier Decision Engine]
+│       ├── decision_engine.py      [COMPLETED: Central Multi-Tier Multi-Signal Decision Engine]
 │       └── shadow_validator.py     [COMPLETED: Multi-Client Traffic Replay Harness]
 └── tests/
-    └── test_ml_inference_service.py [COMPLETED: 14/14 PyTest Suite, Parity & Latency Benchmark]
+    ├── test_ml_inference_service.py [COMPLETED: 17/17 PyTest Suite: Probes, Parity, Tamper, CPU]
+    └── test_waf_core.py             [COMPLETED: 17/17 PyTest Suite: Policy, Rules, Fusion, Degraded]
 ```
