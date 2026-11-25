@@ -1,0 +1,49 @@
+{
+  "phase": 12,
+  "title": "React + TypeScript SOC SaaS Dashboard (apps/web)",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-25T15:15:00Z",
+  "summary": {
+    "app_scaffolded": "apps/web",
+    "tech_stack": [
+      "React 18.3",
+      "TypeScript 5.7",
+      "Vite 6.0",
+      "Tailwind CSS 3.4 (darkMode: class)",
+      "TanStack React Query 5.62",
+      "React Router 6.28",
+      "Recharts 2.14",
+      "Lucide React 0.468",
+      "Vitest 2.1 + Testing Library"
+    ],
+    "key_deliverables": [
+      "Dark-first SOC UI with smooth Dark / Light mode toggle and zero-flash startup script",
+      "Typed API Client with credentials: 'include', automatic silent 401 refresh via POST /auth/refresh, and token-queueing",
+      "AuthContext with session restoration (/auth/me), multi-tenant state, and granular RBAC role helpers",
+      "Operational SOC Overview Dashboard with 4 KPI cards, Recharts stacked area chart, top attacked paths, and live incident stream",
+      "Security Events Explorer with monospace styling, 5-column action filter bar, inspect drawer with risk breakdown, and false-positive feedback submission form",
+      "Protected Sites Management with add site modal, pause/resume toggle, and deletion lifecycle",
+      "Tenant WAF Policy Management with 3-mode selector, interactive 4-band threshold bar with invariant enforcement, rule toggles, scoped regex exclusions, and 1-click version rollback",
+      "False-Positive Feedback Queue with human governance banner, status tabs, and OWNER/ADMIN approval/rejection modal",
+      "Team & RBAC Management with member listing, role tiers, and member invitation modal"
+    ]
+  },
+  "test_results": {
+    "vitest_frontend_suites": 4,
+    "vitest_frontend_passed": 18,
+    "nestjs_unit_suites": 7,
+    "nestjs_unit_passed": 62,
+    "nestjs_e2e_suites": 5,
+    "nestjs_e2e_passed": 68,
+    "python_pytest_passed": 77,
+    "python_pytest_total": 77,
+    "frontend_build": "SUCCESS (Vite bundle 746 kB minified / 207 kB gzip, 0 TypeScript errors)"
+  },
+  "invariants_preserved": [
+    "Python ML/WAF Data Plane 100% untouched and passing (77/77 PyTest)",
+    "Modular Monolith DDD architecture preserved with 0 domain imports from external frameworks",
+    "ML Safety Rule strictly preserved (Human-in-the-loop feedback queue; zero automated retraining on user action)",
+    "Local Windows laptop, $0.00 cloud spend"
+  ],
+  "cloud_spend": "$0.00"
+}
