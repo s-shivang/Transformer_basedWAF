@@ -45,6 +45,7 @@ export class PrismaTenantRepository implements ITenantRepository {
         slug: tenant.slug.value,
         tier: tenant.tier as any,
         status: tenant.status as any,
+        maxSites: tenant.maxSites,
         createdAt: tenant.createdAt,
         updatedAt: tenant.updatedAt,
       },
@@ -53,6 +54,7 @@ export class PrismaTenantRepository implements ITenantRepository {
         slug: tenant.slug.value,
         tier: tenant.tier as any,
         status: tenant.status as any,
+        maxSites: tenant.maxSites,
         updatedAt: tenant.updatedAt,
       },
     });
@@ -79,6 +81,7 @@ export class PrismaTenantRepository implements ITenantRepository {
         slug: TenantSlug.create(record.slug).getValue(),
         tier: record.tier as TenantTier,
         status: record.status as TenantStatus,
+        maxSites: record.maxSites ?? 5,
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       },

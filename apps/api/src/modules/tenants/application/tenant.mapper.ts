@@ -9,6 +9,7 @@ export class TenantMapper {
       slug: tenant.slug.value,
       tier: tenant.tier,
       status: tenant.status,
+      maxSites: tenant.maxSites,
       createdAt: tenant.createdAt.toISOString(),
       updatedAt: tenant.updatedAt.toISOString(),
     };

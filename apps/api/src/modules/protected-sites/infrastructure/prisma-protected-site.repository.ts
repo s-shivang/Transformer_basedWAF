@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/infrastructure/prisma.service';
-import { ProtectedSite, SiteStatus } from '../domain/protected-site.entity';
+import { ProtectedSite, SiteStatus, OnboardingStatus } from '../domain/protected-site.entity';
 import { SiteDomain } from '../domain/site-domain.vo';
 import { OriginUrl } from '../domain/origin-url.vo';
 import { IProtectedSiteRepository } from '../domain/protected-site.repository.interface';
@@ -19,7 +19,15 @@ export class PrismaProtectedSiteRepository implements IProtectedSiteRepository {
 
   async findByDomain(tenantId: string, domain: SiteDomain): Promise<ProtectedSite | null> {
     const record = await this.prisma.protectedSite.findUnique({
-      where: { tenantId_domain: { tenantId, domain: domain.value } },
+      where: { domain: domain.value },
+    });
+    if (!record || record.tenantId !== tenantId) return null;
+    return this.toDomain(record);
+  }
+
+  async findGlobalByDomain(domain: SiteDomain): Promise<ProtectedSite | null> {
+    const record = await this.prisma.protectedSite.findUnique({
+      where: { domain: domain.value },
     });
     if (!record) return null;
     return this.toDomain(record);
@@ -33,6 +41,12 @@ export class PrismaProtectedSiteRepository implements IProtectedSiteRepository {
     return records.map((r) => this.toDomain(r));
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    return this.prisma.protectedSite.count({
+      where: { tenantId },
+    });
+  }
+
   async save(site: ProtectedSite): Promise<void> {
     await this.prisma.protectedSite.upsert({
       where: { id: site.id },
@@ -43,6 +57,11 @@ export class PrismaProtectedSiteRepository implements IProtectedSiteRepository {
         domain: site.domain.value,
         upstreamUrl: site.originUrl.value,
         status: site.status as any,
+        onboardingStatus: site.onboardingStatus as any,
+        verificationToken: site.verificationToken,
+        verifiedAt: site.verifiedAt,
+        configVersion: site.configVersion,
+        lastOnboardingError: site.lastOnboardingError,
         createdAt: site.createdAt,
         updatedAt: site.updatedAt,
       },
@@ -50,6 +69,11 @@ export class PrismaProtectedSiteRepository implements IProtectedSiteRepository {
         name: site.name,
         upstreamUrl: site.originUrl.value,
         status: site.status as any,
+        onboardingStatus: site.onboardingStatus as any,
+        verificationToken: site.verificationToken,
+        verifiedAt: site.verifiedAt,
+        configVersion: site.configVersion,
+        lastOnboardingError: site.lastOnboardingError,
         updatedAt: site.updatedAt,
       },
     });
@@ -75,6 +99,11 @@ export class PrismaProtectedSiteRepository implements IProtectedSiteRepository {
       domain: SiteDomain.create(record.domain).getValue(),
       originUrl: OriginUrl.create(record.upstreamUrl).getValue(),
       status: record.status as SiteStatus,
+      onboardingStatus: (record.onboardingStatus as OnboardingStatus) ?? OnboardingStatus.ACTIVE,
+      verificationToken: record.verificationToken ?? null,
+      verifiedAt: record.verifiedAt ?? null,
+      configVersion: record.configVersion ?? 1,
+      lastOnboardingError: record.lastOnboardingError ?? null,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });

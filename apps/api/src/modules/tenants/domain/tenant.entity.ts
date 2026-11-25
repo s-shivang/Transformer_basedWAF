@@ -20,6 +20,7 @@ export interface TenantProps {
   slug: TenantSlug;
   tier: TenantTier;
   status: TenantStatus;
+  maxSites: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +49,10 @@ export class Tenant extends Entity<TenantId> {
     return this._props.status;
   }
 
+  get maxSites(): number {
+    return this._props.maxSites;
+  }
+
   get createdAt(): Date {
     return this._props.createdAt;
   }
@@ -70,6 +75,15 @@ export class Tenant extends Entity<TenantId> {
 
   public upgradeTier(newTier: TenantTier): Result<void> {
     this._props.tier = newTier;
+    this._props.updatedAt = new Date();
+    return Result.ok<void>();
+  }
+
+  public updateSiteQuota(newLimit: number): Result<void> {
+    if (typeof newLimit !== 'number' || isNaN(newLimit) || newLimit < 1 || newLimit > 100) {
+      return Result.fail<void>('Site quota must be an integer between 1 and 100');
+    }
+    this._props.maxSites = Math.floor(newLimit);
     this._props.updatedAt = new Date();
     return Result.ok<void>();
   }
@@ -104,6 +118,7 @@ export class Tenant extends Entity<TenantId> {
       slug: TenantSlug;
       tier?: TenantTier;
       status?: TenantStatus;
+      maxSites?: number;
     },
     id?: TenantId,
   ): Result<Tenant> {
@@ -117,6 +132,11 @@ export class Tenant extends Entity<TenantId> {
       return Result.fail<Tenant>('Tenant slug is required');
     }
 
+    const maxSites = props.maxSites ?? 5;
+    if (maxSites < 1 || maxSites > 100) {
+      return Result.fail<Tenant>('Site quota must be between 1 and 100');
+    }
+
     const tenantId = id ?? TenantId.create(crypto.randomUUID()).getValue();
     const now = new Date();
 
@@ -125,6 +145,7 @@ export class Tenant extends Entity<TenantId> {
       slug: props.slug,
       tier: props.tier ?? TenantTier.FREE,
       status: props.status ?? TenantStatus.ACTIVE,
+      maxSites,
       createdAt: now,
       updatedAt: now,
     });
@@ -133,6 +154,9 @@ export class Tenant extends Entity<TenantId> {
   }
 
   public static reconstitute(id: TenantId, props: TenantProps): Tenant {
-    return new Tenant(id, props);
+    return new Tenant(id, {
+      ...props,
+      maxSites: props.maxSites ?? 5,
+    });
   }
 }

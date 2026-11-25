@@ -1,6 +1,6 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SiteStatus } from '../../domain/protected-site.entity';
+import { SiteStatus, OnboardingStatus } from '../../domain/protected-site.entity';
 
 export class CreateProtectedSiteDto {
   @ApiProperty({ example: 'Main Production API' })
@@ -19,6 +19,30 @@ export class CreateProtectedSiteDto {
   originUrl: string;
 }
 
+export class StartSiteOnboardingDto {
+  @ApiProperty({ example: 'Checkout Gateway' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ example: 'checkout.acme.com' })
+  @IsString()
+  @IsNotEmpty()
+  domain: string;
+
+  @ApiProperty({ example: 'https://checkout-service.internal:8443' })
+  @IsString()
+  @IsNotEmpty()
+  originUrl: string;
+}
+
+export class RetryOnboardingDto {
+  @ApiPropertyOptional({ enum: OnboardingStatus, default: OnboardingStatus.PENDING_VERIFICATION })
+  @IsOptional()
+  @IsEnum(OnboardingStatus)
+  targetStatus?: OnboardingStatus;
+}
+
 export class UpdateProtectedSiteDto {
   @ApiPropertyOptional({ example: 'Renamed API' })
   @IsOptional()
@@ -34,4 +58,26 @@ export class UpdateProtectedSiteDto {
   @IsOptional()
   @IsEnum(SiteStatus)
   status?: SiteStatus;
+}
+
+export interface OnboardingInstructionsResponseDto {
+  siteId: string;
+  name: string;
+  domain: string;
+  originUrl: string;
+  onboardingStatus: OnboardingStatus;
+  verificationToken: string | null;
+  configVersion: number;
+  txtRecord: {
+    host: string;
+    value: string | null;
+    ttl: number;
+  };
+  trafficRecord: {
+    type: 'CNAME';
+    host: string;
+    target: string;
+  };
+  lastError: string | null;
+  verifiedAt: string | null;
 }
