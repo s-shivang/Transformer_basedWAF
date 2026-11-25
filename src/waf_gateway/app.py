@@ -177,7 +177,10 @@ class WAFGatewayApp:
 
 
 # Global Gateway Instance
-gateway = WAFGatewayApp()
+gateway = WAFGatewayApp(
+    upstream_url=os.getenv("WAF_UPSTREAM_URL", "http://127.0.0.1:8002"),
+    ml_service_url=os.getenv("WAF_ML_SERVICE_URL", "http://127.0.0.1:8000"),
+)
 
 
 def set_gateway(new_gateway: WAFGatewayApp) -> None:

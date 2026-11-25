@@ -102,7 +102,7 @@ services:
       dockerfile: docker/Dockerfile.python
     container_name: waf-ml-service
     restart: unless-stopped
-    command: ["python", "-m", "uvicorn", "src.inference_service.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["python", "-m", "uvicorn", "src.ml_service.app:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       WAF_MODEL_DIR: "/app/models/frozen/v1_0"
       WAF_BATCH_SIZE: "32"
@@ -123,7 +123,7 @@ services:
       dockerfile: docker/Dockerfile.python
     container_name: waf-protected-app
     restart: unless-stopped
-    command: ["python", "src/protected_app/app.py", "--host", "0.0.0.0", "--port", "8002"]
+    command: ["python", "-m", "uvicorn", "src.protected_app.app:app", "--host", "0.0.0.0", "--port", "8002"]
     ports:
       - "8002:8002"
     healthcheck:
@@ -159,7 +159,7 @@ services:
       protected-app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8001/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8001/_waf/health || exit 1"]
       interval: 4s
       timeout: 3s
       retries: 5
@@ -179,7 +179,7 @@ services:
       waf-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/ || exit 1"]
       interval: 4s
       timeout: 3s
       retries: 5
