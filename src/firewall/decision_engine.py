@@ -364,8 +364,12 @@ class CentralDecisionEngine:
                     target_action = "CHALLENGE"
                     target_reason = "ML_CHALLENGE_BAND"
             elif self.policy.thresholds.monitor <= ml_score < self.policy.thresholds.challenge:
-                target_action = "MONITOR"
-                target_reason = "ML_MONITOR_ALERT"
+                if is_anomaly_active:
+                    target_action = "CHALLENGE"
+                    target_reason = "BEHAVIORAL_ANOMALY_ESCALATION"
+                else:
+                    target_action = "MONITOR"
+                    target_reason = "ML_MONITOR_ALERT"
             else:
                 if is_anomaly_active:
                     target_action = "CHALLENGE"

@@ -486,6 +486,13 @@ async def reverse_proxy_handler(request: Request, full_path: str):
     # C. ALLOW or MONITOR -> Forward upstream
     forward_headers = {
         k: v for k, v in request.headers.items()
+        if k.lower() not in HOP_BY_HOP_HEADERS and k.lower() != "cookie"
+    }
+    # Pass along cookies except internal waf_clearance if desired, or pass all
+    if "cookie" in request.headers:
+        forward_headers["cookie"] = request.headers["cookie"]
+    forward_headers = {
+        k: v for k, v in request.headers.items()
         if k.lower() not in HOP_BY_HOP_HEADERS
     }
 

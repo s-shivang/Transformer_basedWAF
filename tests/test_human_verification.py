@@ -100,7 +100,7 @@ def test_browser_in_gray_zone_receives_html_challenge(challenge_gateway):
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                     "X-Forwarded-For": client_ip,
                 }
-                resp = await client.get("/search?q=test", headers=headers)
+                resp = await client.get("/api/items/1", headers=headers)
 
                 assert resp.status_code == 403
                 assert "text/html" in resp.headers["content-type"]
