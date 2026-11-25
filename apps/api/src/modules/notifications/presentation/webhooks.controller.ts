@@ -44,7 +44,11 @@ export class WebhooksController {
       throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
     }
 
-    return this.createWebhookUseCase.execute(tenantId, dto);
+    try {
+      return await this.createWebhookUseCase.execute(tenantId, dto);
+    } catch (err: any) {
+      throw new HttpException(err.message || 'Failed to create webhook', HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Get()

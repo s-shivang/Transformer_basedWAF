@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from '@shared/infrastructure/prisma.service';
+import { IdentityModule } from '../identity/identity.module';
 import { NOTIFICATION_REPOSITORY } from './domain/repositories/notification.repository.interface';
 import { WEBHOOK_ENDPOINT_REPOSITORY } from './domain/repositories/webhook-endpoint.repository.interface';
 import { PrismaNotificationRepository } from './infrastructure/repositories/notification.repository';
@@ -28,6 +29,7 @@ import { NotificationsController } from './presentation/notifications.controller
 import { WebhooksController } from './presentation/webhooks.controller';
 
 @Module({
+  imports: [IdentityModule],
   controllers: [NotificationsController, WebhooksController],
   providers: [
     PrismaService,
