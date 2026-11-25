@@ -254,14 +254,23 @@ def test_runtime_policy_inspection_and_update(custom_gateway):
                 assert policy_res.status_code == 200
                 assert policy_res.json()["inspection_mode"] == "monitor"
 
-                # 3. Switch mode to 'blocking'
+                # 3. Switch mode to 'blocking' (with X-WAF-Admin-Key)
                 update_res = await client.post(
                     "/_waf/policy",
-                    json={"inspection_mode": "blocking"}
+                    json={"inspection_mode": "blocking"},
+                    headers={"X-WAF-Admin-Key": "waf-admin-secret-key-local"}
                 )
                 assert update_res.status_code == 200
                 assert update_res.json()["policy"]["inspection_mode"] == "blocking"
                 assert custom_gateway.policy.inspection_mode == "blocking"
+
+                # Verify bad admin key rejected
+                bad_auth_res = await client.post(
+                    "/_waf/policy",
+                    json={"inspection_mode": "monitor"},
+                    headers={"X-WAF-Admin-Key": "wrong-key"}
+                )
+                assert bad_auth_res.status_code == 401
 
                 # 4. Verify immediate enforcement of blocking mode
                 attack_res = await client.get("/search?q=1%20UNION%20SELECT%201--")
@@ -274,8 +283,64 @@ def test_runtime_policy_inspection_and_update(custom_gateway):
 
 
 # ============================================================================
-# 6. Data Plane Latency Benchmark (50 Requests)
+# 7. Live Proxy ML-Outage Resilience Tests (Step 0 Hardening)
 # ============================================================================
+
+def test_live_proxy_ml_outage_resilience(tmp_path):
+    """
+    Simulates an unreachable ML Inference Service in the live WAF Gateway:
+    1. fail_closed mode returns 403 Forbidden in blocking mode.
+    2. fail_open mode forwards benign traffic with X-WAF-Degraded: true.
+    3. Layer 1 rules still strictly block path traversal even when ML is down.
+    """
+    async def _run():
+        log_file = tmp_path / "test_outage_events.jsonl"
+        # Configure a gateway pointing to a dead port for ML service (no in-process ML)
+        outage_gw = WAFGatewayApp(
+            upstream_url="http://127.0.0.1:8002",
+            ml_service_url="http://127.0.0.1:65534",  # Unreachable port
+            policy=FirewallPolicy(
+                inspection_mode="blocking",
+                ml_enabled=True,
+                ml_failure_mode="fail_closed",
+            ),
+            security_log_path=log_file,
+            in_process_ml_engine=None,
+            in_process_upstream_app=protected_app,
+        )
+
+        await outage_gw.initialize()
+        try:
+            import src.waf_gateway.app as gw_mod
+            gw_mod.set_gateway(outage_gw)
+
+            transport = httpx.ASGITransport(app=gw_mod.app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://waf-gateway") as client:
+                # 1. In fail_closed + blocking mode, ML outage blocks traffic
+                resp_fail_closed = await client.get("/api/items/1")
+                assert resp_fail_closed.status_code == 403
+                assert resp_fail_closed.headers["X-WAF-Action"] == "BLOCK"
+                assert "ML_UNAVAILABLE" in resp_fail_closed.headers.get("X-WAF-Reason", "") or "FAIL_CLOSED" in resp_fail_closed.headers.get("X-WAF-Reason", "")
+
+                # 2. Switch to fail_open mode
+                outage_gw.policy.ml_failure_mode = "fail_open"
+
+                # Benign traffic should now be forwarded in degraded mode
+                resp_fail_open = await client.get("/api/items/1")
+                assert resp_fail_open.status_code == 200
+                assert resp_fail_open.json()["item_id"] == 1
+                assert resp_fail_open.headers["X-WAF-Action"] in ("ALLOW", "MONITOR")
+                assert resp_fail_open.headers.get("X-WAF-Degraded") == "true"
+
+                # 3. Layer 1 deterministic rules MUST STILL BLOCK even in ML outage
+                resp_traversal = await client.get("/files?name=../../etc/passwd")
+                assert resp_traversal.status_code == 403
+                assert resp_traversal.headers["X-WAF-Action"] == "BLOCK"
+                assert "LAYER1_RULE" in resp_traversal.headers.get("X-WAF-Reason", "")
+        finally:
+            await outage_gw.shutdown()
+
+    asyncio.run(_run())
 
 def test_data_plane_latency_benchmark(custom_gateway):
     """

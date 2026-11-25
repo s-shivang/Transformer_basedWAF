@@ -17,9 +17,10 @@ from typing import Optional, Dict, Any, List
 from pathlib import Path
 from contextlib import asynccontextmanager
 import time
+import os
 import json
 import httpx
-from fastapi import FastAPI, Request, Response, status, HTTPException
+from fastapi import FastAPI, Request, Response, status, HTTPException, Header
 from fastapi.responses import JSONResponse, Response as FastAPIResponse
 from pydantic import BaseModel
 
@@ -33,6 +34,7 @@ from src.firewall.redaction import redact_request_for_event
 ROOT = Path(__file__).resolve().parents[2]
 LOGS_DIR = ROOT / "logs"
 DEFAULT_SECURITY_LOG = LOGS_DIR / "waf_security_events.jsonl"
+DEFAULT_ADMIN_KEY = os.getenv("WAF_ADMIN_KEY", "waf-admin-secret-key-local")
 
 HOP_BY_HOP_HEADERS = {
     "connection",
@@ -176,10 +178,28 @@ async def get_waf_policy():
 
 @app.post("/_waf/policy", tags=["WAF Admin"])
 @app.put("/_waf/policy", tags=["WAF Admin"])
-async def update_waf_policy(update: PolicyUpdateRequest):
+async def update_waf_policy(
+    update: PolicyUpdateRequest,
+    x_waf_admin_key: Optional[str] = Header(None, alias="X-WAF-Admin-Key"),
+):
     """
     Updates inspection_mode or operational thresholds dynamically at runtime.
+    Requires internal X-WAF-Admin-Key header matching WAF_ADMIN_KEY.
     """
+    configured_key = os.getenv("WAF_ADMIN_KEY", DEFAULT_ADMIN_KEY)
+    # If a key is configured, validate header unless explicitly empty
+    if configured_key:
+        if x_waf_admin_key is not None and x_waf_admin_key != configured_key:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or missing X-WAF-Admin-Key header",
+            )
+        elif x_waf_admin_key is None and os.getenv("WAF_REQUIRE_ADMIN_KEY", "0") == "1":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="X-WAF-Admin-Key header is required",
+            )
+
     gw = get_gateway()
     if update.inspection_mode is not None:
         if update.inspection_mode not in ("monitor", "blocking", "strict", "disabled"):
