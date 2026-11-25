@@ -1,0 +1,50 @@
+{
+  "phase": "17B",
+  "name": "Atomic Config Distribution & Python Gateway Host Registry",
+  "timestamp": "2026-11-25T22:32:00+05:30",
+  "status": "COMPLETED",
+  "verification": {
+    "python_tests": {
+      "host_registry_and_sync": "11/11 passed",
+      "total_pytest_suite": "96 passed"
+    },
+    "nestjs_tests": {
+      "unit_tests": "87/87 passed",
+      "onboarding_e2e_tests": "18/18 passed",
+      "architecture_invariants": "2/2 passed"
+    },
+    "react_tests": {
+      "vitest": "22/22 passed"
+    },
+    "production_builds": {
+      "apps_api": "SUCCESS (nest build)",
+      "apps_web": "SUCCESS (tsc -b && vite build)"
+    }
+  },
+  "deliverables": {
+    "data_plane": {
+      "host_registry": "src/waf_gateway/host_registry.py",
+      "fastapi_endpoints": [
+        "POST /_waf/sites/sync",
+        "DELETE /_waf/sites/{domain}",
+        "GET /_waf/sites"
+      ],
+      "admin_auth": "X-WAF-Admin-Key header enforcement with 401/403"
+    },
+    "control_plane": {
+      "prisma_schema": "Added gatewayAckVersion and lastSyncedAt to ProtectedSite",
+      "sync_client_port": "apps/api/src/modules/protected-sites/domain/site-config-sync.interface.ts",
+      "http_adapter": "apps/api/src/modules/protected-sites/infrastructure/gateway/http-site-config-sync.client.ts",
+      "in_memory_adapter": "apps/api/src/modules/protected-sites/infrastructure/gateway/in-memory-site-config-sync.client.ts",
+      "use_case": "ConfigureSiteOnGatewayUseCase",
+      "endpoint": "POST /api/v1/sites/:siteId/onboarding/configure"
+    }
+  },
+  "invariants_enforced": [
+    "Atomic updates with Last-Known-Good preservation on validation failure",
+    "SSRF blocked: Link-local, metadata, and invalid loopback IPs rejected",
+    "Stale downgrades rejected unless force_rollback=true",
+    "Zero ORM/framework imports in DDD domain layer",
+    "Single-upstream proxying 100% backward-compatible"
+  ]
+}

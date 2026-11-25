@@ -428,8 +428,11 @@ async def sync_site_config(
     Validates payload and preserves last-known-good state on error.
     """
     try:
+        data = payload.model_dump()
+        if data.get("policy") is None:
+            data.pop("policy", None)
         route_config = host_registry.upsert_site(
-            payload.model_dump(),
+            data,
             force_rollback=payload.force_rollback,
         )
         return {
