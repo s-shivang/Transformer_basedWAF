@@ -206,7 +206,7 @@ export const Overview: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 font-sans select-none">
       {/* 1. Hero Command Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             <span className="text-[#0A0A0A] dark:text-white">Threat </span>
@@ -218,7 +218,7 @@ export const Overview: React.FC = () => {
         </div>
 
         {/* Action Controls & Filters */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Date Range / Window Picker Pill */}
           <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] text-sm">
             <Calendar className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA]" />
