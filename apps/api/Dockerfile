@@ -43,4 +43,4 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 3000
 
 # Entrypoint script: Push Prisma schema to Postgres on boot, then start NestJS
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/main.js"]

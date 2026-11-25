@@ -59,6 +59,7 @@ services:
       INTERNAL_GATEWAY_SECRET: ${WAF_INGEST_KEY:-waf-internal-ingest-secret-dev}
       CORS_ORIGIN: "http://localhost:5173"
       WAF_LOCAL_DEV_DNS: "true"
+      WAF_GATEWAY_URL: "http://waf-gateway:8001"
       WAF_GATEWAY_SYNC_URL: "http://waf-gateway:8001"
       WAF_GATEWAY_ADMIN_URL: "http://waf-gateway:8001"
       WAF_ALLOW_PRIVATE_ORIGINS: "true"

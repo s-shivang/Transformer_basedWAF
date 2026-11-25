@@ -77,7 +77,7 @@ import { PrismaService } from '@shared/infrastructure/prisma.service';
     {
       provide: SITE_CONFIG_SYNC_CLIENT,
       useClass:
-        process.env.NODE_ENV === 'test' || process.env.WAF_LOCAL_DEV_DNS === 'true'
+        process.env.NODE_ENV === 'test' && process.env.WAF_USE_HTTP_SYNC !== 'true'
           ? InMemorySiteConfigSyncClient
           : HttpSiteConfigSyncClient,
     },
@@ -88,7 +88,7 @@ import { PrismaService } from '@shared/infrastructure/prisma.service';
     {
       provide: ORIGIN_HEALTH_CHECKER,
       useClass:
-        process.env.NODE_ENV === 'test' || process.env.WAF_LOCAL_DEV_DNS === 'true'
+        process.env.NODE_ENV === 'test' && process.env.WAF_USE_HTTP_HEALTH !== 'true'
           ? InMemoryOriginHealthChecker
           : HttpOriginHealthChecker,
     },

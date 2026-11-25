@@ -677,6 +677,8 @@ export class ActivateSiteUseCase {
   constructor(
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
     @Inject(ORIGIN_HEALTH_CHECKER) private readonly originHealthChecker: IOriginHealthChecker,
+    @Inject(SITE_CONFIG_SYNC_CLIENT) private readonly syncClient: ISiteConfigSyncClient,
+    @Inject(WAF_POLICY_REPOSITORY) private readonly policyRepo: IWafPolicyRepository,
     @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
   ) {}
 
@@ -705,6 +707,40 @@ export class ActivateSiteUseCase {
       if (actRes.isFailure) {
         return Result.fail(actRes.getError());
       }
+
+      // Sync active route config with enabled: true to WAF Gateway
+      try {
+        const policy = await this.policyRepo.findActiveBySite(tenantId, site.id);
+        const policyPayload = policy
+          ? {
+              mode: policy.mode.toLowerCase(),
+              block_threshold: policy.thresholds.blockThreshold,
+              challenge_threshold: policy.thresholds.challengeThreshold,
+              monitor_threshold: policy.thresholds.monitorThreshold,
+              ml_enabled: policy.mlEnabled,
+              rules_enabled: policy.rulesEnabled,
+              challenge_enabled: policy.challengeEnabled,
+              exclusions: (policy.exclusions as any[]) || [],
+            }
+          : undefined;
+
+        const syncRes = await this.syncClient.syncSiteConfig({
+          site_id: site.id,
+          tenant_id: site.tenantId,
+          domain: site.domain.value,
+          origin_url: site.originUrl.value,
+          enabled: true,
+          config_version: site.configVersion,
+          policy: policyPayload,
+        });
+
+        if (syncRes.acknowledged) {
+          site.acknowledgeGatewaySync(syncRes.config_version);
+        }
+      } catch {
+        // Non-blocking sync attempt
+      }
+
       await this.siteRepo.save(site);
 
       const audit = AuditLog.create({

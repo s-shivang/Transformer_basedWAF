@@ -12,7 +12,12 @@ export class HttpSiteConfigSyncClient implements ISiteConfigSyncClient {
   private readonly adminKey: string;
 
   constructor() {
-    this.gatewayUrl = (process.env.WAF_GATEWAY_URL || 'http://127.0.0.1:8001').replace(/\/+$/, '');
+    this.gatewayUrl = (
+      process.env.WAF_GATEWAY_URL ||
+      process.env.WAF_GATEWAY_ADMIN_URL ||
+      process.env.WAF_GATEWAY_SYNC_URL ||
+      'http://127.0.0.1:8001'
+    ).replace(/\/+$/, '');
     this.adminKey = process.env.WAF_ADMIN_KEY || 'waf-admin-secret-key-local';
   }
 
