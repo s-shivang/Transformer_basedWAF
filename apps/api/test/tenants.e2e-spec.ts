@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from '../src/app.module';
 import { TENANT_REPOSITORY } from '../src/modules/tenants/domain/tenant.repository.interface';
 import { InMemoryTenantRepository } from '../src/modules/tenants/infrastructure/in-memory-tenant.repository';
+import { TOKEN_SERVICE, ITokenService } from '../src/modules/identity/infrastructure/token.service';
 
 describe('Tenants API (E2E Integration)', () => {
   let app: INestApplication;
   let inMemoryRepo: InMemoryTenantRepository;
+  let tokenService: ITokenService;
+  let validToken: string;
 
   beforeAll(async () => {
     inMemoryRepo = new InMemoryTenantRepository();
@@ -21,6 +25,7 @@ describe('Tenants API (E2E Integration)', () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -29,6 +34,8 @@ describe('Tenants API (E2E Integration)', () => {
       }),
     );
     await app.init();
+
+    tokenService = app.get(TOKEN_SERVICE);
   });
 
   afterAll(async () => {
@@ -76,33 +83,45 @@ describe('Tenants API (E2E Integration)', () => {
       .expect(400);
   });
 
-  it('GET /api/v1/tenants should list all created tenants', async () => {
-    await request(app.getHttpServer())
+  it('GET /api/v1/tenants should return caller active tenant when authenticated', async () => {
+    const createRes = await request(app.getHttpServer())
       .post('/api/v1/tenants')
       .send({ name: 'Org One', slug: 'org-one' })
       .expect(201);
 
-    await request(app.getHttpServer())
-      .post('/api/v1/tenants')
-      .send({ name: 'Org Two', slug: 'org-two' })
-      .expect(201);
+    const callerToken = tokenService.generateAccessToken({
+      sub: 'caller-user-id',
+      tenantId: createRes.body.id,
+      role: 'OWNER',
+      email: 'owner@orgone.com',
+    });
 
     const res = await request(app.getHttpServer())
       .get('/api/v1/tenants')
+      .set('Authorization', `Bearer ${callerToken}`)
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(2);
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].id).toBe(createRes.body.id);
   });
 
-  it('GET /api/v1/tenants/slug/:slug should retrieve tenant by slug', async () => {
-    await request(app.getHttpServer())
+  it('GET /api/v1/tenants/slug/:slug should retrieve tenant by slug for authenticated member', async () => {
+    const createRes = await request(app.getHttpServer())
       .post('/api/v1/tenants')
       .send({ name: 'Lookup Tenant', slug: 'lookup-tenant' })
       .expect(201);
 
+    const callerToken = tokenService.generateAccessToken({
+      sub: 'caller-user-id',
+      tenantId: createRes.body.id,
+      role: 'ADMIN',
+      email: 'admin@lookuptenant.com',
+    });
+
     const res = await request(app.getHttpServer())
       .get('/api/v1/tenants/slug/lookup-tenant')
+      .set('Authorization', `Bearer ${callerToken}`)
       .expect(200);
 
     expect(res.body.slug).toBe('lookup-tenant');
@@ -110,8 +129,16 @@ describe('Tenants API (E2E Integration)', () => {
   });
 
   it('GET /api/v1/tenants/slug/non-existent should return 404', () => {
+    const callerToken = tokenService.generateAccessToken({
+      sub: 'caller-user-id',
+      tenantId: 'some-tenant-id',
+      role: 'VIEWER',
+      email: 'viewer@example.com',
+    });
+
     return request(app.getHttpServer())
       .get('/api/v1/tenants/slug/non-existent')
+      .set('Authorization', `Bearer ${callerToken}`)
       .expect(404);
   });
 });

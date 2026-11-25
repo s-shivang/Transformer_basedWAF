@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthController, TenantMembersController } from './presentation/auth.controller';
 import { RegisterUseCase } from './application/register.use-case';
 import { LoginUseCase } from './application/login.use-case';
@@ -26,7 +26,7 @@ import { TenantsModule } from '../tenants/tenants.module';
 import { PrismaService } from '@shared/infrastructure/prisma.service';
 
 @Module({
-  imports: [TenantsModule],
+  imports: [forwardRef(() => TenantsModule)],
   controllers: [AuthController, TenantMembersController],
   providers: [
     RegisterUseCase,

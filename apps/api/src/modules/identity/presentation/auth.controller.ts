@@ -6,6 +6,7 @@ import {
   Req,
   Res,
   HttpStatus,
+  HttpCode,
   HttpException,
   UseGuards,
   UnauthorizedException,
@@ -75,6 +76,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Authentication successful' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
@@ -102,6 +104,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Rotate refresh token and get new access token' })
   @ApiResponse({ status: 200, description: 'Tokens successfully refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid or revoked refresh token' })
