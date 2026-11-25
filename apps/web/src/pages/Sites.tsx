@@ -85,7 +85,7 @@ export const Sites: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 text-white font-medium text-xs transition-all shadow-[0_0_15px_rgba(255,102,0,0.3)]"
           >
             <Plus className="w-4 h-4" />
             <span>Add Protected Site</span>
@@ -94,11 +94,11 @@ export const Sites: React.FC = () => {
       </div>
 
       {/* Sites Table */}
-      <div className="rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] overflow-hidden shadow-xs">
+      <div className="rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 text-slate-500 dark:text-slate-400 font-medium">
+              <tr className="border-b border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB]/50 dark:bg-[#111111]/50 text-[#71717A] dark:text-[#A1A1AA] font-medium">
                 <th className="py-3 px-4">Site Name</th>
                 <th className="py-3 px-4 font-mono">Domain FQDN</th>
                 <th className="py-3 px-4 font-mono">Upstream Origin URL</th>
@@ -106,17 +106,17 @@ export const Sites: React.FC = () => {
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1F2937]">
+            <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#222222]">
               {sites.length > 0 ? (
                 sites.map((s: any) => (
-                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                  <tr key={s.id} className="hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors">
+                    <td className="py-3 px-4 font-semibold text-[#0A0A0A] dark:text-white">
                       {s.name}
                     </td>
-                    <td className="py-3 px-4 font-mono text-blue-600 dark:text-blue-400 font-medium">
+                    <td className="py-3 px-4 font-mono text-[#FF6600] dark:text-[#FF8800] font-medium">
                       {s.domain}
                     </td>
-                    <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-400">
+                    <td className="py-3 px-4 font-mono text-[#71717A] dark:text-[#A1A1AA]">
                       {s.originUrl}
                     </td>
                     <td className="py-3 px-3">
@@ -194,21 +194,21 @@ export const Sites: React.FC = () => {
 
       {/* Add Protected Site Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-[#1F2937] p-6 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#1F2937] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-[#0A0A0A] rounded-2xl border border-[#E5E7EB] dark:border-[#222222] p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB] dark:border-[#222222] mb-4">
               <h2 className="text-sm font-bold tracking-tight">Register Protected Site</h2>
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-[#71717A] hover:text-[#0A0A0A] dark:text-[#A1A1AA] dark:hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {modalError && (
-              <div className="mb-4 p-2.5 rounded-lg bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 text-xs text-red-700 dark:text-red-400 flex items-center gap-2">
+              <div className="mb-4 p-2.5 rounded-xl bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 text-xs text-red-700 dark:text-red-400 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{modalError}</span>
               </div>
@@ -216,7 +216,7 @@ export const Sites: React.FC = () => {
 
             <form onSubmit={handleCreate} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   Site Name
                 </label>
                 <input
@@ -225,12 +225,12 @@ export const Sites: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Production API"
-                  className="w-full px-3 py-2 text-xs rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   Domain FQDN (Hostname)
                 </label>
                 <input
@@ -239,12 +239,12 @@ export const Sites: React.FC = () => {
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
                   placeholder="api.example.com (no scheme, path, or port)"
-                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   Upstream Origin URL
                 </label>
                 <input
@@ -253,9 +253,9 @@ export const Sites: React.FC = () => {
                   value={originUrl}
                   onChange={(e) => setOriginUrl(e.target.value)}
                   placeholder="https://backend-lb.internal.net:8443"
-                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                 />
-                <span className="text-[10px] text-slate-400 block mt-1">
+                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mt-1">
                   SSRF protected: Link-local metadata IPs (e.g. 169.254.169.254) are forbidden.
                 </span>
               </div>
@@ -264,14 +264,14 @@ export const Sites: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-[#1F2937] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-3 py-2 text-xs rounded-xl border border-[#E5E7EB] dark:border-[#222222] text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createSiteMutation.isPending}
-                  className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-xs rounded-xl bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 text-white font-medium shadow-[0_0_15px_rgba(255,102,0,0.3)] transition-all disabled:opacity-50"
                 >
                   {createSiteMutation.isPending ? 'Provisioning...' : 'Provision v1 Policy'}
                 </button>
