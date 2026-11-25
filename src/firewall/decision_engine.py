@@ -123,10 +123,13 @@ class CentralDecisionEngine:
         req: Union[ParsedRequest, str],
         client_id: str = "unknown_client",
         event_time: Optional[float] = None,
+        policy: Optional[FirewallPolicy] = None,
     ) -> WAFDecision:
         """
         Executes multi-layer inspection according to policy.
+        Allows per-request policy override for multi-tenant dynamic host routing.
         """
+        eff_policy = policy or self.policy
         t_start = time.perf_counter()
         req_id = f"req_{uuid.uuid4().hex[:12]}"
 
@@ -143,12 +146,12 @@ class CentralDecisionEngine:
         # ==========================================================
         # 1. Inspection Disabled Check
         # ==========================================================
-        if self.policy.inspection_mode == "disabled":
+        if eff_policy.inspection_mode == "disabled":
             latency = (time.perf_counter() - t_start) * 1000.0
             return WAFDecision(
                 request_id=req_id,
-                tenant_id=self.policy.tenant_id,
-                site_id=self.policy.site_id,
+                tenant_id=eff_policy.tenant_id,
+                site_id=eff_policy.site_id,
                 action="ALLOW",
                 would_action="ALLOW",
                 reason="INSPECTION_DISABLED",
@@ -156,8 +159,8 @@ class CentralDecisionEngine:
                 stage_used="none",
                 degraded_mode=False,
                 model_version="none",
-                policy_version=self.policy.policy_version,
-                inspection_mode=self.policy.inspection_mode,
+                policy_version=eff_policy.policy_version,
+                inspection_mode=eff_policy.inspection_mode,
                 latency_ms=round(latency, 3),
             )
 
@@ -165,43 +168,43 @@ class CentralDecisionEngine:
         # 2. Request Validation Constraints (Size & Methods)
         # ==========================================================
         req_bytes = len(parsed_req.raw_text.encode("utf-8")) if parsed_req.raw_text else 0
-        if req_bytes > self.policy.max_request_size_bytes:
+        if req_bytes > eff_policy.max_request_size_bytes:
             would = "BLOCK"
-            act = "MONITOR" if self.policy.inspection_mode == "monitor" else "BLOCK"
+            act = "MONITOR" if eff_policy.inspection_mode == "monitor" else "BLOCK"
             latency = (time.perf_counter() - t_start) * 1000.0
             self.anomaly_detector.record_event(client_id, parsed_req.path, is_blocked=(act == "BLOCK"), event_time=now)
             return WAFDecision(
                 request_id=req_id,
-                tenant_id=self.policy.tenant_id,
-                site_id=self.policy.site_id,
+                tenant_id=eff_policy.tenant_id,
+                site_id=eff_policy.site_id,
                 action=act,
                 would_action=would,
                 reason="REQUEST_SIZE_LIMIT_EXCEEDED",
                 risk_score=1.0,
                 stage_used="protocol_validator",
                 rule_matches=["RFC_PAYLOAD_TOO_LARGE"],
-                policy_version=self.policy.policy_version,
-                inspection_mode=self.policy.inspection_mode,
+                policy_version=eff_policy.policy_version,
+                inspection_mode=eff_policy.inspection_mode,
                 latency_ms=round(latency, 3),
             )
 
-        if not self.policy.is_method_allowed(parsed_req.method):
+        if not eff_policy.is_method_allowed(parsed_req.method):
             would = "BLOCK"
-            act = "MONITOR" if self.policy.inspection_mode == "monitor" else "BLOCK"
+            act = "MONITOR" if eff_policy.inspection_mode == "monitor" else "BLOCK"
             latency = (time.perf_counter() - t_start) * 1000.0
             self.anomaly_detector.record_event(client_id, parsed_req.path, is_blocked=(act == "BLOCK"), event_time=now)
             return WAFDecision(
                 request_id=req_id,
-                tenant_id=self.policy.tenant_id,
-                site_id=self.policy.site_id,
+                tenant_id=eff_policy.tenant_id,
+                site_id=eff_policy.site_id,
                 action=act,
                 would_action=would,
                 reason=f"DISALLOWED_HTTP_METHOD_{parsed_req.method.upper()}",
                 risk_score=1.0,
                 stage_used="protocol_validator",
                 rule_matches=["RFC_METHOD_DISALLOWED"],
-                policy_version=self.policy.policy_version,
-                inspection_mode=self.policy.inspection_mode,
+                policy_version=eff_policy.policy_version,
+                inspection_mode=eff_policy.inspection_mode,
                 latency_ms=round(latency, 3),
             )
 
@@ -209,29 +212,29 @@ class CentralDecisionEngine:
         # 3. Layer 1: Deterministic Rules Engine
         # ==========================================================
         rule_matches: List[str] = []
-        if self.policy.rules_enabled:
+        if eff_policy.rules_enabled:
             rule_res: RuleValidationResult = self.rules_engine.validate(parsed_req)
             if rule_res.has_blocking_violation:
                 rule_matches = [v.rule_id for v in rule_res.violations if v.severity == "BLOCK"]
                 primary_rule = rule_matches[0]
 
                 would = "BLOCK"
-                act = "MONITOR" if self.policy.inspection_mode == "monitor" else "BLOCK"
+                act = "MONITOR" if eff_policy.inspection_mode == "monitor" else "BLOCK"
                 self.anomaly_detector.record_event(client_id, parsed_req.path, is_blocked=(act == "BLOCK"), event_time=now)
 
                 latency = (time.perf_counter() - t_start) * 1000.0
                 return WAFDecision(
                     request_id=req_id,
-                    tenant_id=self.policy.tenant_id,
-                    site_id=self.policy.site_id,
+                    tenant_id=eff_policy.tenant_id,
+                    site_id=eff_policy.site_id,
                     action=act,
                     would_action=would,
                     reason=f"LAYER1_RULE_{primary_rule}",
                     risk_score=1.0,
                     stage_used="rules_engine",
                     rule_matches=rule_matches,
-                    policy_version=self.policy.policy_version,
-                    inspection_mode=self.policy.inspection_mode,
+                    policy_version=eff_policy.policy_version,
+                    inspection_mode=eff_policy.inspection_mode,
                     latency_ms=round(latency, 3),
                     details={"violation_details": [v.message for v in rule_res.violations]},
                 )
@@ -239,20 +242,20 @@ class CentralDecisionEngine:
         # ==========================================================
         # 4. Path Exclusions (Bypass ML)
         # ==========================================================
-        if self.policy.is_path_excluded(parsed_req.path):
+        if eff_policy.is_path_excluded(parsed_req.path):
             latency = (time.perf_counter() - t_start) * 1000.0
             self.anomaly_detector.record_event(client_id, parsed_req.path, is_blocked=False, event_time=now)
             return WAFDecision(
                 request_id=req_id,
-                tenant_id=self.policy.tenant_id,
-                site_id=self.policy.site_id,
+                tenant_id=eff_policy.tenant_id,
+                site_id=eff_policy.site_id,
                 action="ALLOW",
                 would_action="ALLOW",
                 reason="PATH_EXCLUDED_FROM_ML",
                 risk_score=0.0,
                 stage_used="path_exclusion",
-                policy_version=self.policy.policy_version,
-                inspection_mode=self.policy.inspection_mode,
+                policy_version=eff_policy.policy_version,
+                inspection_mode=eff_policy.inspection_mode,
                 latency_ms=round(latency, 3),
             )
 
@@ -261,7 +264,7 @@ class CentralDecisionEngine:
         # ==========================================================
         anomaly_flags: List[str] = []
         is_anomaly_active = False
-        if self.policy.anomaly_enabled:
+        if eff_policy.anomaly_enabled:
             anom_res: AnomalyEvaluationResult = self.anomaly_detector.evaluate(
                 client_id, req=parsed_req, current_time=now
             )
@@ -276,7 +279,7 @@ class CentralDecisionEngine:
         model_ver = "unknown"
         degraded = False
 
-        if self.policy.ml_enabled:
+        if eff_policy.ml_enabled:
             ml_res: MLClientResult = self.ml_client.predict(
                 raw_http=parsed_req.raw_text,
                 request_id=req_id,
@@ -291,11 +294,11 @@ class CentralDecisionEngine:
 
                 if is_anomaly_active:
                     would = "CHALLENGE"
-                    act = "MONITOR" if self.policy.inspection_mode == "monitor" else "CHALLENGE"
+                    act = "MONITOR" if eff_policy.inspection_mode == "monitor" else "CHALLENGE"
                     reason = "ML_DEGRADED_ANOMALY_ACTIVE"
-                elif self.policy.ml_failure_mode == "fail_closed":
+                elif eff_policy.ml_failure_mode == "fail_closed":
                     would = "BLOCK"
-                    act = "MONITOR" if self.policy.inspection_mode == "monitor" else "BLOCK"
+                    act = "MONITOR" if eff_policy.inspection_mode == "monitor" else "BLOCK"
                     reason = "ML_UNAVAILABLE_FAIL_CLOSED"
                 else:  # fail_open
                     would = "ALLOW"
@@ -306,8 +309,8 @@ class CentralDecisionEngine:
                 latency = (time.perf_counter() - t_start) * 1000.0
                 return WAFDecision(
                     request_id=req_id,
-                    tenant_id=self.policy.tenant_id,
-                    site_id=self.policy.site_id,
+                    tenant_id=eff_policy.tenant_id,
+                    site_id=eff_policy.site_id,
                     action=act,
                     would_action=would,
                     reason=reason,
@@ -317,8 +320,8 @@ class CentralDecisionEngine:
                     anomaly_flags=anomaly_flags,
                     degraded_mode=True,
                     model_version="unavailable",
-                    policy_version=self.policy.policy_version,
-                    inspection_mode=self.policy.inspection_mode,
+                    policy_version=eff_policy.policy_version,
+                    inspection_mode=eff_policy.inspection_mode,
                     latency_ms=round(latency, 3),
                     details={"error": ml_res.error_message, "failure_domain": fail_domain},
                 )
@@ -340,11 +343,11 @@ class CentralDecisionEngine:
             target_reason = "FAST_PASS_CLEAN"
 
         # B. Strict mode evaluation
-        elif self.policy.inspection_mode == "strict":
-            if ml_score >= self.policy.thresholds.strict_block:
+        elif eff_policy.inspection_mode == "strict":
+            if ml_score >= eff_policy.thresholds.strict_block:
                 target_action = "BLOCK"
                 target_reason = "STRICT_ML_BLOCK"
-            elif ml_score >= self.policy.thresholds.monitor:
+            elif ml_score >= eff_policy.thresholds.monitor:
                 target_action = "MONITOR"
                 target_reason = "STRICT_ML_MONITOR"
             else:
@@ -353,17 +356,17 @@ class CentralDecisionEngine:
 
         # C. Standard Blocking & Monitor mode evaluation
         else:
-            if ml_score >= self.policy.thresholds.block:
+            if ml_score >= eff_policy.thresholds.block:
                 target_action = "BLOCK"
                 target_reason = "ML_THRESHOLD_EXCEEDED"
-            elif self.policy.thresholds.challenge <= ml_score < self.policy.thresholds.block:
+            elif eff_policy.thresholds.challenge <= ml_score < eff_policy.thresholds.block:
                 if is_anomaly_active:
                     target_action = "BLOCK"
                     target_reason = "ML_AND_ANOMALY_ESCALATION"
                 else:
                     target_action = "CHALLENGE"
                     target_reason = "ML_CHALLENGE_BAND"
-            elif self.policy.thresholds.monitor <= ml_score < self.policy.thresholds.challenge:
+            elif eff_policy.thresholds.monitor <= ml_score < eff_policy.thresholds.challenge:
                 if is_anomaly_active:
                     target_action = "CHALLENGE"
                     target_reason = "BEHAVIORAL_ANOMALY_ESCALATION"
@@ -380,7 +383,7 @@ class CentralDecisionEngine:
 
         # Determine would_action and action based on inspection_mode
         would_action = target_action
-        if self.policy.inspection_mode == "monitor":
+        if eff_policy.inspection_mode == "monitor":
             # In monitor mode: never return BLOCK or CHALLENGE to the client
             if would_action in ("BLOCK", "CHALLENGE", "MONITOR"):
                 final_action = "MONITOR"
@@ -400,8 +403,8 @@ class CentralDecisionEngine:
         latency = (time.perf_counter() - t_start) * 1000.0
         return WAFDecision(
             request_id=req_id,
-            tenant_id=self.policy.tenant_id,
-            site_id=self.policy.site_id,
+            tenant_id=eff_policy.tenant_id,
+            site_id=eff_policy.site_id,
             action=final_action,
             would_action=would_action,
             reason=target_reason,
@@ -411,7 +414,7 @@ class CentralDecisionEngine:
             anomaly_flags=anomaly_flags,
             degraded_mode=degraded,
             model_version=model_ver,
-            policy_version=self.policy.policy_version,
-            inspection_mode=self.policy.inspection_mode,
+            policy_version=eff_policy.policy_version,
+            inspection_mode=eff_policy.inspection_mode,
             latency_ms=round(latency, 3),
         )

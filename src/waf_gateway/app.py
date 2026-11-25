@@ -38,11 +38,46 @@ from src.waf_gateway.challenge import (
     CLEARANCE_TTL_SECONDS,
 )
 from src.waf_gateway.host_registry import host_registry, SiteRouteConfig, SitePolicyConfig
+from src.waf_gateway.origin_guard import (
+    validate_origin_before_connect,
+    OriginSSRFBlockedError,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGS_DIR = ROOT / "logs"
 DEFAULT_SECURITY_LOG = LOGS_DIR / "waf_security_events.jsonl"
 DEFAULT_ADMIN_KEY = os.getenv("WAF_ADMIN_KEY", "waf-admin-secret-key-local")
+
+
+def build_firewall_policy_from_site(route_config: SiteRouteConfig) -> FirewallPolicy:
+    """Constructs a tenant- and site-specific FirewallPolicy from active SiteRouteConfig."""
+    p_cfg = route_config.policy
+    path_exclusions = ["/healthcheck", "/health", "/ready", "/robots.txt"]
+    for excl in p_cfg.exclusions:
+        prefix = excl.get("pathPrefix") or excl.get("path_prefix")
+        if prefix:
+            path_exclusions.append(prefix)
+
+    thresholds = ThresholdConfig(
+        monitor=p_cfg.monitor_threshold,
+        challenge=p_cfg.challenge_threshold,
+        block=p_cfg.block_threshold,
+        strict_block=p_cfg.strict_block_threshold,
+    )
+    mode = p_cfg.mode.lower() if p_cfg.mode else "monitor"
+    if mode not in ("monitor", "blocking", "strict", "disabled"):
+        mode = "monitor"
+
+    return FirewallPolicy(
+        tenant_id=route_config.tenant_id,
+        site_id=route_config.site_id,
+        inspection_mode=mode,
+        rules_enabled=p_cfg.rules_enabled,
+        ml_enabled=p_cfg.ml_enabled,
+        anomaly_enabled=p_cfg.anomaly_enabled,
+        thresholds=thresholds,
+        path_exclusions=path_exclusions,
+    )
 
 HOP_BY_HOP_HEADERS = {
     "connection",
@@ -88,6 +123,9 @@ class WAFGatewayApp:
         security_log_path: Optional[Path] = None,
         in_process_ml_engine: Optional[Any] = None,
         in_process_upstream_app: Optional[Any] = None,
+        in_process_upstream_apps: Optional[Dict[str, Any]] = None,
+        dynamic_routing_enabled: Optional[bool] = None,
+        allow_private_origins: Optional[bool] = None,
     ):
         self.upstream_url = upstream_url.rstrip("/")
         self.security_log_path = security_log_path or DEFAULT_SECURITY_LOG
@@ -104,7 +142,22 @@ class WAFGatewayApp:
         )
 
         self.in_process_upstream_app = in_process_upstream_app
+        self.in_process_upstream_apps = dict(in_process_upstream_apps or {})
+        if in_process_upstream_app is not None:
+            self.in_process_upstream_apps[self.upstream_url] = in_process_upstream_app
+
+        if dynamic_routing_enabled is not None:
+            self.dynamic_routing_enabled = dynamic_routing_enabled
+        else:
+            self.dynamic_routing_enabled = os.getenv("WAF_DYNAMIC_ROUTING_ENABLED", "false").lower() in ("true", "1", "yes")
+
+        if allow_private_origins is not None:
+            self.allow_private_origins = allow_private_origins
+        else:
+            self.allow_private_origins = os.getenv("WAF_ALLOW_PRIVATE_ORIGINS", "false").lower() in ("true", "1", "yes")
+
         self.upstream_client: Optional[httpx.AsyncClient] = None
+        self._dynamic_upstream_clients: Dict[str, httpx.AsyncClient] = {}
         self.control_plane_url = os.getenv("WAF_CONTROL_PLANE_URL", "").rstrip("/")
         self.ingest_key = os.getenv("WAF_INGEST_KEY", "")
         self.default_tenant_id = os.getenv("WAF_DEFAULT_TENANT_ID", "")
@@ -123,10 +176,34 @@ class WAFGatewayApp:
             limits=httpx.Limits(max_keepalive_connections=50, max_connections=100),
         )
 
+    async def get_dynamic_upstream_client(self, origin_url: str) -> httpx.AsyncClient:
+        """Retrieves or instantiates an AsyncClient pool for a dynamically routed upstream origin."""
+        clean_origin = origin_url.rstrip("/")
+        if clean_origin in self._dynamic_upstream_clients:
+            return self._dynamic_upstream_clients[clean_origin]
+
+        transport = None
+        for app_url, app_inst in self.in_process_upstream_apps.items():
+            if app_url.rstrip("/") == clean_origin:
+                transport = httpx.ASGITransport(app=app_inst)
+                break
+
+        client = httpx.AsyncClient(
+            base_url=clean_origin,
+            transport=transport,
+            timeout=httpx.Timeout(connect=2.0, read=10.0, write=10.0, pool=10.0),
+            limits=httpx.Limits(max_keepalive_connections=50, max_connections=100),
+        )
+        self._dynamic_upstream_clients[clean_origin] = client
+        return client
+
     async def shutdown(self):
         """Closes upstream connection pool."""
         if self.upstream_client is not None:
             await self.upstream_client.aclose()
+        for client in self._dynamic_upstream_clients.values():
+            await client.aclose()
+        self._dynamic_upstream_clients.clear()
         self.ml_client.close()
 
     def log_security_event(self, parsed_req: ParsedRequest, decision: WAFDecision, client_ip: str, extra_event_type: Optional[str] = None):
@@ -141,8 +218,8 @@ class WAFGatewayApp:
 
             # Non-blocking async event dispatch to Control Plane if configured
             if self.control_plane_url and self.ingest_key:
-                tenant_id = self.policy.tenant_id or self.default_tenant_id
-                site_id = self.policy.site_id or self.default_site_id
+                tenant_id = decision.tenant_id or self.policy.tenant_id or self.default_tenant_id
+                site_id = decision.site_id or self.policy.site_id or self.default_site_id
                 if tenant_id:
                     control_event = {
                         "tenantId": tenant_id,
@@ -496,6 +573,35 @@ async def reverse_proxy_handler(request: Request, full_path: str):
         raise HTTPException(status_code=404, detail="Not Found")
 
     gw = get_gateway()
+
+    # 1. Dynamic Host-Based Routing & Unknown-Host Guard
+    is_dynamic = gw.dynamic_routing_enabled or (
+        os.getenv("WAF_DYNAMIC_ROUTING_ENABLED", "false").lower() in ("true", "1", "yes")
+    )
+
+    matched_site: Optional[SiteRouteConfig] = None
+    effective_policy: Optional[FirewallPolicy] = None
+
+    if is_dynamic:
+        host_header = request.headers.get("host") or request.headers.get("x-forwarded-host") or ""
+        clean_host = host_header.split(":")[0].strip().lower()
+
+        matched_site = host_registry.lookup(clean_host) if clean_host else None
+        if matched_site is None or not matched_site.enabled:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                headers={
+                    "X-WAF-Action": "REJECT_UNKNOWN_HOST",
+                },
+                content={
+                    "error": "UNKNOWN_HOST",
+                    "message": "Domain is not registered or active on this WAF",
+                    "host": clean_host,
+                },
+            )
+
+        effective_policy = build_firewall_policy_from_site(matched_site)
+
     # Respect X-Forwarded-For if set (e.g. from reverse proxy or test client)
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
@@ -527,10 +633,11 @@ async def reverse_proxy_handler(request: Request, full_path: str):
 
     parsed_req = parse_raw_http(raw_http_text, request_id=f"req_{int(time.time()*1000)}")
 
-    # 2. Central Decision Engine Evaluation
+    # 2. Central Decision Engine Evaluation (per-site policy applied if dynamic)
     decision = gw.decision_engine.inspect_request(
         req=parsed_req,
         client_id=client_ip,
+        policy=effective_policy,
     )
 
     # 3. Log Redacted Security Event to JSONL
@@ -623,20 +730,43 @@ async def reverse_proxy_handler(request: Request, full_path: str):
             )
 
     # C. ALLOW or MONITOR -> Forward upstream
-    forward_headers = {
-        k: v for k, v in request.headers.items()
-        if k.lower() not in HOP_BY_HOP_HEADERS and k.lower() != "cookie"
-    }
-    # Pass along cookies except internal waf_clearance if desired, or pass all
-    if "cookie" in request.headers:
-        forward_headers["cookie"] = request.headers["cookie"]
+    target_origin = gw.upstream_url
+    active_client = gw.upstream_client
+
+    if is_dynamic and matched_site is not None:
+        target_origin = matched_site.origin_url
+        allow_priv = gw.allow_private_origins or (
+            os.getenv("WAF_ALLOW_PRIVATE_ORIGINS", "false").lower() in ("true", "1", "yes")
+        )
+        try:
+            validate_origin_before_connect(target_origin, allow_private_origins=allow_priv)
+        except OriginSSRFBlockedError as e:
+            return JSONResponse(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                headers={
+                    "X-WAF-Action": "BLOCKED_SSRF",
+                    "X-WAF-Request-ID": decision.request_id,
+                },
+                content={
+                    "error": "ORIGIN_BLOCKED_SSRF",
+                    "message": "Upstream origin address violates SSRF policy",
+                },
+            )
+
+        active_client = await gw.get_dynamic_upstream_client(target_origin)
+
     forward_headers = {
         k: v for k, v in request.headers.items()
         if k.lower() not in HOP_BY_HOP_HEADERS
     }
+    if is_dynamic and matched_site is not None:
+        forward_headers["x-waf-site-id"] = matched_site.site_id
+        forward_headers["x-waf-tenant-id"] = matched_site.tenant_id
+        if "x-forwarded-host" not in forward_headers and "host" in request.headers:
+            forward_headers["x-forwarded-host"] = request.headers["host"]
 
     try:
-        upstream_resp = await gw.upstream_client.request(
+        upstream_resp = await active_client.request(
             method=request.method,
             url=raw_path,
             headers=forward_headers,
@@ -671,7 +801,7 @@ async def reverse_proxy_handler(request: Request, full_path: str):
             },
             content={
                 "error": "Bad Gateway: Upstream protected application unreachable",
-                "upstream_url": gw.upstream_url,
+                "upstream_url": target_origin,
                 "detail": str(e),
             },
         )
