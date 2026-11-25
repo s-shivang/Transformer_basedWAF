@@ -246,10 +246,15 @@ export class ProtectedSite extends Entity<string> {
     const siteId = id ?? crypto.randomUUID();
     const now = new Date();
 
-    const isLegacyDirectActive = props.status === SiteStatus.ACTIVE && !props.onboardingStatus;
-    const initialOnboarding = isLegacyDirectActive
-      ? OnboardingStatus.ACTIVE
-      : props.onboardingStatus ?? OnboardingStatus.PENDING_VERIFICATION;
+    let initialOnboarding = props.onboardingStatus;
+    let initialStatus = props.status;
+
+    if (!initialOnboarding) {
+      initialStatus = initialStatus ?? SiteStatus.ACTIVE;
+      initialOnboarding = initialStatus === SiteStatus.ACTIVE ? OnboardingStatus.ACTIVE : OnboardingStatus.PAUSED;
+    } else {
+      initialStatus = initialStatus ?? (initialOnboarding === OnboardingStatus.ACTIVE ? SiteStatus.ACTIVE : SiteStatus.PAUSED);
+    }
 
     const token =
       props.verificationToken !== undefined
@@ -263,7 +268,7 @@ export class ProtectedSite extends Entity<string> {
       name: props.name.trim(),
       domain: props.domain,
       originUrl: props.originUrl,
-      status: props.status ?? (initialOnboarding === OnboardingStatus.ACTIVE ? SiteStatus.ACTIVE : SiteStatus.PAUSED),
+      status: initialStatus,
       onboardingStatus: initialOnboarding,
       verificationToken: token,
       verifiedAt: props.verifiedAt ?? (initialOnboarding === OnboardingStatus.ACTIVE ? now : null),

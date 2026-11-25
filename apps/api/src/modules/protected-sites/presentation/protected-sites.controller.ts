@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   HttpStatus,
+  HttpCode,
   HttpException,
   UseGuards,
   Req,
@@ -105,6 +106,7 @@ export class ProtectedSitesController {
   }
 
   @Post(':siteId/onboarding/verify-domain')
+  @HttpCode(HttpStatus.OK)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Trigger DNS TXT record check to advance onboarding from PENDING_VERIFICATION to VERIFIED' })
   @ApiResponse({ status: 200, description: 'Domain ownership verified successfully' })
@@ -127,6 +129,7 @@ export class ProtectedSitesController {
   }
 
   @Post(':siteId/onboarding/retry')
+  @HttpCode(HttpStatus.OK)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Retry onboarding from FAILED state' })
   @ApiResponse({ status: 200, description: 'Onboarding reset for retry' })
@@ -153,6 +156,7 @@ export class ProtectedSitesController {
   }
 
   @Post(':siteId/onboarding/pause')
+  @HttpCode(HttpStatus.OK)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Pause an active protected site' })
   @ApiResponse({ status: 200, description: 'Site paused successfully' })
@@ -174,6 +178,7 @@ export class ProtectedSitesController {
   }
 
   @Post(':siteId/onboarding/resume')
+  @HttpCode(HttpStatus.OK)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Resume a paused protected site' })
   @ApiResponse({ status: 200, description: 'Site resumed successfully' })
