@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -8,6 +9,9 @@ async function bootstrap() {
 
   // Set global API route prefix
   app.setGlobalPrefix('api/v1');
+
+  // Parse cookies for HttpOnly authentication tokens
+  app.use(cookieParser());
 
   // Global validation pipe for strict DTO payload enforcement
   app.useGlobalPipes(
@@ -18,8 +22,11 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS with credentials for HttpOnly cookie authentication
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
 
   // Setup OpenAPI / Swagger documentation
   const config = new DocumentBuilder()
@@ -28,8 +35,10 @@ async function bootstrap() {
       'Multi-tenant Cloud-Native WAF Management Plane API (Modular Monolith + DDD)',
     )
     .setVersion('1.0.0')
+    .addTag('Auth & Identity', 'Authentication, session management, and RBAC')
     .addTag('Tenants', 'Multi-tenant management bounded context')
     .addTag('Health', 'Operational health check endpoints')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

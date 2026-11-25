@@ -6,14 +6,19 @@ import {
   Param,
   HttpStatus,
   HttpException,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Request } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateTenantUseCase } from '../application/create-tenant.use-case';
 import { GetTenantByIdUseCase } from '../application/get-tenant-by-id.use-case';
 import { GetTenantBySlugUseCase } from '../application/get-tenant-by-slug.use-case';
 import { ListTenantsUseCase } from '../application/list-tenants.use-case';
 import { CreateTenantRequestDto } from './dtos/create-tenant.request.dto';
 import { TenantResponseDto } from '../application/dtos/tenant.dto';
+import { JwtAuthGuard } from '../../identity/presentation/guards/jwt-auth.guard';
+import { TenantScopeGuard } from '../../identity/presentation/guards/tenant-scope.guard';
 
 @ApiTags('Tenants')
 @Controller('tenants')
@@ -38,16 +43,28 @@ export class TenantsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all tenants' })
-  @ApiResponse({ status: 200, description: 'List of all tenants' })
-  async findAll(): Promise<TenantResponseDto[]> {
-    const result = await this.listTenantsUseCase.execute();
-    return result.getValue();
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List tenant for the authenticated user' })
+  @ApiResponse({ status: 200, description: 'List user active tenant' })
+  async findAll(@Req() req: Request): Promise<TenantResponseDto[]> {
+    const activeTenantId = req.tenantContext?.tenantId;
+    if (!activeTenantId) {
+      return [];
+    }
+    const result = await this.getTenantByIdUseCase.execute(activeTenantId);
+    if (result.isFailure) {
+      return [];
+    }
+    return [result.getValue()];
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a tenant by UUID' })
+  @UseGuards(JwtAuthGuard, TenantScopeGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a tenant by UUID (Scoped to caller tenant)' })
   @ApiResponse({ status: 200, description: 'Tenant found' })
+  @ApiResponse({ status: 403, description: 'Forbidden (Cross-tenant access)' })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
   async findById(@Param('id') id: string): Promise<TenantResponseDto> {
     const result = await this.getTenantByIdUseCase.execute(id);
@@ -58,14 +75,22 @@ export class TenantsController {
   }
 
   @Get('slug/:slug')
-  @ApiOperation({ summary: 'Get a tenant by unique slug' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a tenant by unique slug (Scoped to caller tenant)' })
   @ApiResponse({ status: 200, description: 'Tenant found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
-  async findBySlug(@Param('slug') slug: string): Promise<TenantResponseDto> {
+  async findBySlug(@Param('slug') slug: string, @Req() req: Request): Promise<TenantResponseDto> {
     const result = await this.getTenantBySlugUseCase.execute(slug);
     if (result.isFailure) {
       throw new HttpException(result.getError(), HttpStatus.NOT_FOUND);
     }
-    return result.getValue();
+    const tenant = result.getValue();
+    // Validate caller belongs to this tenant
+    if (req.tenantContext && tenant.id !== req.tenantContext.tenantId) {
+      throw new HttpException('Access to requested tenant is forbidden', HttpStatus.FORBIDDEN);
+    }
+    return tenant;
   }
 }

@@ -74,6 +74,7 @@ model Tenant {
   wafPolicies     WafPolicy[]
   securityEvents  SecurityEvent[]
   auditLogs       AuditLog[]
+  refreshSessions RefreshSession[]
 
   @@index([slug])
   @@index([status])
@@ -90,8 +91,9 @@ model User {
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
   // Relationships
-  memberships Membership[]
-  auditLogs   AuditLog[]
+  memberships     Membership[]
+  auditLogs       AuditLog[]
+  refreshSessions RefreshSession[]
 
   @@index([email])
   @@map("users")
@@ -112,6 +114,23 @@ model Membership {
   @@index([tenantId])
   @@index([userId])
   @@map("memberships")
+}
+
+model RefreshSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_sessions")
 }
 
 // ----------------------------------------------------

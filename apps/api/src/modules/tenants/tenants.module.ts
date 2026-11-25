@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TenantsController } from './presentation/tenants.controller';
 import { CreateTenantUseCase } from './application/create-tenant.use-case';
 import { GetTenantByIdUseCase } from './application/get-tenant-by-id.use-case';
@@ -7,8 +7,10 @@ import { ListTenantsUseCase } from './application/list-tenants.use-case';
 import { TENANT_REPOSITORY } from './domain/tenant.repository.interface';
 import { PrismaTenantRepository } from './infrastructure/prisma-tenant.repository';
 import { PrismaService } from '@shared/infrastructure/prisma.service';
+import { IdentityModule } from '../identity/identity.module';
 
 @Module({
+  imports: [forwardRef(() => IdentityModule)],
   controllers: [TenantsController],
   providers: [
     CreateTenantUseCase,
@@ -21,6 +23,6 @@ import { PrismaService } from '@shared/infrastructure/prisma.service';
       useClass: PrismaTenantRepository,
     },
   ],
-  exports: [TENANT_REPOSITORY, GetTenantByIdUseCase],
+  exports: [TENANT_REPOSITORY, GetTenantByIdUseCase, GetTenantBySlugUseCase],
 })
 export class TenantsModule {}
