@@ -21,7 +21,7 @@ import os
 import json
 import asyncio
 import httpx
-from fastapi import FastAPI, Request, Response, status, HTTPException, Header, BackgroundTasks
+from fastapi import FastAPI, Request, Response, status, HTTPException, Header, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse, Response as FastAPIResponse
 from pydantic import BaseModel
 
@@ -37,6 +37,7 @@ from src.waf_gateway.challenge import (
     sanitize_redirect_url,
     CLEARANCE_TTL_SECONDS,
 )
+from src.waf_gateway.host_registry import host_registry, SiteRouteConfig, SitePolicyConfig
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGS_DIR = ROOT / "logs"
@@ -388,6 +389,90 @@ async def update_waf_policy(
     return {
         "status": "updated",
         "policy": gw.policy.model_dump(),
+    }
+
+
+def verify_admin_key(x_waf_admin_key: Optional[str] = Header(None, alias="X-WAF-Admin-Key")) -> str:
+    configured_key = os.getenv("WAF_ADMIN_KEY", DEFAULT_ADMIN_KEY)
+    if not x_waf_admin_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="X-WAF-Admin-Key header is required",
+        )
+    if x_waf_admin_key != configured_key:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid X-WAF-Admin-Key header",
+        )
+    return x_waf_admin_key
+
+
+class SiteSyncPayload(BaseModel):
+    site_id: str
+    tenant_id: str
+    domain: str
+    origin_url: str
+    enabled: bool = True
+    config_version: int = 1
+    policy: Optional[Dict[str, Any]] = None
+    force_rollback: bool = False
+
+
+@app.post("/_waf/sites/sync", tags=["WAF Host Registry"])
+async def sync_site_config(
+    payload: SiteSyncPayload,
+    admin_key: str = Depends(verify_admin_key),
+):
+    """
+    Atomically updates or registers a protected site route configuration.
+    Validates payload and preserves last-known-good state on error.
+    """
+    try:
+        route_config = host_registry.upsert_site(
+            payload.model_dump(),
+            force_rollback=payload.force_rollback,
+        )
+        return {
+            "acknowledged": True,
+            "site_id": route_config.site_id,
+            "domain": route_config.domain,
+            "config_version": route_config.config_version,
+            "active_sites_count": host_registry.active_sites_count,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.delete("/_waf/sites/{domain}", tags=["WAF Host Registry"])
+async def delete_site_config(
+    domain: str,
+    admin_key: str = Depends(verify_admin_key),
+):
+    """
+    Evicts a removed or paused domain from the HostRegistry.
+    """
+    clean_domain = domain.split(":")[0].strip().lower()
+    removed = host_registry.remove_site(clean_domain)
+    return {
+        "removed": removed,
+        "domain": clean_domain,
+        "active_sites_count": host_registry.active_sites_count,
+    }
+
+
+@app.get("/_waf/sites", tags=["WAF Host Registry"])
+async def list_site_configs(
+    admin_key: str = Depends(verify_admin_key),
+):
+    """
+    Lists active site configurations and their acknowledged versions.
+    """
+    return {
+        "sites": host_registry.get_active_routes(),
+        "active_sites_count": host_registry.active_sites_count,
+        "last_sync_at": host_registry.last_sync_at,
     }
 
 

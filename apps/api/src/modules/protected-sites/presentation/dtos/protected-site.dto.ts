@@ -60,6 +60,12 @@ export class UpdateProtectedSiteDto {
   status?: SiteStatus;
 }
 
+export class ConfigureSiteDto {
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  forceRollback?: boolean;
+}
+
 export interface OnboardingInstructionsResponseDto {
   siteId: string;
   name: string;
@@ -68,6 +74,8 @@ export interface OnboardingInstructionsResponseDto {
   onboardingStatus: OnboardingStatus;
   verificationToken: string | null;
   configVersion: number;
+  gatewayAckVersion: number | null;
+  lastSyncedAt: string | null;
   txtRecord: {
     host: string;
     value: string | null;

@@ -67,6 +67,8 @@ export interface ProtectedSiteProps {
   verificationToken: string | null;
   verifiedAt: Date | null;
   configVersion: number;
+  gatewayAckVersion: number | null;
+  lastSyncedAt: Date | null;
   lastOnboardingError: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -116,6 +118,14 @@ export class ProtectedSite extends Entity<string> {
     return this._props.configVersion;
   }
 
+  get gatewayAckVersion(): number | null {
+    return this._props.gatewayAckVersion;
+  }
+
+  get lastSyncedAt(): Date | null {
+    return this._props.lastSyncedAt;
+  }
+
   get lastOnboardingError(): string | null {
     return this._props.lastOnboardingError;
   }
@@ -154,6 +164,21 @@ export class ProtectedSite extends Entity<string> {
       this._props.status = SiteStatus.PAUSED;
     }
 
+    return Result.ok<void>();
+  }
+
+  public acknowledgeGatewaySync(version: number): Result<void> {
+    if (typeof version !== 'number' || version < 1) {
+      return Result.fail<void>('Invalid gateway ack version');
+    }
+    this._props.gatewayAckVersion = version;
+    this._props.lastSyncedAt = new Date();
+    this._props.lastOnboardingError = null;
+
+    if (this._props.onboardingStatus === OnboardingStatus.CONFIGURING) {
+      this._props.onboardingStatus = OnboardingStatus.DNS_PENDING;
+    }
+    this._props.updatedAt = new Date();
     return Result.ok<void>();
   }
 
@@ -232,6 +257,8 @@ export class ProtectedSite extends Entity<string> {
       verificationToken?: string | null;
       verifiedAt?: Date | null;
       configVersion?: number;
+      gatewayAckVersion?: number | null;
+      lastSyncedAt?: Date | null;
       lastOnboardingError?: string | null;
     },
     id?: string,
@@ -273,6 +300,8 @@ export class ProtectedSite extends Entity<string> {
       verificationToken: token,
       verifiedAt: props.verifiedAt ?? (initialOnboarding === OnboardingStatus.ACTIVE ? now : null),
       configVersion: props.configVersion ?? 1,
+      gatewayAckVersion: props.gatewayAckVersion ?? null,
+      lastSyncedAt: props.lastSyncedAt ?? null,
       lastOnboardingError: props.lastOnboardingError ?? null,
       createdAt: now,
       updatedAt: now,
@@ -293,6 +322,8 @@ export class ProtectedSite extends Entity<string> {
       verificationToken?: string | null;
       verifiedAt?: Date | null;
       configVersion?: number;
+      gatewayAckVersion?: number | null;
+      lastSyncedAt?: Date | null;
       lastOnboardingError?: string | null;
       createdAt: Date;
       updatedAt: Date;
@@ -308,6 +339,8 @@ export class ProtectedSite extends Entity<string> {
       verificationToken: props.verificationToken ?? null,
       verifiedAt: props.verifiedAt ?? null,
       configVersion: props.configVersion ?? 1,
+      gatewayAckVersion: props.gatewayAckVersion ?? null,
+      lastSyncedAt: props.lastSyncedAt ?? null,
       lastOnboardingError: props.lastOnboardingError ?? null,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,

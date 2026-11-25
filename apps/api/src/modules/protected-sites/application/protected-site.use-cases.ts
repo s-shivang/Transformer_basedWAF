@@ -22,6 +22,10 @@ import {
   AUDIT_LOG_REPOSITORY,
 } from '../../identity/domain/identity.repository.interfaces';
 import { AuditLog } from '../../identity/domain/audit-log.entity';
+import {
+  ISiteConfigSyncClient,
+  SITE_CONFIG_SYNC_CLIENT,
+} from '../domain/site-config-sync.interface';
 import { CreateProtectedSiteDto, UpdateProtectedSiteDto } from '../presentation/dtos/protected-site.dto';
 
 @Injectable()
@@ -210,11 +214,19 @@ export class DeleteProtectedSiteUseCase {
   constructor(
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
     @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+    @Inject(SITE_CONFIG_SYNC_CLIENT) private readonly syncClient: ISiteConfigSyncClient,
   ) {}
 
   async execute(tenantId: string, siteId: string, userId?: string, clientIp?: string): Promise<Result<void>> {
     const site = await this.siteRepo.findById(tenantId, siteId);
     if (!site) return Result.fail(`Protected site '${siteId}' not found`);
+
+    // Evict from WAF Gateway host registry
+    try {
+      await this.syncClient.removeSiteConfig(site.domain.value);
+    } catch {
+      // Non-blocking eviction attempt
+    }
 
     await this.siteRepo.delete(tenantId, siteId);
 

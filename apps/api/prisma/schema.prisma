@@ -188,6 +188,8 @@ model ProtectedSite {
   verificationToken   String?          @map("verification_token") @db.VarChar(255)
   verifiedAt          DateTime?        @map("verified_at")
   configVersion       Int              @default(1) @map("config_version")
+  gatewayAckVersion   Int?             @map("gateway_ack_version")
+  lastSyncedAt        DateTime?        @map("last_synced_at")
   lastOnboardingError String?          @map("last_onboarding_error") @db.Text
   createdAt           DateTime         @default(now()) @map("created_at")
   updatedAt           DateTime         @updatedAt @map("updated_at")
