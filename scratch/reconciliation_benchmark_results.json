@@ -1,0 +1,116 @@
+{
+  "v1_0": {
+    "tau_0_50": {
+      "total_samples": 2865,
+      "threshold": 0.5,
+      "accuracy": 0.9051,
+      "precision": 0.9365,
+      "recall": 0.8282,
+      "f1": 0.879,
+      "fpr": 0.0401,
+      "fnr": 0.1718,
+      "roc_auc": 0.9608,
+      "pr_auc": 0.9582,
+      "confusion_matrix": {
+        "tn": 1605,
+        "fp": 67,
+        "fn": 205,
+        "tp": 988
+      }
+    },
+    "tau_0_85": {
+      "total_samples": 2865,
+      "threshold": 0.85,
+      "accuracy": 0.8956,
+      "precision": 0.9533,
+      "recall": 0.7879,
+      "f1": 0.8628,
+      "fpr": 0.0275,
+      "fnr": 0.2121,
+      "roc_auc": 0.9608,
+      "pr_auc": 0.9582,
+      "confusion_matrix": {
+        "tn": 1626,
+        "fp": 46,
+        "fn": 253,
+        "tp": 940
+      }
+    }
+  },
+  "v2_1": {
+    "tau_0_50": {
+      "total_samples": 2865,
+      "threshold": 0.5,
+      "accuracy": 0.8168,
+      "precision": 0.8568,
+      "recall": 0.6723,
+      "f1": 0.7534,
+      "fpr": 0.0801,
+      "fnr": 0.3277,
+      "roc_auc": 0.8909,
+      "pr_auc": 0.8857,
+      "confusion_matrix": {
+        "tn": 1538,
+        "fp": 134,
+        "fn": 391,
+        "tp": 802
+      }
+    },
+    "tau_0_85": {
+      "total_samples": 2865,
+      "threshold": 0.85,
+      "accuracy": 0.8056,
+      "precision": 0.8804,
+      "recall": 0.6169,
+      "f1": 0.7255,
+      "fpr": 0.0598,
+      "fnr": 0.3831,
+      "roc_auc": 0.8909,
+      "pr_auc": 0.8857,
+      "confusion_matrix": {
+        "tn": 1572,
+        "fp": 100,
+        "fn": 457,
+        "tp": 736
+      }
+    }
+  },
+  "v2_2": {
+    "tau_0_50": {
+      "total_samples": 2865,
+      "threshold": 0.5,
+      "accuracy": 0.8112,
+      "precision": 0.8396,
+      "recall": 0.6756,
+      "f1": 0.7487,
+      "fpr": 0.0921,
+      "fnr": 0.3244,
+      "roc_auc": 0.832,
+      "pr_auc": 0.8404,
+      "confusion_matrix": {
+        "tn": 1518,
+        "fp": 154,
+        "fn": 387,
+        "tp": 806
+      }
+    },
+    "tau_0_85": {
+      "total_samples": 2865,
+      "threshold": 0.85,
+      "accuracy": 0.8056,
+      "precision": 0.8804,
+      "recall": 0.6169,
+      "f1": 0.7255,
+      "fpr": 0.0598,
+      "fnr": 0.3831,
+      "roc_auc": 0.832,
+      "pr_auc": 0.8404,
+      "confusion_matrix": {
+        "tn": 1572,
+        "fp": 100,
+        "fn": 457,
+        "tp": 736
+      }
+    }
+  }
+}

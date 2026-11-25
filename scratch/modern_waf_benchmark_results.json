@@ -1,0 +1,124 @@
+{
+  "ml_blocking_0_85": {
+    "mode": "blocking_mode_ml_tau_0_85",
+    "total": 105,
+    "hard_blocked_403": 70,
+    "challenged_429_or_html": 34,
+    "allowed_200": 0,
+    "other_status": 1,
+    "by_category": {
+      "SQLi": {
+        "total": 15,
+        "blocked": 5,
+        "challenged": 9,
+        "allowed": 0
+      },
+      "XSS": {
+        "total": 15,
+        "blocked": 14,
+        "challenged": 1,
+        "allowed": 0
+      },
+      "Path Traversal": {
+        "total": 15,
+        "blocked": 9,
+        "challenged": 6,
+        "allowed": 0
+      },
+      "CMDI": {
+        "total": 12,
+        "blocked": 12,
+        "challenged": 0,
+        "allowed": 0
+      },
+      "NoSQLi": {
+        "total": 10,
+        "blocked": 10,
+        "challenged": 0,
+        "allowed": 0
+      },
+      "SSTI": {
+        "total": 10,
+        "blocked": 10,
+        "challenged": 0,
+        "allowed": 0
+      },
+      "SSRF": {
+        "total": 8,
+        "blocked": 8,
+        "challenged": 0,
+        "allowed": 0
+      },
+      "Benign": {
+        "total": 20,
+        "blocked": 2,
+        "challenged": 18,
+        "allowed": 0
+      }
+    },
+    "latencies_ms": [],
+    "latency_p50_ms": 10.15,
+    "latency_p95_ms": 111.08
+  },
+  "regex_only_baseline": {
+    "mode": "blocking_mode_regex_only",
+    "total": 105,
+    "hard_blocked_403": 30,
+    "challenged_429_or_html": 75,
+    "allowed_200": 0,
+    "other_status": 0,
+    "by_category": {
+      "SQLi": {
+        "total": 15,
+        "blocked": 5,
+        "challenged": 10,
+        "allowed": 0
+      },
+      "XSS": {
+        "total": 15,
+        "blocked": 14,
+        "challenged": 1,
+        "allowed": 0
+      },
+      "Path Traversal": {
+        "total": 15,
+        "blocked": 6,
+        "challenged": 9,
+        "allowed": 0
+      },
+      "CMDI": {
+        "total": 12,
+        "blocked": 2,
+        "challenged": 10,
+        "allowed": 0
+      },
+      "NoSQLi": {
+        "total": 10,
+        "blocked": 0,
+        "challenged": 10,
+        "allowed": 0
+      },
+      "SSTI": {
+        "total": 10,
+        "blocked": 2,
+        "challenged": 8,
+        "allowed": 0
+      },
+      "SSRF": {
+        "total": 8,
+        "blocked": 1,
+        "challenged": 7,
+        "allowed": 0
+      },
+      "Benign": {
+        "total": 20,
+        "blocked": 0,
+        "challenged": 20,
+        "allowed": 0
+      }
+    },
+    "latencies_ms": [],
+    "latency_p50_ms": 1.88,
+    "latency_p95_ms": 2.35
+  }
+}
