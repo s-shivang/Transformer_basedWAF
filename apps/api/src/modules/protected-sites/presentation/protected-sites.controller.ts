@@ -152,7 +152,9 @@ export class ProtectedSitesController {
 
     const result = await this.configureGatewayUseCase.execute(tenantId, siteId, dto, userId, clientIp);
     if (result.isFailure) {
-      throw new HttpException(result.getError(), HttpStatus.BAD_REQUEST);
+      const err = result.getError();
+      const status = err.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+      throw new HttpException(err, status);
     }
 
     return result.getValue();

@@ -379,6 +379,13 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
     let pendingSiteId: string;
 
     beforeAll(async () => {
+      // Expand quota to 10 for Phase 17B tests
+      await request(app.getHttpServer())
+        .patch(`/api/v1/tenants/${tenantIdA}/quota`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({ maxSites: 10 })
+        .expect(200);
+
       // 1. Create a site in PENDING_VERIFICATION
       const pendingRes = await request(app.getHttpServer())
         .post('/api/v1/sites/onboarding')

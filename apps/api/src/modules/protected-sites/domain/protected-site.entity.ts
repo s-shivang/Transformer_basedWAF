@@ -39,6 +39,7 @@ const VALID_TRANSITIONS: Record<OnboardingStatus, OnboardingStatus[]> = {
   [OnboardingStatus.DNS_PENDING]: [
     OnboardingStatus.TLS_PENDING,
     OnboardingStatus.HEALTH_CHECK,
+    OnboardingStatus.CONFIGURING,
     OnboardingStatus.FAILED,
   ],
   [OnboardingStatus.TLS_PENDING]: [OnboardingStatus.HEALTH_CHECK, OnboardingStatus.FAILED],

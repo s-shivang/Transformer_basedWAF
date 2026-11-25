@@ -258,7 +258,8 @@ export class ConfigureSiteOnGatewayUseCase {
     if (
       site.onboardingStatus !== OnboardingStatus.VERIFIED &&
       site.onboardingStatus !== OnboardingStatus.ACTIVE &&
-      site.onboardingStatus !== OnboardingStatus.CONFIGURING
+      site.onboardingStatus !== OnboardingStatus.CONFIGURING &&
+      site.onboardingStatus !== OnboardingStatus.DNS_PENDING
     ) {
       return Result.fail(
         `Site must be VERIFIED before configuring gateway (current: ${site.onboardingStatus})`,
@@ -279,13 +280,13 @@ export class ConfigureSiteOnGatewayUseCase {
     const policyPayload = policy
       ? {
           mode: policy.mode.toLowerCase(),
-          block_threshold: policy.blockThreshold,
-          challenge_threshold: policy.challengeThreshold,
-          monitor_threshold: policy.monitorThreshold,
+          block_threshold: policy.thresholds.blockThreshold,
+          challenge_threshold: policy.thresholds.challengeThreshold,
+          monitor_threshold: policy.thresholds.monitorThreshold,
           ml_enabled: policy.mlEnabled,
           rules_enabled: policy.rulesEnabled,
           challenge_enabled: policy.challengeEnabled,
-          exclusions: (policy.exclusionsJson as any[]) || [],
+          exclusions: (policy.exclusions as any[]) || [],
         }
       : {
           mode: 'monitor',
@@ -476,13 +477,13 @@ export class PauseResumeSiteUseCase {
         config_version: site.configVersion,
         policy: policy ? {
           mode: policy.mode.toLowerCase(),
-          block_threshold: policy.blockThreshold,
-          challenge_threshold: policy.challengeThreshold,
-          monitor_threshold: policy.monitorThreshold,
+          block_threshold: policy.thresholds.blockThreshold,
+          challenge_threshold: policy.thresholds.challengeThreshold,
+          monitor_threshold: policy.thresholds.monitorThreshold,
           ml_enabled: policy.mlEnabled,
           rules_enabled: policy.rulesEnabled,
           challenge_enabled: policy.challengeEnabled,
-          exclusions: (policy.exclusionsJson as any[]) || [],
+          exclusions: (policy.exclusions as any[]) || [],
         } : undefined,
       });
     } catch {
