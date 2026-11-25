@@ -128,11 +128,11 @@ export const AppShell: React.FC = () => {
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex flex-col leading-tight overflow-hidden">
-                  <div className="flex items-center gap-1.5 font-semibold text-sm tracking-tight">
+                  <div className="flex items-center gap-1.5 font-bold text-base tracking-tight">
                     <span className="text-[#0A0A0A] dark:text-white">Transformer</span>
                     <span className="text-[#EA580C] dark:text-[#FF7A1A]">WAF</span>
                   </div>
-                  <span className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] truncate font-normal">
+                  <span className="text-xs text-[#71717A] dark:text-[#A1A1AA] truncate font-normal">
                     {tenant?.name || 'Threat Intelligence'}
                   </span>
                 </div>
@@ -158,23 +158,23 @@ export const AppShell: React.FC = () => {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-xl text-xs transition-all relative group',
-                  collapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'px-3 py-2.5',
+                  'flex items-center gap-3 rounded-xl text-sm transition-all relative group',
+                  collapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'px-3.5 py-2.5',
                   isActive
                     ? 'bg-[#FFF7ED] border border-[#FFEDD5] text-[#EA580C] font-semibold dark:bg-gradient-to-r dark:from-[#FF6600]/80 dark:to-[#EA580C]/40 dark:border-[#FF6600]/40 dark:text-white dark:shadow-[0_0_15px_rgba(255,102,0,0.35)]'
-                    : 'text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white',
+                    : 'text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white font-medium',
                 )
               }
               title={collapsed ? item.label : undefined}
             >
               <item.icon className="w-4 h-4 shrink-0" />
-              {!collapsed && <span className="truncate font-medium">{item.label}</span>}
+              {!collapsed && <span className="truncate">{item.label}</span>}
               {item.badge !== undefined && (
                 <span
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium leading-none',
+                    'px-2 py-0.5 rounded-full text-xs font-mono font-medium leading-none',
                     'bg-[#F3F4F6] text-[#71717A] border border-[#E5E7EB] dark:bg-[#161616] dark:text-[#A1A1AA] dark:border-[#262626]',
-                    collapsed ? 'absolute top-1 right-1 text-[9px] px-1 py-0' : 'ml-auto',
+                    collapsed ? 'absolute top-1 right-1 text-[10px] px-1 py-0' : 'ml-auto',
                   )}
                 >
                   {item.badge}
@@ -189,13 +189,13 @@ export const AppShell: React.FC = () => {
           <NavLink
             to="/policies"
             className={cn(
-              'flex items-center gap-3 rounded-xl text-xs text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white transition-colors',
-              collapsed ? 'w-10 h-10 mx-auto justify-center' : 'px-3 py-2',
+              'flex items-center gap-3 rounded-xl text-sm font-medium text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white transition-colors',
+              collapsed ? 'w-10 h-10 mx-auto justify-center' : 'px-3.5 py-2',
             )}
             title={collapsed ? 'Settings' : undefined}
           >
             <Settings className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="font-medium">Settings</span>}
+            {!collapsed && <span>Settings</span>}
           </NavLink>
 
           {/* System Online Status Card */}
@@ -212,7 +212,7 @@ export const AppShell: React.FC = () => {
             {!collapsed && (
               <div className="flex items-center gap-2 overflow-hidden">
                 <Pin className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
-                <span className="text-xs font-medium text-[#0A0A0A] dark:text-white truncate">
+                <span className="text-sm font-medium text-[#0A0A0A] dark:text-white truncate">
                   System Online
                 </span>
               </div>
@@ -239,12 +239,12 @@ export const AppShell: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search threats, IPs, domains, or keywords..."
                 className={cn(
-                  'w-full h-10 pl-10 pr-12 rounded-xl text-xs font-sans border transition-colors',
+                  'w-full h-10 pl-10 pr-12 rounded-xl text-sm font-sans border transition-colors',
                   'bg-[#F3F4F6] border-[#E5E7EB] text-[#0A0A0A] placeholder-[#71717A] focus:bg-white focus:border-[#EA580C] focus:outline-none focus:ring-1 focus:ring-[#EA580C]',
                   'dark:bg-[#111111] dark:border-[#222222] dark:text-white dark:placeholder-[#71717A] dark:focus:bg-[#161616] dark:focus:border-[#FF6600] dark:focus:ring-[#FF6600]',
                 )}
               />
-              <span className="absolute right-3 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#E5E7EB] dark:bg-[#222222] text-[#71717A] dark:text-[#A1A1AA] pointer-events-none">
+              <span className="absolute right-3 px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-[#E5E7EB] dark:bg-[#222222] text-[#71717A] dark:text-[#A1A1AA] pointer-events-none">
                 ⌘K
               </span>
             </div>
@@ -266,7 +266,7 @@ export const AppShell: React.FC = () => {
               >
                 <Bell className="w-4 h-4" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-red-500 text-white shadow-xs">
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-red-500 text-white shadow-xs">
                     {unreadNotifications}
                   </span>
                 )}
@@ -276,24 +276,24 @@ export const AppShell: React.FC = () => {
               {showNotifications && (
                 <div
                   className={cn(
-                    'absolute right-0 mt-2 w-80 rounded-xl border p-3 z-50 shadow-xl',
+                    'absolute right-0 mt-2 w-80 rounded-xl border p-3.5 z-50 shadow-xl',
                     'bg-white border-[#E5E7EB] text-[#0A0A0A] dark:bg-[#0A0A0A] dark:border-[#222222] dark:text-white',
                   )}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-[#E5E7EB] dark:border-[#222222] mb-2">
-                    <span className="text-xs font-semibold">Security Notifications</span>
-                    <span className="text-[10px] font-mono text-[#FF6600]">{unreadNotifications} unread</span>
+                    <span className="text-sm font-semibold">Security Notifications</span>
+                    <span className="text-xs font-mono text-[#FF6600]">{unreadNotifications} unread</span>
                   </div>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    <div className="p-2 rounded-lg bg-[#F9FAFB] dark:bg-[#161616] text-xs">
-                      <div className="font-semibold text-red-500">ATTACK_SPIKE Detected</div>
-                      <div className="text-[11px] text-[#71717A] dark:text-[#A1A1AA]">
+                    <div className="p-2.5 rounded-lg bg-[#F9FAFB] dark:bg-[#161616] text-xs">
+                      <div className="font-semibold text-red-500 text-xs">ATTACK_SPIKE Detected</div>
+                      <div className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5">
                         Multiple blocked requests on site API Gateway
                       </div>
                     </div>
-                    <div className="p-2 rounded-lg bg-[#F9FAFB] dark:bg-[#161616] text-xs">
-                      <div className="font-semibold text-[#FF8800]">ML_DEGRADED</div>
-                      <div className="text-[11px] text-[#71717A] dark:text-[#A1A1AA]">
+                    <div className="p-2.5 rounded-lg bg-[#F9FAFB] dark:bg-[#161616] text-xs">
+                      <div className="font-semibold text-[#FF8800] text-xs">ML_DEGRADED</div>
+                      <div className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5">
                         ML model fail_open activated temporarily
                       </div>
                     </div>
@@ -316,15 +316,15 @@ export const AppShell: React.FC = () => {
                   'dark:bg-[#111111] dark:border-[#222222] dark:hover:bg-[#161616] dark:text-white',
                 )}
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FF6600] to-[#EA580C] flex items-center justify-center text-xs font-bold text-white shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF6600] to-[#EA580C] flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm">
                   {(user?.name || user?.email || 'N')[0].toUpperCase()}
                 </div>
                 <div className="hidden sm:flex flex-col text-left leading-tight">
-                  <span className="text-xs font-semibold truncate max-w-[120px]">
+                  <span className="text-sm font-semibold truncate max-w-[130px]">
                     {user?.name || user?.email?.split('@')[0] || 'Noah Turner'}
                   </span>
-                  <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA]">
-                    {user?.role === 'OWNER' ? 'Lead Architect' : user?.role || 'Security Analyst'}
+                  <span className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
+                    {user?.role === 'OWNER' ? 'Principal SecOps Architect' : user?.role || 'Security Analyst'}
                   </span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
@@ -334,28 +334,28 @@ export const AppShell: React.FC = () => {
               {showProfileMenu && (
                 <div
                   className={cn(
-                    'absolute right-0 mt-2 w-48 rounded-xl border p-2 z-50 shadow-xl',
+                    'absolute right-0 mt-2 w-52 rounded-xl border p-2 z-50 shadow-xl',
                     'bg-white border-[#E5E7EB] text-[#0A0A0A] dark:bg-[#0A0A0A] dark:border-[#222222] dark:text-white',
                   )}
                 >
                   <div className="px-3 py-2 border-b border-[#E5E7EB] dark:border-[#222222] text-xs">
-                    <div className="font-semibold truncate">{user?.name || user?.email}</div>
-                    <div className="text-[10px] font-mono text-[#FF6600] uppercase">{user?.role}</div>
+                    <div className="font-semibold text-sm truncate">{user?.name || user?.email}</div>
+                    <div className="text-xs font-mono text-[#FF6600] uppercase mt-0.5">{user?.role}</div>
                   </div>
                   <NavLink
                     to="/team"
                     onClick={() => setShowProfileMenu(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors font-medium"
                   >
-                    <UserIcon className="w-3.5 h-3.5" />
+                    <UserIcon className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA]" />
                     <span>Team & Members</span>
                   </NavLink>
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
+                    <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
                   </button>
                 </div>

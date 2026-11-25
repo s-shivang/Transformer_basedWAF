@@ -222,14 +222,14 @@ export const Policies: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white">WAF Policy Studio</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-white">WAF Policy Studio</h1>
             {activePolicy && (
-              <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[#FF6600]/10 text-[#FF6600] dark:text-[#FF8800] border border-[#FF6600]/20">
+              <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-[#FF6600]/10 text-[#FF6600] dark:text-[#FF8800] border border-[#FF6600]/20">
                 Active v{activePolicy.version}
               </span>
             )}
           </div>
-          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
+          <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1">
             Per-site multi-layer inspection tuning, 4-band risk thresholds, and scoped exclusions
           </p>
         </div>

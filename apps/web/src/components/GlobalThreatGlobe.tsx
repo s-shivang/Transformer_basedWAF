@@ -483,10 +483,10 @@ export const GlobalThreatGlobe: React.FC<GlobalThreatGlobeProps> = ({
               </span>
 
               <div className="flex flex-col leading-tight">
-                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] font-medium tracking-wide uppercase">
+                <span className="text-xs text-[#71717A] dark:text-[#A1A1AA] font-medium tracking-wider uppercase">
                   {callout.label}
                 </span>
-                <span className="font-mono font-semibold text-xs tabular-nums text-[#0A0A0A] dark:text-white">
+                <span className="font-mono font-semibold text-sm tabular-nums text-[#0A0A0A] dark:text-white mt-0.5">
                   {callout.sublabel}
                 </span>
               </div>
@@ -544,15 +544,15 @@ export const GlobalThreatGlobe: React.FC<GlobalThreatGlobeProps> = ({
       </div>
 
       {/* 6. Centered Bottom Severity Legend */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 text-[11px] font-sans font-medium">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-5 text-xs font-sans font-medium">
         <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
-          <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" /> Malicious
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" /> Malicious
         </span>
         <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
-          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" /> Suspicious
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" /> Suspicious
         </span>
         <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
-          <span className="w-2 h-2 rounded-full bg-[#10B981] shrink-0" /> Benign
+          <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] shrink-0" /> Benign
         </span>
       </div>
     </div>

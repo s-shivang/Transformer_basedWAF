@@ -75,8 +75,8 @@ export const Sites: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Protected Sites</h1>
-          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
+          <h1 className="text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-white">Protected Sites</h1>
+          <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1">
             Domain endpoints safeguarded by Transformer WAF with automated reverse-proxy inspection
           </p>
         </div>

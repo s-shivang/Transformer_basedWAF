@@ -85,11 +85,11 @@ export const TeamPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#FF6600]" />
-            Team & Access Control (RBAC)
+          <h1 className="text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
+            <Users className="w-6 h-6 text-[#FF6600]" />
+            <span>Team & Access Control (RBAC)</span>
           </h1>
-          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
+          <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1">
             Manage organization members, assign granular security roles, and enforce tenant access policies.
           </p>
         </div>

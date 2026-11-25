@@ -90,8 +90,8 @@ export const Events: React.FC = () => {
     <div className="space-y-4">
       {/* Page Title */}
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Security Events Explorer</h1>
-        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5 font-normal">
+        <h1 className="text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-white">Security Events Explorer</h1>
+        <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1 font-normal">
           Inspect, filter, and audit deep inspection telemetry across all protected routes
         </p>
       </div>
@@ -132,7 +132,7 @@ export const Events: React.FC = () => {
                 setSearchPath(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-3 py-1.5 text-xs font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
+              className="w-full pl-9 pr-3 py-2 text-sm font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
             />
           </div>
 

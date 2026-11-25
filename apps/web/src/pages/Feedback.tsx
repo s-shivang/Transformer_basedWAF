@@ -90,11 +90,11 @@ export const FeedbackPage: React.FC = () => {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-[#FF6600]" />
-          False-Positive Feedback Queue
+        <h1 className="text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
+          <MessageSquare className="w-6 h-6 text-[#FF6600]" />
+          <span>False-Positive Feedback Queue</span>
         </h1>
-        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
+        <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1">
           Review analyst feedback on flagged requests and curate high-confidence samples for the offline ML retraining pipeline.
         </p>
       </div>

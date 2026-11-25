@@ -208,11 +208,11 @@ export const Overview: React.FC = () => {
       {/* 1. Hero Command Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             <span className="text-[#0A0A0A] dark:text-white">Threat </span>
             <span className="text-[#EA580C] dark:text-[#FF7A1A]">Center</span>
           </h1>
-          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5 font-normal">
+          <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1 font-normal">
             Autonomous multi-tenant neural inspection engine & real-time perimeter telemetry
           </p>
         </div>
@@ -220,44 +220,44 @@ export const Overview: React.FC = () => {
         {/* Action Controls & Filters */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Date Range / Window Picker Pill */}
-          <div className="flex items-center gap-2 h-9 px-3 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] text-xs">
-            <Calendar className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
+          <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] text-sm">
+            <Calendar className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA]" />
             <select
               value={timeWindow}
               onChange={(e) => setTimeWindow(e.target.value as any)}
-              className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-[#0A0A0A] dark:text-white"
+              className="bg-transparent text-sm font-medium focus:outline-none cursor-pointer text-[#0A0A0A] dark:text-white"
             >
               <option value="24h" className="dark:bg-[#111111]">Last 24 Hours (Realtime UTC)</option>
               <option value="7d" className="dark:bg-[#111111]">Past 7 Days (7d)</option>
               <option value="30d" className="dark:bg-[#111111]">Past 30 Days (30d)</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
+            <ChevronDown className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA]" />
           </div>
 
           {/* Grid / List Layout Switcher */}
-          <div className="hidden md:flex items-center gap-1 h-9 p-1 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222]">
+          <div className="hidden md:flex items-center gap-1 h-10 p-1 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222]">
             <button
               type="button"
-              className="p-1 rounded-lg text-[#FF6600] bg-[#FFF7ED] dark:bg-[#161616]"
+              className="p-1.5 rounded-lg text-[#FF6600] bg-[#FFF7ED] dark:bg-[#161616]"
               aria-label="Grid view"
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               type="button"
-              className="p-1 rounded-lg text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white"
+              className="p-1.5 rounded-lg text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white"
               aria-label="List view"
             >
-              <List className="w-3.5 h-3.5" />
+              <List className="w-4 h-4" />
             </button>
           </div>
 
           {/* Protected Site Selector */}
-          <div className="flex items-center h-9 px-3 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] text-xs">
+          <div className="flex items-center h-10 px-3.5 rounded-xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] text-sm">
             <select
               value={selectedSiteId || ''}
               onChange={(e) => setSelectedSiteId(e.target.value || null)}
-              className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-[#0A0A0A] dark:text-white"
+              className="bg-transparent text-sm font-medium focus:outline-none cursor-pointer text-[#0A0A0A] dark:text-white"
             >
               <option value="" className="dark:bg-[#111111]">All Perimeter Gateways</option>
               {sites.map((s: any) => (
@@ -271,9 +271,9 @@ export const Overview: React.FC = () => {
           {/* + New Investigation Primary CTA Button */}
           <Link
             to="/events"
-            className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#FF6600] to-[#EA580C] shadow-[0_0_15px_rgba(255,102,0,0.35)] hover:brightness-110 transition-all"
+            className="flex items-center gap-2 h-10 px-4.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#FF6600] to-[#EA580C] shadow-[0_0_15px_rgba(255,102,0,0.35)] hover:brightness-110 transition-all"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>New Investigation</span>
           </Link>
         </div>
@@ -282,9 +282,9 @@ export const Overview: React.FC = () => {
       {/* 2. Top Bento Grid (Globe 5 cols | 2 Stacked 3 cols | Heatmap 4 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Card: Global Threat Activity (5 cols) */}
-        <div className="lg:col-span-5 rounded-2xl border p-4 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
+        <div className="lg:col-span-5 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
           <div className="flex items-center justify-between mb-2 px-1">
-            <span className="text-xs font-semibold text-[#0A0A0A] dark:text-white">
+            <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">
               Global Threat Activity
             </span>
             <button
@@ -302,18 +302,18 @@ export const Overview: React.FC = () => {
         <div className="lg:col-span-3 flex flex-col gap-5">
           {/* Card 1: Active Threats */}
           <div className="flex-1 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
-            <div className="flex items-center justify-between text-xs text-[#71717A] dark:text-[#A1A1AA]">
-              <span className="font-medium">Active Threat Detections</span>
+            <div className="flex items-center justify-between text-sm text-[#71717A] dark:text-[#A1A1AA]">
+              <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">Active Threat Detections</span>
             </div>
             <div className="flex items-baseline gap-3 my-2">
-              <span className="text-3xl font-semibold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
+              <span className="text-3xl sm:text-4xl font-bold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
                 {metrics.blockedCount || 126}
               </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#FFF7ED] text-[#EA580C] border border-[#FFEDD5] dark:bg-[#FF6600]/15 dark:text-[#FF8800] dark:border-[#FF6600]/30">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold bg-[#FFF7ED] text-[#EA580C] border border-[#FFEDD5] dark:bg-[#FF6600]/15 dark:text-[#FF8800] dark:border-[#FF6600]/30">
                 +12.4%
               </span>
             </div>
-            <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mb-2 font-normal">
+            <span className="text-xs text-[#71717A] dark:text-[#A1A1AA] block mb-2 font-normal">
               Compared to 7-day rolling baseline
             </span>
             {/* Sparkline Area */}
@@ -340,8 +340,8 @@ export const Overview: React.FC = () => {
 
           {/* Card 2: Threat Exposure Arc Gauge */}
           <div className="flex-1 rounded-2xl border p-5 flex flex-col justify-between items-center text-center bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm relative overflow-hidden">
-            <div className="w-full flex items-center justify-between text-xs text-[#71717A] dark:text-[#A1A1AA] mb-2">
-              <span className="font-medium">Threat Exposure Index</span>
+            <div className="w-full flex items-center justify-between text-sm text-[#71717A] dark:text-[#A1A1AA] mb-2">
+              <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">Threat Exposure Index</span>
             </div>
 
             {/* Radial Arc SVG Gauge */}
@@ -376,10 +376,10 @@ export const Overview: React.FC = () => {
               </svg>
               {/* Inner Center Label */}
               <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-                <span className="text-2xl font-semibold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
+                <span className="text-3xl font-bold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
                   78%
                 </span>
-                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] leading-none font-medium">
+                <span className="text-xs text-[#71717A] dark:text-[#A1A1AA] leading-none font-medium mt-1">
                   Perimeter Defense Coverage
                 </span>
               </div>
@@ -395,7 +395,7 @@ export const Overview: React.FC = () => {
         {/* Right Card: Threat Tactics Heatmap (4 cols) */}
         <div className="lg:col-span-4 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-[#0A0A0A] dark:text-white">
+            <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">
               Threat Tactics Heatmap
             </span>
             <button
@@ -408,11 +408,11 @@ export const Overview: React.FC = () => {
           </div>
 
           {/* 7x7 Grid Matrix */}
-          <div className="flex flex-col gap-1.5 flex-1 justify-center">
+          <div className="flex flex-col gap-2 flex-1 justify-center">
             {/* Days Column Header */}
             <div className="flex items-center">
-              <div className="w-24 shrink-0" />
-              <div className="flex-1 grid grid-cols-7 gap-1.5 text-center text-[10px] text-[#71717A] dark:text-[#A1A1AA]">
+              <div className="w-28 shrink-0" />
+              <div className="flex-1 grid grid-cols-7 gap-1.5 text-center text-xs font-medium text-[#71717A] dark:text-[#A1A1AA]">
                 {heatmapDays.map((d) => (
                   <span key={d}>{d}</span>
                 ))}
@@ -422,7 +422,7 @@ export const Overview: React.FC = () => {
             {/* Matrix Rows */}
             {heatmapTactics.map((tactic, rowIdx) => (
               <div key={tactic} className="flex items-center">
-                <span className="w-24 shrink-0 text-[11px] text-[#71717A] dark:text-[#A1A1AA] truncate pr-2">
+                <span className="w-28 shrink-0 text-xs font-medium text-[#71717A] dark:text-[#A1A1AA] truncate pr-2">
                   {tactic}
                 </span>
                 <div className="flex-1 grid grid-cols-7 gap-1.5">
@@ -436,7 +436,7 @@ export const Overview: React.FC = () => {
                     return (
                       <div
                         key={colIdx}
-                        className={cn('h-5 rounded-md transition-transform hover:scale-110 cursor-pointer', cellColor)}
+                        className={cn('h-5.5 rounded-md transition-transform hover:scale-110 cursor-pointer', cellColor)}
                         title={`${tactic} on ${heatmapDays[colIdx]}: ${intensity * 14} attacks`}
                       />
                     );
@@ -446,9 +446,9 @@ export const Overview: React.FC = () => {
             ))}
 
             {/* Bottom Mon-Sun Legend */}
-            <div className="flex items-center mt-2">
-              <div className="w-24 shrink-0" />
-              <div className="flex-1 grid grid-cols-7 gap-1.5 text-center text-[9px] text-[#71717A] dark:text-[#52525B]">
+            <div className="flex items-center mt-1.5">
+              <div className="w-28 shrink-0" />
+              <div className="flex-1 grid grid-cols-7 gap-1.5 text-center text-[10px] text-[#71717A] dark:text-[#52525B]">
                 {heatmapDays.map((d) => (
                   <span key={d}>{d}</span>
                 ))}
@@ -463,7 +463,7 @@ export const Overview: React.FC = () => {
         {/* Left Card: Security Threats Table (7 cols) */}
         <div className="lg:col-span-7 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-semibold text-[#0A0A0A] dark:text-white">
+            <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">
               Security Threats
             </span>
             <button
@@ -477,13 +477,13 @@ export const Overview: React.FC = () => {
 
           {/* Threats Table Headers */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-[#E5E7EB] dark:border-[#222222] text-[#71717A] dark:text-[#A1A1AA]">
-                  <th className="pb-2.5 font-medium">Threat Type</th>
-                  <th className="pb-2.5 font-medium">Asset</th>
-                  <th className="pb-2.5 font-medium">Risk Level</th>
-                  <th className="pb-2.5 font-medium text-right">Status</th>
+                  <th className="pb-3 font-medium text-xs sm:text-sm">Threat Type</th>
+                  <th className="pb-3 font-medium text-xs sm:text-sm">Asset</th>
+                  <th className="pb-3 font-medium text-xs sm:text-sm">Risk Level</th>
+                  <th className="pb-3 font-medium text-xs sm:text-sm text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#161616]">
@@ -497,29 +497,29 @@ export const Overview: React.FC = () => {
                       onClick={() => setSelectedThreat(threat)}
                       className="cursor-pointer hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors group"
                     >
-                      <td className="py-3">
+                      <td className="py-3.5">
                         <div className="flex flex-col">
-                          <span className="font-medium text-[#0A0A0A] dark:text-white group-hover:text-[#FF6600] transition-colors">
+                          <span className="font-semibold text-sm text-[#0A0A0A] dark:text-white group-hover:text-[#FF6600] transition-colors">
                             {threat.threatType}
                           </span>
-                          <span className="text-[10px] font-mono text-[#71717A] dark:text-[#A1A1AA]">
+                          <span className="text-xs font-mono text-[#71717A] dark:text-[#A1A1AA] mt-0.5">
                             {threat.code}
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 font-mono text-xs text-[#0A0A0A] dark:text-[#E4E4E7]">
+                      <td className="py-3.5 font-mono text-sm text-[#0A0A0A] dark:text-[#E4E4E7]">
                         {threat.asset}
                       </td>
                       {/* 10-Segment Segmented Risk Bar */}
-                      <td className="py-3">
-                        <div className="flex items-center gap-1">
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-1.5">
                           {Array.from({ length: 10 }).map((_, idx) => {
                             const isFilled = idx < filledSegments;
                             return (
                               <div
                                 key={idx}
                                 className={cn(
-                                  'w-2 h-3.5 rounded-xs transition-colors',
+                                  'w-2.5 h-4 rounded-xs transition-colors',
                                   isFilled
                                     ? idx > 7
                                       ? 'bg-red-500'
@@ -535,10 +535,10 @@ export const Overview: React.FC = () => {
                           })}
                         </div>
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-3.5 text-right">
                         <span
                           className={cn(
-                            'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border',
+                            'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border',
                             threat.status === 'Blocked' &&
                               'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
                             threat.status === 'Investigating' &&
@@ -561,7 +561,7 @@ export const Overview: React.FC = () => {
         {/* Right Card: Network Traffic Chart (5 cols) */}
         <div className="lg:col-span-5 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-[#0A0A0A] dark:text-white">
+            <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">
               Perimeter Edge Traffic
             </span>
             <button
@@ -576,23 +576,23 @@ export const Overview: React.FC = () => {
           {/* Traffic Count & Legend Row */}
           <div className="flex items-baseline justify-between mb-4">
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-semibold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
+              <span className="text-3xl sm:text-4xl font-bold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
                 40.3M
               </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
                 +6.2% throughput surge
               </span>
             </div>
             {/* Series Legend */}
-            <div className="flex items-center gap-3 text-[10px] font-mono">
+            <div className="flex items-center gap-3 text-xs font-mono">
               <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
-                <span className="w-2 h-2 rounded-full bg-[#FF6600]" /> AWS Ingress
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF6600]" /> AWS Ingress
               </span>
               <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
-                <span className="w-2 h-2 rounded-full bg-[#FB923C]" /> Azure Gateway
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FB923C]" /> Azure Gateway
               </span>
               <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
-                <span className="w-2 h-2 rounded-full bg-[#FACC15]" /> On-Prem DMZ
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" /> On-Prem DMZ
               </span>
             </div>
           </div>
