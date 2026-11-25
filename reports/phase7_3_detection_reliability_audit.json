@@ -1,0 +1,59 @@
+{
+  "phase": "7.3",
+  "title": "Surgical WAF Detection Reliability Audit",
+  "timestamp": "2026-11-25T13:13:00Z",
+  "status": "COMPLETED",
+  "cloud_spend_usd": 0.0,
+  "canonical_reconciliation": {
+    "dev_val_split_samples": 2865,
+    "v1_0": {
+      "tau_0_50": {"recall": 0.8282, "precision": 0.9365, "fpr": 0.0401, "f1": 0.8790, "roc_auc": 0.9608},
+      "tau_0_85": {"recall": 0.7879, "precision": 0.9533, "fpr": 0.0275, "f1": 0.8628, "roc_auc": 0.9608}
+    },
+    "v2_1": {
+      "tau_0_50": {"recall": 0.6723, "precision": 0.8568, "fpr": 0.0801, "f1": 0.7534, "roc_auc": 0.8909},
+      "tau_0_85": {"recall": 0.6169, "precision": 0.8804, "fpr": 0.0598, "f1": 0.7255, "roc_auc": 0.8909}
+    },
+    "v2_2": {
+      "tau_0_50": {"recall": 0.6756, "precision": 0.8396, "fpr": 0.0921, "f1": 0.7487, "roc_auc": 0.8320},
+      "tau_0_85": {"recall": 0.6169, "precision": 0.8804, "fpr": 0.0598, "f1": 0.7255, "roc_auc": 0.8320}
+    }
+  },
+  "false_positive_analysis": {
+    "total_records": 4117,
+    "breakdown": {
+      "LEXICAL_COLLISION": {"count": 2073, "percentage": 50.35},
+      "LONG_PAYLOAD_TRUNCATION": {"count": 2003, "percentage": 48.65},
+      "POTENTIAL_LABEL_OR_PARSE_ISSUE": {"count": 36, "percentage": 0.87},
+      "ENDPOINT_MEMORIZATION": {"count": 4, "percentage": 0.10},
+      "ENCODING_ARTIFACT": {"count": 1, "percentage": 0.02}
+    }
+  },
+  "live_waf_benchmark": {
+    "corpus_size": 105,
+    "ml_blocking_mode_0_85": {
+      "hard_blocked_403": 70,
+      "challenged": 34,
+      "allowed": 0,
+      "latency_p50_ms": 10.15,
+      "latency_p95_ms": 111.08
+    },
+    "regex_only_baseline": {
+      "hard_blocked_403": 30,
+      "challenged": 75,
+      "allowed": 0,
+      "latency_p50_ms": 1.88,
+      "latency_p95_ms": 2.35
+    }
+  },
+  "decision_engine_audit": {
+    "ml_hard_block_at_0_85": true,
+    "clearance_cookie_bypass_hard_block": false,
+    "nginx_policy_route_blocked": true,
+    "fail_mode": "fail_open_with_local_rules"
+  },
+  "pytest_status": {
+    "total_passed": 77,
+    "total_failed": 0
+  }
+}
