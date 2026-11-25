@@ -1,0 +1,86 @@
+{
+  "phase": "17A",
+  "name": "Site Onboarding State Machine, Owner Site Quotas & Domain Ownership Verification",
+  "timestamp": "2026-11-25T21:23:00+05:30",
+  "status": "COMPLETED",
+  "boundary_adherence": {
+    "target_scope": "apps/api/",
+    "forbidden_imports_in_domain": 0,
+    "cross_module_infrastructure_leaks": 0,
+    "external_changes": "None (apps/web, src, models, tests untouched)"
+  },
+  "schema_extensions": {
+    "tenant_max_sites": "Int @default(5) with validation 1 <= maxSites <= 100",
+    "onboarding_status_enum": [
+      "DRAFT",
+      "PENDING_VERIFICATION",
+      "VERIFIED",
+      "CONFIGURING",
+      "DNS_PENDING",
+      "TLS_PENDING",
+      "HEALTH_CHECK",
+      "ACTIVE",
+      "FAILED",
+      "PAUSED",
+      "REMOVED"
+    ],
+    "protected_site_fields": [
+      "domain String @unique",
+      "onboardingStatus OnboardingStatus @default(PENDING_VERIFICATION)",
+      "verificationToken String?",
+      "verifiedAt DateTime?",
+      "configVersion Int @default(1)",
+      "lastOnboardingError String?"
+    ]
+  },
+  "endpoints_implemented": [
+    {
+      "method": "PATCH",
+      "path": "/api/v1/tenants/:id/quota",
+      "role": "OWNER",
+      "description": "Updates max protected site quota for tenant"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sites/onboarding",
+      "role": "OWNER | ADMIN",
+      "description": "Initiates onboarding in PENDING_VERIFICATION state"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sites/:siteId/onboarding",
+      "role": "VIEWER+",
+      "description": "Returns onboarding state, TXT challenge token, and DNS instructions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sites/:siteId/onboarding/verify-domain",
+      "role": "OWNER | ADMIN",
+      "description": "Checks DNS TXT record and advances status to VERIFIED upon match"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sites/:siteId/onboarding/retry",
+      "role": "OWNER | ADMIN",
+      "description": "Resets failed onboarding back to PENDING_VERIFICATION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sites/:siteId/onboarding/pause",
+      "role": "OWNER | ADMIN",
+      "description": "Transitions site to PAUSED state"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sites/:siteId/onboarding/resume",
+      "role": "OWNER | ADMIN",
+      "description": "Resumes site to ACTIVE state"
+    }
+  ],
+  "test_results": {
+    "unit_tests_passed": 87,
+    "e2e_tests_passed": 14,
+    "architecture_invariants_passed": 2,
+    "regression_boundary": "100% PASS"
+  }
+}
