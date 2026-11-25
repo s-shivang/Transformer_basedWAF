@@ -1,0 +1,213 @@
+// Prisma Schema for Transformer-WAF SaaS (Phase 8 Multi-tenant Shared-Schema)
+// Datasource and generator configuration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// Core Multi-Tenant & Identity Models
+// ----------------------------------------------------
+
+enum TenantTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum SiteStatus {
+  ACTIVE
+  PAUSED
+  MAINTENANCE
+}
+
+enum InspectionMode {
+  MONITOR
+  BLOCK
+  SIMULATION
+}
+
+enum PolicyAction {
+  ALLOW
+  MONITOR
+  CHALLENGE
+  BLOCK
+}
+
+enum SecuritySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Tenant {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @db.VarChar(100)
+  slug        String       @unique @db.VarChar(50)
+  tier        TenantTier   @default(FREE)
+  status      TenantStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  memberships     Membership[]
+  protectedSites  ProtectedSite[]
+  wafPolicies     WafPolicy[]
+  securityEvents  SecurityEvent[]
+  auditLogs       AuditLog[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("tenants")
+}
+
+model User {
+  id           String       @id @default(uuid()) @db.Uuid
+  email        String       @unique @db.VarChar(255)
+  passwordHash String       @map("password_hash") @db.VarChar(255)
+  name         String?      @db.VarChar(100)
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  memberships Membership[]
+  auditLogs   AuditLog[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Membership {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      UserRole @default(VIEWER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+// ----------------------------------------------------
+// Protected Sites & WAF Configuration
+// ----------------------------------------------------
+
+model ProtectedSite {
+  id          String     @id @default(uuid()) @db.Uuid
+  tenantId    String     @map("tenant_id") @db.Uuid
+  domain      String     @db.VarChar(255)
+  upstreamUrl String     @map("upstream_url") @db.VarChar(500)
+  status      SiteStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  wafPolicies    WafPolicy[]
+  securityEvents SecurityEvent[]
+
+  @@unique([tenantId, domain])
+  @@index([tenantId])
+  @@index([domain])
+  @@map("protected_sites")
+}
+
+model WafPolicy {
+  id                   String         @id @default(uuid()) @db.Uuid
+  tenantId             String         @map("tenant_id") @db.Uuid
+  siteId               String?        @map("site_id") @db.Uuid
+  name                 String         @db.VarChar(100)
+  mode                 InspectionMode @default(MONITOR)
+  fastPassThreshold    Float          @default(0.04) @map("fast_pass_threshold")
+  monitorThreshold     Float          @default(0.05) @map("monitor_threshold")
+  challengeThreshold   Float          @default(0.50) @map("challenge_threshold")
+  blockThreshold       Float          @default(0.85) @map("block_threshold")
+  rateLimitPerMinute   Int            @default(300) @map("rate_limit_per_minute")
+  modelId              String         @default("v1_0") @map("model_id") @db.VarChar(50)
+  rulesJson            Json           @default("[]") @map("rules_json")
+  isDefault            Boolean        @default(false) @map("is_default")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  site   ProtectedSite? @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([siteId])
+  @@map("waf_policies")
+}
+
+// ----------------------------------------------------
+// Security Events & Audit Logging
+// ----------------------------------------------------
+
+model SecurityEvent {
+  id            String           @id @default(uuid()) @db.Uuid
+  tenantId      String           @map("tenant_id") @db.Uuid
+  siteId        String?          @map("site_id") @db.Uuid
+  requestId     String           @map("request_id") @db.VarChar(64)
+  clientIp      String           @map("client_ip") @db.VarChar(45)
+  method        String           @db.VarChar(10)
+  uri           String           @db.VarChar(2048)
+  action        PolicyAction
+  severity      SecuritySeverity @default(LOW)
+  mlScore       Float?           @map("ml_score")
+  calibratedP   Float?           @map("calibrated_p")
+  triggeredRule String?          @map("triggered_rule") @db.VarChar(100)
+  stageUsed     String?          @map("stage_used") @db.VarChar(50)
+  redactedEvent Json?            @map("redacted_event")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  site   ProtectedSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([siteId, createdAt])
+  @@index([action])
+  @@index([clientIp])
+  @@map("security_events")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  resource   String   @db.VarChar(100)
+  resourceId String?  @map("resource_id") @db.VarChar(100)
+  metadata   Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@map("audit_logs")
+}
