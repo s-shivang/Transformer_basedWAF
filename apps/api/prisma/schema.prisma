@@ -39,6 +39,20 @@ enum SiteStatus {
   MAINTENANCE
 }
 
+enum OnboardingStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  VERIFIED
+  CONFIGURING
+  DNS_PENDING
+  TLS_PENDING
+  HEALTH_CHECK
+  ACTIVE
+  FAILED
+  PAUSED
+  REMOVED
+}
+
 enum WafMode {
   MONITOR
   BLOCKING
@@ -85,6 +99,7 @@ model Tenant {
   slug        String       @unique @db.VarChar(50)
   tier        TenantTier   @default(FREE)
   status      TenantStatus @default(ACTIVE)
+  maxSites    Int          @default(5) @map("max_sites")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -163,14 +178,19 @@ model RefreshSession {
 // ----------------------------------------------------
 
 model ProtectedSite {
-  id          String     @id @default(uuid()) @db.Uuid
-  tenantId    String     @map("tenant_id") @db.Uuid
-  name        String     @db.VarChar(100)
-  domain      String     @db.VarChar(255)
-  upstreamUrl String     @map("upstream_url") @db.VarChar(500)
-  status      SiteStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id                  String           @id @default(uuid()) @db.Uuid
+  tenantId            String           @map("tenant_id") @db.Uuid
+  name                String           @db.VarChar(100)
+  domain              String           @unique @db.VarChar(255)
+  upstreamUrl         String           @map("upstream_url") @db.VarChar(500)
+  status              SiteStatus       @default(ACTIVE)
+  onboardingStatus    OnboardingStatus @default(PENDING_VERIFICATION) @map("onboarding_status")
+  verificationToken   String?          @map("verification_token") @db.VarChar(255)
+  verifiedAt          DateTime?        @map("verified_at")
+  configVersion       Int              @default(1) @map("config_version")
+  lastOnboardingError String?          @map("last_onboarding_error") @db.Text
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   wafPolicies    WafPolicy[]
@@ -178,9 +198,9 @@ model ProtectedSite {
   eventFeedbacks EventFeedback[]
   notifications  Notification[]
 
-  @@unique([tenantId, domain])
   @@index([tenantId])
   @@index([domain])
+  @@index([onboardingStatus])
   @@map("protected_sites")
 }
 

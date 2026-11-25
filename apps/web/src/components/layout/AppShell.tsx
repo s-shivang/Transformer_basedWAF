@@ -90,14 +90,14 @@ export const AppShell: React.FC = () => {
         className={cn(
           'flex flex-col border-r transition-all duration-300 z-30 select-none shrink-0',
           'bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222]',
-          collapsed ? 'w-[72px]' : 'w-[260px]',
+          collapsed ? 'w-[72px]' : 'w-[276px]',
         )}
       >
         {/* Brand Header */}
         <div
           className={cn(
             'h-16 flex items-center border-b border-[#E5E7EB] dark:border-[#222222] transition-all relative',
-            collapsed ? 'justify-center px-2' : 'justify-between px-3.5',
+            collapsed ? 'justify-center px-2' : 'justify-between px-4',
           )}
         >
           {collapsed ? (
@@ -123,12 +123,12 @@ export const AppShell: React.FC = () => {
           ) : (
             /* Expanded State: Logo + Title + Collapse Chevron */
             <>
-              <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6600] to-[#EA580C] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(255,102,0,0.3)]">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex flex-col leading-tight min-w-0">
-                  <div className="flex items-center gap-1 font-bold text-[15px] tracking-tight whitespace-nowrap">
+                <div className="flex flex-col leading-tight min-w-0 flex-1 pr-1">
+                  <div className="flex items-center gap-1.5 font-bold text-[15px] tracking-tight whitespace-nowrap overflow-visible">
                     <span className="text-[#0A0A0A] dark:text-white">Transformer</span>
                     <span className="text-[#EA580C] dark:text-[#FF7A1A]">WAF</span>
                   </div>
