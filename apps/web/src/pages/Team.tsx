@@ -66,14 +66,14 @@ export const TeamPage: React.FC = () => {
         );
       case 'ANALYST':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FF6600]/10 text-[#FF6600] dark:text-[#FF8800] border border-[#FF6600]/20">
             <ShieldAlert className="w-3.5 h-3.5" /> SOC Analyst
           </span>
         );
       case 'VIEWER':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20">
             <Eye className="w-3.5 h-3.5" /> Read-Only Viewer
           </span>
         );
@@ -158,8 +158,8 @@ export const TeamPage: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-wider text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-sm text-[#71717A] dark:text-[#A1A1AA]">
+              <thead className="bg-[#F9FAFB]/50 dark:bg-[#111111]/50 text-xs uppercase tracking-wider text-[#71717A] dark:text-[#A1A1AA] font-semibold border-b border-[#E5E7EB] dark:border-[#222222]">
                 <tr>
                   <th className="py-3 px-4">User</th>
                   <th className="py-3 px-4">Email Address</th>
@@ -167,25 +167,25 @@ export const TeamPage: React.FC = () => {
                   <th className="py-3 px-4">Joined Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#222222]">
                 {members.map((member: any) => (
                   <tr
                     key={member.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                    className="hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors"
                   >
                     <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-900 dark:text-white">
+                      <div className="font-semibold text-[#0A0A0A] dark:text-white">
                         {member.user?.fullName || 'Active User'}
                       </div>
-                      <div className="text-xs text-slate-400 font-mono">
+                      <div className="text-xs text-[#71717A] dark:text-[#A1A1AA] font-mono">
                         {member.userId}
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-mono text-xs text-slate-700 dark:text-slate-300">
+                    <td className="py-3 px-4 font-mono text-xs text-[#0A0A0A] dark:text-zinc-300">
                       {member.user?.email || 'N/A'}
                     </td>
                     <td className="py-3 px-4">{getRoleBadge(member.role)}</td>
-                    <td className="py-3 px-4 whitespace-nowrap font-mono text-xs text-slate-400">
+                    <td className="py-3 px-4 whitespace-nowrap font-mono text-xs text-[#71717A] dark:text-[#A1A1AA]">
                       {member.createdAt
                         ? new Date(member.createdAt).toLocaleDateString()
                         : 'N/A'}
@@ -201,35 +201,35 @@ export const TeamPage: React.FC = () => {
       {/* Add Member Modal */}
       {isInviteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-indigo-500" />
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0A0A0A] border border-[#E5E7EB] dark:border-[#222222] p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-[#0A0A0A] dark:text-white flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-[#FF6600]" />
               Add Organization Member
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
               Add an existing registered user to this tenant with a designated RBAC permission tier.
             </p>
 
             <form onSubmit={handleInviteSubmit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   User Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-[#71717A] dark:text-[#A1A1AA]" />
                   <input
                     type="email"
                     required
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-[#F9FAFB] dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                     placeholder="analyst@corp.io"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   Role Tier
                 </label>
                 <select
@@ -237,7 +237,7 @@ export const TeamPage: React.FC = () => {
                   onChange={(e) =>
                     setInviteRole(e.target.value as 'ADMIN' | 'ANALYST' | 'VIEWER')
                   }
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-[#F9FAFB] dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                 >
                   <option value="ADMIN">ADMIN — Can modify policies & manage sites</option>
                   <option value="ANALYST">ANALYST — Can triage events & submit feedback</option>
@@ -246,7 +246,7 @@ export const TeamPage: React.FC = () => {
               </div>
 
               {inviteMutation.isError && (
-                <div className="p-3 text-xs rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                <div className="p-3 text-xs rounded-xl bg-red-500/10 text-red-500 border border-red-500/20">
                   {(inviteMutation.error as Error).message}
                 </div>
               )}
@@ -255,14 +255,14 @@ export const TeamPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsInviteOpen(false)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-2 text-sm font-medium rounded-xl text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={inviteMutation.isPending}
-                  className="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 shadow-[0_0_15px_rgba(255,102,0,0.3)] disabled:opacity-50"
                 >
                   {inviteMutation.isPending ? 'Adding...' : 'Add Member'}
                 </button>

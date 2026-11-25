@@ -17,8 +17,8 @@ const TeamPage = lazy(() => import('./pages/Team').then(m => ({ default: m.TeamP
 
 const PageLoader: React.FC = () => (
   <div className="flex-1 p-8 flex items-center justify-center">
-    <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-      <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+    <div className="flex items-center gap-3 text-zinc-500 dark:text-zinc-400">
+      <div className="w-5 h-5 border-2 border-[#FF6600] border-t-transparent rounded-full animate-spin" />
       <span className="text-sm font-medium">Loading view...</span>
     </div>
   </div>

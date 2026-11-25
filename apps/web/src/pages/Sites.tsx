@@ -76,7 +76,7 @@ export const Sites: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Protected Sites</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
             Domain endpoints safeguarded by Transformer WAF with automated reverse-proxy inspection
           </p>
         </div>
@@ -136,7 +136,7 @@ export const Sites: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenPolicy(s.id)}
-                          className="p-1.5 rounded text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className="p-1.5 rounded text-[#71717A] dark:text-[#A1A1AA] hover:text-[#FF6600] dark:hover:text-[#FF8800] hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
                           title="Open WAF Policy Studio"
                         >
                           <Sliders className="w-4 h-4" />
@@ -152,7 +152,7 @@ export const Sites: React.FC = () => {
                                   status: s.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
                                 })
                               }
-                              className="p-1.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              className="p-1.5 rounded text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
                               title={s.status === 'ACTIVE' ? 'Pause WAF Protection' : 'Resume WAF Protection'}
                             >
                               {s.status === 'ACTIVE' ? (
@@ -169,7 +169,7 @@ export const Sites: React.FC = () => {
                                   deleteSiteMutation.mutate(s.id);
                                 }
                               }}
-                              className="p-1.5 rounded text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              className="p-1.5 rounded text-[#71717A] dark:text-[#A1A1AA] hover:text-red-600 dark:hover:text-red-400 hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
                               title="Delete Protected Site"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -182,7 +182,7 @@ export const Sites: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                  <td colSpan={5} className="py-12 text-center text-[#71717A] dark:text-[#A1A1AA]">
                     {isLoading ? 'Loading protected sites...' : 'No protected sites registered yet.'}
                   </td>
                 </tr>

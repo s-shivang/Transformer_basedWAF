@@ -79,7 +79,7 @@ export const FeedbackPage: React.FC = () => {
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-500/10 text-slate-400">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-500/10 text-zinc-400">
             {status}
           </span>
         );
@@ -138,7 +138,7 @@ export const FeedbackPage: React.FC = () => {
       {/* Feedback List Table */}
       <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#222222] bg-white dark:bg-[#0A0A0A] overflow-hidden shadow-sm">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-400 animate-pulse">
+          <div className="p-12 text-center text-[#71717A] dark:text-[#A1A1AA] animate-pulse">
             Loading feedback submissions...
           </div>
         ) : error ? (
@@ -147,18 +147,18 @@ export const FeedbackPage: React.FC = () => {
           </div>
         ) : !feedbackList || feedbackList.length === 0 ? (
           <div className="p-12 text-center">
-            <FileCheck className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-slate-800 dark:text-slate-200">
+            <FileCheck className="w-12 h-12 text-[#71717A] dark:text-[#A1A1AA] mx-auto mb-3" />
+            <h3 className="text-base font-medium text-[#0A0A0A] dark:text-zinc-200">
               No feedback entries found
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1">
               There are currently no submissions with status "{selectedStatus}".
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-wider text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-sm text-[#71717A] dark:text-[#A1A1AA]">
+              <thead className="bg-[#F9FAFB]/50 dark:bg-[#111111]/50 text-xs uppercase tracking-wider text-[#71717A] dark:text-[#A1A1AA] font-semibold border-b border-[#E5E7EB] dark:border-[#222222]">
                 <tr>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Classification</th>
@@ -169,25 +169,25 @@ export const FeedbackPage: React.FC = () => {
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#222222]">
                 {feedbackList.map((item: any) => (
                   <tr
                     key={item.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                    className="hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors"
                   >
                     <td className="py-3 px-4 whitespace-nowrap">
                       {getStatusBadge(item.status)}
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap font-medium text-slate-900 dark:text-white">
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                    <td className="py-3 px-4 whitespace-nowrap font-medium text-[#0A0A0A] dark:text-white">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#FF6600]/10 text-[#FF6600] dark:text-[#FF8800] border border-[#FF6600]/20">
                         {item.label}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-mono text-xs text-slate-900 dark:text-slate-100">
+                      <div className="font-mono text-xs text-[#0A0A0A] dark:text-zinc-100">
                         {item.event?.method || 'N/A'} {item.event?.path || 'N/A'}
                       </div>
-                      <div className="text-xs text-slate-400 font-mono">
+                      <div className="text-xs text-[#71717A] dark:text-[#A1A1AA] font-mono">
                         {item.event?.requestId || item.eventId}
                       </div>
                     </td>
@@ -195,20 +195,20 @@ export const FeedbackPage: React.FC = () => {
                       {item.event?.riskScore !== undefined ? (
                         <RiskMeter score={item.event.riskScore} />
                       ) : (
-                        <span className="text-xs text-slate-400">N/A</span>
+                        <span className="text-xs text-[#71717A] dark:text-[#A1A1AA]">N/A</span>
                       )}
                     </td>
                     <td className="py-3 px-4 max-w-xs">
-                      <div className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
-                        {item.notes || <span className="italic text-slate-400">No notes provided</span>}
+                      <div className="text-xs text-[#0A0A0A] dark:text-zinc-300 line-clamp-2">
+                        {item.notes || <span className="italic text-[#71717A] dark:text-[#A1A1AA]">No notes provided</span>}
                       </div>
                       {item.reviewNotes && (
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
+                        <div className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1 italic">
                           Reviewer: {item.reviewNotes}
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap font-mono text-xs text-slate-400">
+                    <td className="py-3 px-4 whitespace-nowrap font-mono text-xs text-[#71717A] dark:text-[#A1A1AA]">
                       {new Date(item.createdAt).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap text-right">
@@ -240,7 +240,7 @@ export const FeedbackPage: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
                           {item.status === 'PENDING_REVIEW' ? 'Review restricted' : 'Completed'}
                         </span>
                       )}
@@ -256,8 +256,8 @@ export const FeedbackPage: React.FC = () => {
       {/* Review Modal */}
       {reviewModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0A0A0A] border border-[#E5E7EB] dark:border-[#222222] p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-[#0A0A0A] dark:text-white flex items-center gap-2">
               {reviewModalItem.action === 'APPROVED' ? (
                 <>
                   <CheckCircle2 className="w-5 h-5 text-emerald-500" />
@@ -270,7 +270,7 @@ export const FeedbackPage: React.FC = () => {
                 </>
               )}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-2">
               {reviewModalItem.action === 'APPROVED'
                 ? 'Approving marks this request payload as high-confidence ground truth for dataset curation.'
                 : 'Rejecting marks this feedback submission as invalid or unverified.'}
@@ -278,7 +278,7 @@ export const FeedbackPage: React.FC = () => {
 
             <form onSubmit={handleReviewSubmit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   Reviewer Notes (Optional)
                 </label>
                 <textarea
@@ -287,13 +287,13 @@ export const FeedbackPage: React.FC = () => {
                     setReviewModalItem({ ...reviewModalItem, notes: e.target.value })
                   }
                   rows={3}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-[#F9FAFB] dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                   placeholder="e.g., Validated legitimate enterprise webhook query parameters."
                 />
               </div>
 
               {reviewMutation.isError && (
-                <div className="p-3 text-xs rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                <div className="p-3 text-xs rounded-xl bg-red-500/10 text-red-500 border border-red-500/20">
                   {(reviewMutation.error as Error).message}
                 </div>
               )}
@@ -302,14 +302,14 @@ export const FeedbackPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setReviewModalItem(null)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-2 text-sm font-medium rounded-xl text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={reviewMutation.isPending}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg text-white ${
+                  className={`px-4 py-2 text-sm font-semibold rounded-xl text-white ${
                     reviewModalItem.action === 'APPROVED'
                       ? 'bg-emerald-600 hover:bg-emerald-500'
                       : 'bg-rose-600 hover:bg-rose-500'
