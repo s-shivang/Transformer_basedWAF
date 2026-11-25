@@ -1,0 +1,30 @@
+{
+  "phase": 10,
+  "title": "Protected Sites & Tenant WAF Policy Management",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-25T13:38:00Z",
+  "summary": {
+    "modules_created": [
+      "apps/api/src/modules/protected-sites",
+      "apps/api/src/modules/waf-policies"
+    ],
+    "invariants_enforced": [
+      "Strict DDD architectural boundaries (0 forbidden imports in domain layers)",
+      "Cross-tenant isolation (404 Not Found without existence leakage)",
+      "Strict RBAC hierarchy (OWNER, ADMIN, ANALYST, VIEWER)",
+      "Domain FQDN validation & SSRF protection on upstream origin URLs",
+      "Threshold ordering invariant (0.0 < monitor < challenge < block <= 1.0)",
+      "Anti-wildcard scoped exclusions with required justification",
+      "Non-destructive policy versioning and 1-click rollback"
+    ]
+  },
+  "test_results": {
+    "nestjs_unit_suites": 5,
+    "nestjs_unit_passed": 49,
+    "nestjs_e2e_suites": 4,
+    "nestjs_e2e_passed": 45,
+    "python_pytest_passed": 77,
+    "architecture_violations": 0
+  },
+  "cloud_spend": "$0.00"
+}

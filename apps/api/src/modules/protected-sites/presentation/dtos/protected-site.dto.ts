@@ -1,6 +1,5 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SiteStatus } from '../../domain/protected-site.entity';
+import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProtectedSiteDto {
   @ApiProperty({ example: 'Main Production API' })
@@ -14,24 +13,19 @@ export class CreateProtectedSiteDto {
   domain: string;
 
   @ApiProperty({ example: 'https://backend.internal.acme.com' })
-  @IsString()
+  @IsUrl({ require_tld: false, protocols: ['http', 'https'] })
   @IsNotEmpty()
   originUrl: string;
 }
 
 export class UpdateProtectedSiteDto {
-  @ApiPropertyOptional({ example: 'Renamed API' })
-  @IsOptional()
-  @IsString()
+  @ApiProperty({ example: 'Renamed API', required: false })
   name?: string;
 
-  @ApiPropertyOptional({ example: 'https://new-origin.internal.acme.com' })
-  @IsOptional()
-  @IsString()
+  @ApiProperty({ example: 'https://new-origin.internal.acme.com', required: false })
   originUrl?: string;
 
-  @ApiPropertyOptional({ enum: SiteStatus, example: SiteStatus.ACTIVE })
-  @IsOptional()
-  @IsEnum(SiteStatus)
-  status?: SiteStatus;
+  @ApiProperty({ example: 'ACTIVE', enum: ['ACTIVE', 'PAUSED'], required: false })
+  status?: string;
 }
+

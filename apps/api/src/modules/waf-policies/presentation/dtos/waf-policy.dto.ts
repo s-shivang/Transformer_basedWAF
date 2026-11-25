@@ -1,7 +1,6 @@
 import {
   IsBoolean,
   IsEnum,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -90,3 +89,4 @@ export class UpdateWafPolicyDto {
   @Type(() => ScopedExclusionDto)
   exclusions?: ScopedExclusionDto[];
 }
+
