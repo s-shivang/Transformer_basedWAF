@@ -10,7 +10,17 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // Listen on 0.0.0.0 for host and Docker container access
     port: 5173,
+    strictPort: true,
+    watch: {
+      usePolling: true, // Essential for Windows and Docker volume mounts
+      interval: 100,
+    },
+    hmr: {
+      clientPort: 5173,
+      overlay: true,
+    },
   },
   build: {
     chunkSizeWarningLimit: 600,

@@ -75,20 +75,28 @@ services:
     networks:
       - waf-internal
 
-  # 4. React SOC SaaS Dashboard
+  # 4. React SOC SaaS Dashboard (Live Dev with Instant Vite Hot Reload)
   web:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
+      target: dev
     container_name: waf-web
     restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
     ports:
-      - "5173:80"
+      - "5173:5173"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5173/ || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5

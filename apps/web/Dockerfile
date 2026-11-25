@@ -1,4 +1,20 @@
-# Multi-stage Dockerfile for React SOC Dashboard
+# Development Stage with Live Hot Reload (Vite HMR)
+FROM node:20-alpine AS dev
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5173
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# Multi-stage Dockerfile for React SOC Dashboard (Production)
 FROM node:20-alpine AS builder
 
 WORKDIR /app
