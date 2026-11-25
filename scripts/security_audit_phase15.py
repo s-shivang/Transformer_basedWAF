@@ -12,6 +12,9 @@ Executes live adversarial checks against the running Docker stack:
 import sys
 import time
 import json
+import base64
+import hmac
+import hashlib
 import subprocess
 import httpx
 
@@ -20,6 +23,16 @@ WEB_BASE = "http://127.0.0.1:5173"
 NGINX_BASE = "http://127.0.0.1:8080"
 
 test_results = []
+
+
+def sign_jwt(payload: dict, secret: str) -> str:
+    header = {"alg": "HS256", "typ": "JWT"}
+    b64_header = base64.urlsafe_b64encode(json.dumps(header, separators=(',', ':')).encode()).decode().rstrip("=")
+    b64_payload = base64.urlsafe_b64encode(json.dumps(payload, separators=(',', ':')).encode()).decode().rstrip("=")
+    signing_input = f"{b64_header}.{b64_payload}".encode("ascii")
+    signature = hmac.new(secret.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    b64_sig = base64.urlsafe_b64encode(signature).decode("ascii").rstrip("=")
+    return f"{b64_header}.{b64_payload}.{b64_sig}"
 
 
 def record(cat: str, name: str, passed: bool, detail: str = ""):
@@ -221,14 +234,17 @@ def run_security_audit():
         viewerMemberId = addViewerRes.json()["userId"]
 
         # Mint a viewer JWT token scoped specifically to Tenant A
-        # (Since /auth/login returns activeTenantId for the user's primary/registered tenant)
-        # We can authenticate as viewer with Tenant A's tenantId via signed JWT
-        # Or test using their scoped JWT:
-        import jwt as pyjwt
-        viewerTokenA = pyjwt.encode(
-            {"sub": viewerMemberId, "tenantId": tenantAId, "role": "VIEWER", "email": f"viewer-{ts}@acme-a.com"},
-            "dev_jwt_access_secret_super_secure_32chars!",
-            algorithm="HS256"
+        now = int(time.time())
+        viewerTokenA = sign_jwt(
+            {
+                "sub": viewerMemberId,
+                "tenantId": tenantAId,
+                "role": "VIEWER",
+                "email": f"viewer-{ts}@acme-a.com",
+                "iat": now,
+                "exp": now + 900,
+            },
+            "dev_jwt_access_secret_super_secure_32chars!"
         )
 
         with httpx.Client(timeout=10.0) as viewerClient:
@@ -349,18 +365,26 @@ def run_security_audit():
             record("Cat E", "Layer 1 rules STILL block attacks while ML service is DOWN (403 BLOCK)", l1_blocks, f"status={r_atk.status_code}")
 
             # 3. Clean benign traffic fails open cleanly with X-WAF-Degraded: true
-            r_clean = client.get(f"{NGINX_BASE}/")
+            r_clean = client.get(f"{NGINX_BASE}/", headers={"X-Forwarded-For": "198.51.100.55"})
             fails_open = (r_clean.status_code == 200 and r_clean.headers.get("X-WAF-Degraded") == "true")
             record("Cat E", "Benign traffic safely fails open (200 OK + X-WAF-Degraded: true)", fails_open, f"status={r_clean.status_code}, degraded={r_clean.headers.get('X-WAF-Degraded')}")
     finally:
         # Restore ml-service container
         print("Restoring waf-ml-service container...")
         subprocess.run(["docker", "compose", "start", "ml-service"], check=True)
-        time.sleep(4)
+        # Wait up to 15s for ML model weights to reload and become ready
+        for _ in range(30):
+            try:
+                h = httpx.get("http://127.0.0.1:8000/health", timeout=1.0)
+                if h.status_code == 200 and h.json().get("model_ready"):
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
 
         # Verify normal ML scoring recovers
         with httpx.Client(timeout=10.0) as client:
-            r_recov = client.get(f"{NGINX_BASE}/")
+            r_recov = client.get(f"{NGINX_BASE}/", headers={"X-Forwarded-For": "198.51.100.56"})
             recovered = (r_recov.status_code == 200 and r_recov.headers.get("X-WAF-Degraded") in (None, "false"))
             record("Cat E", "ML Service recovered and scoring normally (X-WAF-Degraded: false/none)", recovered, f"status={r_recov.status_code}, degraded={r_recov.headers.get('X-WAF-Degraded')}")
 

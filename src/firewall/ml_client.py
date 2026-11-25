@@ -8,6 +8,8 @@ testing adapters, and explicit failure domain categorization.
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 import time
+import socket
+from urllib.parse import urlparse
 import httpx
 
 from src.ml_service.schemas import PredictRequest, PredictResponse
@@ -61,12 +63,56 @@ class MLClient:
         )
 
         self._client: Optional[httpx.Client] = None
+        self._hostname: Optional[str] = None
+        self._cached_ip: Optional[str] = None
+        self._port_str: str = ""
+        self._scheme: str = "http"
+
         if self.in_process_engine is None:
+            effective_base_url = self.base_url
+            headers = {}
+            try:
+                parsed = urlparse(self.base_url)
+                self._scheme = parsed.scheme or "http"
+                self._hostname = parsed.hostname
+                self._port_str = f":{parsed.port}" if parsed.port else ""
+                if self._hostname and not all(c.isdigit() or c == "." for c in self._hostname):
+                    self._cached_ip = socket.gethostbyname(self._hostname)
+                    effective_base_url = f"{self._scheme}://{self._cached_ip}{self._port_str}"
+                    headers["Host"] = parsed.netloc
+            except Exception:
+                effective_base_url = self.base_url
+
             self._client = httpx.Client(
-                base_url=self.base_url,
+                base_url=effective_base_url,
+                headers=headers if headers else None,
                 timeout=self.timeout,
                 limits=self.limits,
             )
+
+    def _try_refresh_ip(self):
+        """Attempts to re-resolve hostname if container was restarted with a new IP."""
+        if not self._hostname or all(c.isdigit() or c == "." for c in self._hostname):
+            return
+        try:
+            new_ip = socket.gethostbyname(self._hostname)
+            if new_ip != self._cached_ip:
+                self._cached_ip = new_ip
+                effective_base_url = f"{self._scheme}://{new_ip}{self._port_str}"
+                old_client = self._client
+                self._client = httpx.Client(
+                    base_url=effective_base_url,
+                    headers={"Host": f"{self._hostname}{self._port_str}"},
+                    timeout=self.timeout,
+                    limits=self.limits,
+                )
+                if old_client:
+                    try:
+                        old_client.close()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
     def close(self):
         """Closes the underlying HTTP connection pool."""
@@ -182,6 +228,7 @@ class MLClient:
                 )
 
         except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.PoolTimeout) as e:
+            self._try_refresh_ip()
             latency = (time.perf_counter() - t0) * 1000.0
             return MLClientResult(
                 success=False,
@@ -190,6 +237,7 @@ class MLClient:
                 latency_ms=round(latency, 3),
             )
         except (httpx.ConnectError, httpx.NetworkError) as e:
+            self._try_refresh_ip()
             latency = (time.perf_counter() - t0) * 1000.0
             return MLClientResult(
                 success=False,
