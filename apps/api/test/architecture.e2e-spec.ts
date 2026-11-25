@@ -19,13 +19,13 @@ describe('DDD Architectural Boundary Invariants', () => {
     return results;
   }
 
-  it('domain layers must have ZERO imports from @prisma/client, @nestjs/*, or express', () => {
+  it('domain layers must have ZERO imports from @prisma/client, @nestjs/*, express, bullmq, or ioredis', () => {
     const allFiles = getFilesRecursively(domainDir);
     const domainFiles = allFiles.filter((f) => f.includes(`${path.sep}domain${path.sep}`));
 
     expect(domainFiles.length).toBeGreaterThan(0);
 
-    const forbiddenImports = ['@prisma/client', '@nestjs', 'express'];
+    const forbiddenImports = ['@prisma/client', '@nestjs', 'express', 'bullmq', 'ioredis'];
     const violations: { file: string; line: string }[] = [];
 
     domainFiles.forEach((filePath) => {

@@ -1,4 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { IJobQueue } from '@shared/infrastructure/queues/job-queue.interface';
+import { JOB_QUEUE_TOKEN, QUEUES, JOBS } from '@shared/infrastructure/queues/queue.constants';
 import { Result } from '@shared/application/result';
 import { WafPolicy, WafMode, MlFailureMode } from '../domain/waf-policy.entity';
 import { PolicyThresholds } from '../domain/policy-thresholds.vo';
@@ -98,6 +100,7 @@ export class UpdateSitePolicyUseCase {
     @Inject(WAF_POLICY_REPOSITORY) private readonly policyRepo: IWafPolicyRepository,
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
     @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+    @Optional() @Inject(JOB_QUEUE_TOKEN) private readonly jobQueue?: IJobQueue,
   ) {}
 
   async execute(
@@ -191,6 +194,15 @@ export class UpdateSitePolicyUseCase {
     }).getValue();
     await this.auditRepo.save(audit);
 
+    if (this.jobQueue) {
+      await this.jobQueue.enqueue(QUEUES.POLICY_SYNC, JOBS.SYNC_POLICY, {
+        tenantId,
+        siteId,
+        version: nextPolicy.version,
+        effectivePolicy: serializePolicy(nextPolicy),
+      });
+    }
+
     return Result.ok(serializePolicy(nextPolicy));
   }
 }
@@ -201,6 +213,7 @@ export class RollbackSitePolicyUseCase {
     @Inject(WAF_POLICY_REPOSITORY) private readonly policyRepo: IWafPolicyRepository,
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
     @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+    @Optional() @Inject(JOB_QUEUE_TOKEN) private readonly jobQueue?: IJobQueue,
   ) {}
 
   async execute(
@@ -252,6 +265,15 @@ export class RollbackSitePolicyUseCase {
       ipAddress: clientIp,
     }).getValue();
     await this.auditRepo.save(audit);
+
+    if (this.jobQueue) {
+      await this.jobQueue.enqueue(QUEUES.POLICY_SYNC, JOBS.SYNC_POLICY, {
+        tenantId,
+        siteId,
+        version: rollbackPolicy.version,
+        effectivePolicy: serializePolicy(rollbackPolicy),
+      });
+    }
 
     return Result.ok(serializePolicy(rollbackPolicy));
   }

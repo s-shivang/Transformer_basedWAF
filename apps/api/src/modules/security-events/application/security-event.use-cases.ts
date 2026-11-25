@@ -1,4 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { IJobQueue } from '@shared/infrastructure/queues/job-queue.interface';
+import { JOB_QUEUE_TOKEN, QUEUES, JOBS } from '@shared/infrastructure/queues/queue.constants';
 import { Result } from '@shared/application/result';
 import { SecurityEvent } from '../domain/security-event.entity';
 import { EventFeedback } from '../domain/event-feedback.entity';
@@ -76,6 +78,7 @@ export class IngestSecurityEventsUseCase {
   constructor(
     @Inject(SECURITY_EVENT_REPOSITORY) private readonly eventRepo: ISecurityEventRepository,
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Optional() @Inject(JOB_QUEUE_TOKEN) private readonly jobQueue?: IJobQueue,
   ) {}
 
   async execute(eventsDto: IngestSecurityEventDto[]): Promise<Result<{ ingested: number; ids: string[] }>> {
@@ -128,6 +131,30 @@ export class IngestSecurityEventsUseCase {
     }
 
     await this.eventRepo.saveBatch(domainEvents);
+
+    // Asynchronously enqueue alerts evaluation
+    if (this.jobQueue) {
+      const eventsByTenant = new Map<string, IngestSecurityEventDto[]>();
+      for (const dto of eventsDto) {
+        if (!eventsByTenant.has(dto.tenantId)) {
+          eventsByTenant.set(dto.tenantId, []);
+        }
+        eventsByTenant.get(dto.tenantId)!.push(dto);
+      }
+
+      for (const [tenantId, tenantEvents] of eventsByTenant.entries()) {
+        await this.jobQueue.enqueue(QUEUES.ALERTS, JOBS.PROCESS_ALERTS, {
+          tenantId,
+          events: tenantEvents.map((e) => ({
+            siteId: e.siteId,
+            action: e.action,
+            degradedMode: e.degradedMode,
+            path: e.path,
+            requestId: e.requestId,
+          })),
+        });
+      }
+    }
 
     return Result.ok({
       ingested: domainEvents.length,
