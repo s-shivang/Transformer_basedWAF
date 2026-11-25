@@ -91,7 +91,7 @@ export const Events: React.FC = () => {
       {/* Page Title */}
       <div>
         <h1 className="text-xl font-bold tracking-tight">Security Events Explorer</h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
           Inspect, filter, and audit deep inspection telemetry across all protected routes
         </p>
       </div>
@@ -148,7 +148,7 @@ export const Events: React.FC = () => {
                 setMinScore(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-2.5 py-1.5 text-xs font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
             />
           </div>
         </div>
@@ -180,17 +180,17 @@ export const Events: React.FC = () => {
                       selectedEvent?.id === event.id && 'bg-[#FFF7ED] dark:bg-[#1C1C1C]',
                     )}
                   >
-                    <td className="py-2 px-4 font-mono text-slate-500 whitespace-nowrap">
+                    <td className="py-2 px-4 font-mono text-[#71717A] dark:text-[#A1A1AA] whitespace-nowrap">
                       {event.createdAt ? new Date(event.createdAt).toLocaleTimeString([], { hour12: false }) : '-'}
                     </td>
                     <td className="py-2 px-3 whitespace-nowrap">
                       <ActionBadge action={event.action} />
                     </td>
                     <td className="py-2 px-3 font-mono">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 mr-2">
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300 mr-2">
                         {event.method}
                       </span>
-                      <span className="text-slate-800 dark:text-slate-200">{event.path}</span>
+                      <span className="text-[#0A0A0A] dark:text-white">{event.path}</span>
                     </td>
                     <td className="py-2 px-3 font-mono font-bold tabular-nums text-right">
                       <span
@@ -200,27 +200,27 @@ export const Events: React.FC = () => {
                             : event.riskScore >= 0.50
                               ? 'text-amber-600 dark:text-amber-400'
                               : event.riskScore >= 0.05
-                                ? 'text-cyan-600 dark:text-cyan-400'
+                                ? 'text-orange-600 dark:text-[#FF8800]'
                                 : 'text-emerald-600 dark:text-emerald-400',
                         )}
                       >
                         {event.riskScore.toFixed(4)}
                       </span>
                     </td>
-                    <td className="py-2 px-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    <td className="py-2 px-3 font-mono text-[#71717A] dark:text-[#A1A1AA] whitespace-nowrap">
                       {event.stageUsed || 'l1_rules'}
                     </td>
-                    <td className="py-2 px-3 font-mono tabular-nums text-right text-slate-500 whitespace-nowrap">
+                    <td className="py-2 px-3 font-mono tabular-nums text-right text-[#71717A] dark:text-[#A1A1AA] whitespace-nowrap">
                       {event.latencyMs?.toFixed(1)} ms
                     </td>
-                    <td className="py-2 px-4 text-slate-600 dark:text-slate-400 max-w-[280px] truncate">
+                    <td className="py-2 px-4 text-[#71717A] dark:text-[#A1A1AA] max-w-[280px] truncate">
                       {event.reason || 'Normal benign request'}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-[#71717A] dark:text-[#A1A1AA]">
                     {isLoading ? 'Loading events telemetry...' : 'No security events match criteria.'}
                   </td>
                 </tr>
@@ -230,9 +230,9 @@ export const Events: React.FC = () => {
         </div>
 
         {/* Pagination Bar */}
-        <div className="p-3 border-t border-slate-200 dark:border-[#1F2937] flex items-center justify-between text-xs text-slate-500">
+        <div className="p-3 border-t border-[#E5E7EB] dark:border-[#222222] flex items-center justify-between text-xs text-[#71717A] dark:text-[#A1A1AA]">
           <span>
-            Total events: <strong className="font-mono text-slate-800 dark:text-slate-200">{total}</strong>
+            Total events: <strong className="font-mono text-[#0A0A0A] dark:text-white">{total}</strong>
           </span>
           <div className="flex items-center gap-2">
             <span>
@@ -242,7 +242,7 @@ export const Events: React.FC = () => {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="p-1 rounded border border-slate-200 dark:border-[#1F2937] disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="p-1 rounded border border-[#E5E7EB] dark:border-[#222222] disabled:opacity-30 hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -250,7 +250,7 @@ export const Events: React.FC = () => {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
-              className="p-1 rounded border border-slate-200 dark:border-[#1F2937] disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="p-1 rounded border border-[#E5E7EB] dark:border-[#222222] disabled:opacity-30 hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -287,32 +287,32 @@ export const Events: React.FC = () => {
 
             {/* HTTP Request Monospace Summary */}
             <div className="space-y-1.5">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Request Target</span>
-              <div className="p-3 rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] font-mono text-xs break-all">
-                <span className="text-blue-600 dark:text-blue-400 font-bold mr-2">{selectedEvent.method}</span>
-                <span className="text-slate-800 dark:text-slate-100">{selectedEvent.path}</span>
+              <span className="text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">Request Target</span>
+              <div className="p-3 rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] font-mono text-xs break-all">
+                <span className="text-[#FF6600] dark:text-[#FF8800] font-bold mr-2">{selectedEvent.method}</span>
+                <span className="text-[#0A0A0A] dark:text-zinc-100">{selectedEvent.path}</span>
               </div>
             </div>
 
             {/* Detection Telemetry Metadata Grid */}
             <div className="space-y-1.5">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Detection Context</span>
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono p-3 rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937]">
+              <span className="text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">Detection Context</span>
+              <div className="grid grid-cols-2 gap-2 text-xs font-mono p-3 rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222]">
                 <div>
-                  <span className="text-slate-400 block text-[10px]">STAGE USED</span>
-                  <span className="font-semibold">{selectedEvent.stageUsed || 'N/A'}</span>
+                  <span className="text-[#71717A] dark:text-[#A1A1AA] block text-[10px]">STAGE USED</span>
+                  <span className="font-semibold text-[#0A0A0A] dark:text-white">{selectedEvent.stageUsed || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">MODEL VERSION</span>
-                  <span className="font-semibold">{selectedEvent.modelVersion || 'v1_0'}</span>
+                  <span className="text-[#71717A] dark:text-[#A1A1AA] block text-[10px]">MODEL VERSION</span>
+                  <span className="font-semibold text-[#0A0A0A] dark:text-white">{selectedEvent.modelVersion || 'v1_0'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">POLICY VERSION</span>
-                  <span className="font-semibold">v{selectedEvent.policyVersion || 1}</span>
+                  <span className="text-[#71717A] dark:text-[#A1A1AA] block text-[10px]">POLICY VERSION</span>
+                  <span className="font-semibold text-[#0A0A0A] dark:text-white">v{selectedEvent.policyVersion || 1}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">DEGRADED MODE</span>
-                  <span className={selectedEvent.degradedMode ? 'text-amber-500 font-bold' : 'text-slate-300'}>
+                  <span className="text-[#71717A] dark:text-[#A1A1AA] block text-[10px]">DEGRADED MODE</span>
+                  <span className={selectedEvent.degradedMode ? 'text-amber-500 font-bold' : 'text-zinc-400'}>
                     {selectedEvent.degradedMode ? 'TRUE' : 'FALSE'}
                   </span>
                 </div>
@@ -321,29 +321,29 @@ export const Events: React.FC = () => {
 
             {/* Redacted Monospace Request JSON */}
             <div className="space-y-1.5">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">
                 Redacted Payload (Privacy-Safe)
               </span>
-              <pre className="p-3 rounded-lg border bg-slate-900 text-slate-100 border-slate-800 font-mono text-[11px] overflow-x-auto max-h-48 leading-relaxed">
+              <pre className="p-3 rounded-xl border bg-[#000000] text-zinc-100 border-[#222222] font-mono text-[11px] overflow-x-auto max-h-48 leading-relaxed">
                 {JSON.stringify(selectedEvent.redactedRequest || { note: 'No payload captured' }, null, 2)}
               </pre>
             </div>
 
             {/* False-Positive Submission Section (Hidden for VIEWER) */}
             {canSubmitFeedback && (
-              <div className="pt-2 border-t border-slate-200 dark:border-[#1F2937]">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
+              <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#222222]">
+                <h3 className="text-xs font-bold text-[#0A0A0A] dark:text-white mb-1 flex items-center gap-1.5">
                   <ShieldAlert className="w-4 h-4 text-amber-500" />
                   <span>Submit Security Feedback</span>
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                <p className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] mb-3">
                   Report False Positives or Confirmed Attacks to the supervisory human review queue.
                 </p>
 
                 {feedbackStatusMsg && (
                   <div
                     className={cn(
-                      'p-2.5 rounded-lg text-xs mb-3 flex items-center gap-2 border',
+                      'p-2.5 rounded-xl text-xs mb-3 flex items-center gap-2 border',
                       feedbackStatusMsg.type === 'success'
                         ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
                         : 'bg-red-50 text-red-800 dark:bg-red-500/15 dark:text-red-400 border-red-200 dark:border-red-500/30',
@@ -360,13 +360,13 @@ export const Events: React.FC = () => {
 
                 <form onSubmit={handleFeedbackSubmit} className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-[#71717A] dark:text-[#A1A1AA] mb-1">
                       Feedback Label
                     </label>
                     <select
                       value={feedbackLabel}
                       onChange={(e) => setFeedbackLabel(e.target.value)}
-                      className="w-full text-xs font-mono rounded-lg border p-2 bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-800 dark:text-slate-200"
+                      className="w-full text-xs font-mono rounded-xl border p-2 bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                     >
                       <option value="FALSE_POSITIVE">FALSE_POSITIVE (Harmless Traffic Blocked)</option>
                       <option value="CONFIRMED_ATTACK">CONFIRMED_ATTACK (Actual Threat Detected)</option>
@@ -376,7 +376,7 @@ export const Events: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-[11px] font-medium text-[#71717A] dark:text-[#A1A1AA] mb-1">
                       Analyst Notes (Optional)
                     </label>
                     <textarea
@@ -384,7 +384,7 @@ export const Events: React.FC = () => {
                       value={feedbackNotes}
                       onChange={(e) => setFeedbackNotes(e.target.value)}
                       placeholder="Why is this a False Positive? e.g. legitimate SQL keywords in search query..."
-                      className="w-full text-xs rounded-lg border p-2 bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full text-xs rounded-xl border p-2 bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                     />
                   </div>
 

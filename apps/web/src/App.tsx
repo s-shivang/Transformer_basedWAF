@@ -39,9 +39,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] dark:bg-[#000000] text-[#71717A] dark:text-[#A1A1AA]">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-[#FF6600] border-t-transparent rounded-full animate-spin" />
           <span className="text-sm font-medium">Verifying Session...</span>
         </div>
       </div>

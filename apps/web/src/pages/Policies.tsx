@@ -58,65 +58,81 @@ export const Policies: React.FC = () => {
 
   const effectiveSiteId = activeSiteId || (sites.length > 0 ? sites[0].id : null);
 
-  // 2. Fetch active policy
-  const { data: activePolicy, isLoading: loadingPolicy } = useQuery({
-    queryKey: ['active-policy', effectiveSiteId],
-    queryFn: () => api.policies.getActive(effectiveSiteId!),
+  // 2. Fetch active policy for effective site
+  const { data: activePolicy, isLoading: isLoadingPolicy } = useQuery({
+    queryKey: ['policy-active', effectiveSiteId],
+    queryFn: () => (effectiveSiteId ? api.policies.getActive(effectiveSiteId) : Promise.resolve(null)),
     enabled: !!effectiveSiteId,
   });
 
   // 3. Fetch policy version history
   const { data: policyHistory = [] } = useQuery({
     queryKey: ['policy-history', effectiveSiteId],
-    queryFn: () => api.policies.getHistory(effectiveSiteId!),
+    queryFn: () => (effectiveSiteId ? api.policies.getHistory(effectiveSiteId) : Promise.resolve([])),
     enabled: !!effectiveSiteId && activeTab === 'history',
   });
 
-  // Populate form when active policy loads
+  // Sync state when activePolicy loads or site changes
   useEffect(() => {
     if (activePolicy) {
       setMode(activePolicy.mode || 'MONITOR');
-      setMonitorThreshold(activePolicy.thresholds?.monitorThreshold ?? 0.05);
-      setChallengeThreshold(activePolicy.thresholds?.challengeThreshold ?? 0.50);
-      setBlockThreshold(activePolicy.thresholds?.blockThreshold ?? 0.85);
-      setMlEnabled(activePolicy.mlEnabled ?? true);
-      setRulesEnabled(activePolicy.rulesEnabled ?? true);
-      setChallengeEnabled(activePolicy.challengeEnabled ?? true);
+      if (activePolicy.thresholds) {
+        setMonitorThreshold(activePolicy.thresholds.monitorThreshold ?? 0.05);
+        setChallengeThreshold(activePolicy.thresholds.challengeThreshold ?? 0.50);
+        setBlockThreshold(activePolicy.thresholds.blockThreshold ?? 0.85);
+      }
+      if (activePolicy.features) {
+        setMlEnabled(activePolicy.features.mlEnabled ?? true);
+        setRulesEnabled(activePolicy.features.rulesEnabled ?? true);
+        setChallengeEnabled(activePolicy.features.challengeEnabled ?? true);
+      }
       setMlFailureMode(activePolicy.mlFailureMode || 'FAIL_OPEN');
       setExclusions(activePolicy.exclusions || []);
     }
   }, [activePolicy]);
 
-  // Update Policy Mutation
+  // Mutation: Update Policy
   const updatePolicyMutation = useMutation({
-    mutationFn: (payload: any) => api.policies.update(effectiveSiteId!, payload),
+    mutationFn: (newPolicyData: any) => {
+      if (!effectiveSiteId) throw new Error('No site selected');
+      return api.policies.update(effectiveSiteId, newPolicyData);
+    },
     onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ['policy-active', effectiveSiteId] });
+      queryClient.invalidateQueries({ queryKey: ['policy-history', effectiveSiteId] });
       setStatusMsg({
         type: 'success',
-        text: `Policy successfully incremented to version v${updated.version}.`,
+        text: `Policy v${updated.version} published and synced to WAF Gateway successfully!`,
       });
-      queryClient.invalidateQueries({ queryKey: ['active-policy', effectiveSiteId] });
-      queryClient.invalidateQueries({ queryKey: ['policy-history', effectiveSiteId] });
     },
     onError: (err: any) => {
-      setStatusMsg({ type: 'error', text: err.message || 'Failed to update policy' });
+      setStatusMsg({
+        type: 'error',
+        text: err.message || 'Failed to update policy',
+      });
     },
   });
 
-  // Rollback Mutation
+  // Mutation: Rollback Policy
   const rollbackMutation = useMutation({
-    mutationFn: (targetVersion: number) => api.policies.rollback(effectiveSiteId!, targetVersion),
-    onSuccess: (rolledBack) => {
+    mutationFn: (targetVersion: number) => {
+      if (!effectiveSiteId) throw new Error('No site selected');
+      return api.policies.rollback(effectiveSiteId, targetVersion);
+    },
+    onSuccess: (restored) => {
+      queryClient.invalidateQueries({ queryKey: ['policy-active', effectiveSiteId] });
+      queryClient.invalidateQueries({ queryKey: ['policy-history', effectiveSiteId] });
       setStatusMsg({
         type: 'success',
-        text: `1-Click Rollback complete: restored settings as active version v${rolledBack.version}.`,
+        text: `Successfully rolled back to configuration of version v${restored.version}!`,
       });
       setActiveTab('editor');
-      queryClient.invalidateQueries({ queryKey: ['active-policy', effectiveSiteId] });
-      queryClient.invalidateQueries({ queryKey: ['policy-history', effectiveSiteId] });
     },
     onError: (err: any) => {
-      setStatusMsg({ type: 'error', text: err.message || 'Rollback failed' });
+      setStatusMsg({
+        type: 'error',
+        text: err.message || 'Rollback failed',
+      });
     },
   });
 
@@ -124,29 +140,41 @@ export const Policies: React.FC = () => {
     e.preventDefault();
     setStatusMsg(null);
 
-    // Threshold validation: 0 < monitor < challenge < block <= 1
-    if (!(monitorThreshold > 0 && monitorThreshold < challengeThreshold && challengeThreshold < blockThreshold && blockThreshold <= 1)) {
+    // Validation: Strict threshold ordering
+    if (monitorThreshold >= challengeThreshold) {
       setStatusMsg({
         type: 'error',
-        text: 'Threshold ordering violated: 0.0 < monitor < challenge < block <= 1.0 required.',
+        text: 'Validation Error: Monitor threshold must be strictly less than Challenge threshold.',
+      });
+      return;
+    }
+    if (challengeThreshold >= blockThreshold) {
+      setStatusMsg({
+        type: 'error',
+        text: 'Validation Error: Challenge threshold must be strictly less than Block threshold.',
       });
       return;
     }
 
     updatePolicyMutation.mutate({
       mode,
-      monitorThreshold,
-      challengeThreshold,
-      blockThreshold,
-      mlEnabled,
-      rulesEnabled,
-      challengeEnabled,
+      thresholds: {
+        monitorThreshold,
+        challengeThreshold,
+        blockThreshold,
+      },
+      features: {
+        mlEnabled,
+        rulesEnabled,
+        challengeEnabled,
+      },
       mlFailureMode,
       exclusions,
     });
   };
 
   const handleAddExclusion = () => {
+    if (!newPathPrefix) return;
     if (!newPathPrefix.startsWith('/')) {
       setStatusMsg({ type: 'error', text: 'Exclusion pathPrefix must start with a leading slash ("/")' });
       return;
@@ -194,14 +222,14 @@ export const Policies: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight">WAF Policy Studio</h1>
+            <h1 className="text-xl font-bold tracking-tight text-[#0A0A0A] dark:text-white">WAF Policy Studio</h1>
             {activePolicy && (
-              <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30">
+              <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[#FF6600]/10 text-[#FF6600] dark:text-[#FF8800] border border-[#FF6600]/20">
                 Active v{activePolicy.version}
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
             Per-site multi-layer inspection tuning, 4-band risk thresholds, and scoped exclusions
           </p>
         </div>
@@ -214,7 +242,7 @@ export const Policies: React.FC = () => {
               setSelectedSiteId(e.target.value);
               setStatusMsg(null);
             }}
-            className="text-xs font-medium rounded-lg border px-3 py-2 bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="text-xs font-medium rounded-xl border px-3 py-2 bg-white dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
           >
             {sites.map((s: any) => (
               <option key={s.id} value={s.id}>
@@ -224,15 +252,15 @@ export const Policies: React.FC = () => {
           </select>
 
           {/* Tab Switcher */}
-          <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-[#090D16] border border-slate-200 dark:border-[#1F2937]">
+          <div className="inline-flex rounded-xl p-0.5 bg-[#F9FAFB] dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#222222]">
             <button
               type="button"
               onClick={() => setActiveTab('editor')}
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5',
+                'px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5',
                 activeTab === 'editor'
-                  ? 'bg-white dark:bg-[#111827] text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100',
+                  ? 'bg-gradient-to-r from-[#FF6600] to-[#EA580C] text-white shadow-[0_0_12px_rgba(255,102,0,0.3)]'
+                  : 'text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white',
               )}
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -242,10 +270,10 @@ export const Policies: React.FC = () => {
               type="button"
               onClick={() => setActiveTab('history')}
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5',
+                'px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5',
                 activeTab === 'history'
-                  ? 'bg-white dark:bg-[#111827] text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100',
+                  ? 'bg-gradient-to-r from-[#FF6600] to-[#EA580C] text-white shadow-[0_0_12px_rgba(255,102,0,0.3)]'
+                  : 'text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white',
               )}
             >
               <History className="w-3.5 h-3.5" />
@@ -258,7 +286,7 @@ export const Policies: React.FC = () => {
       {statusMsg && (
         <div
           className={cn(
-            'p-3 rounded-lg text-xs flex items-center gap-2.5 border',
+            'p-3 rounded-xl text-xs flex items-center gap-2.5 border',
             statusMsg.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
               : 'bg-red-50 text-red-800 dark:bg-red-500/15 dark:text-red-400 border-red-200 dark:border-red-500/30',
@@ -275,7 +303,7 @@ export const Policies: React.FC = () => {
 
       {/* Mode Switch Warning Banner */}
       {(mode === 'BLOCKING' || mode === 'STRICT') && (
-        <div className="p-3.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
+        <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
           <div>
             <strong className="font-semibold">Active Blocking Mode Enabled:</strong> High-confidence attack
@@ -290,8 +318,8 @@ export const Policies: React.FC = () => {
       {activeTab === 'editor' && (
         <form onSubmit={handleSavePolicy} className="space-y-6">
           {/* Section 1: Visual Mode Selector Cards */}
-          <div className="p-5 rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] shadow-xs space-y-3">
-            <h2 className="text-sm font-semibold tracking-tight">Inspection Mode</h2>
+          <div className="p-5 rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm space-y-3">
+            <h2 className="text-sm font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Inspection Mode</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {modes.map((m) => (
                 <button
@@ -300,16 +328,16 @@ export const Policies: React.FC = () => {
                   disabled={!canMutatePolicies}
                   onClick={() => setMode(m.id)}
                   className={cn(
-                    'p-3 rounded-lg border text-left transition-all flex flex-col justify-between',
+                    'p-3 rounded-xl border text-left transition-all flex flex-col justify-between',
                     mode === m.id
-                      ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 ring-1 ring-blue-500'
-                      : 'border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 hover:border-slate-300 dark:hover:border-slate-700',
+                      ? 'border-[#FF6600] bg-[#FFF7ED] dark:bg-[#FF6600]/10 ring-1 ring-[#FF6600]'
+                      : 'border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB] dark:bg-[#111111] hover:border-[#FF6600]/50',
                   )}
                 >
-                  <div className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  <div className="font-mono text-xs font-bold text-[#0A0A0A] dark:text-white mb-1">
                     {m.label}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                  <div className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] leading-snug">
                     {m.desc}
                   </div>
                 </button>
@@ -318,16 +346,16 @@ export const Policies: React.FC = () => {
           </div>
 
           {/* Section 2: Interactive 4-Band Risk Threshold Bar */}
-          <div className="p-5 rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] shadow-xs space-y-4">
+          <div className="p-5 rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm space-y-4">
             <div>
-              <h2 className="text-sm font-semibold tracking-tight">Risk Decision Bands & Thresholds</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <h2 className="text-sm font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Risk Decision Bands & Thresholds</h2>
+              <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
                 Tune the ML confidence thresholds that govern Fast-Pass Allow, Monitor Alert, Challenge, and Block.
               </p>
             </div>
 
             {/* Visual Segmented 4-Band Bar */}
-            <div className="h-6 w-full rounded-lg overflow-hidden flex font-mono text-[11px] font-bold text-white shadow-inner">
+            <div className="h-6 w-full rounded-xl overflow-hidden flex font-mono text-[11px] font-bold text-white shadow-inner">
               <div
                 className="bg-emerald-500 flex items-center justify-center transition-all"
                 style={{ width: `${monitorThreshold * 100}%` }}
@@ -335,7 +363,7 @@ export const Policies: React.FC = () => {
                 Fast-Pass
               </div>
               <div
-                className="bg-cyan-500 flex items-center justify-center transition-all"
+                className="bg-orange-500 flex items-center justify-center transition-all"
                 style={{ width: `${(challengeThreshold - monitorThreshold) * 100}%` }}
               >
                 Monitor
@@ -357,7 +385,7 @@ export const Policies: React.FC = () => {
             {/* Numeric Threshold Inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Monitor Threshold (tau_monitor)
                 </label>
                 <input
@@ -368,13 +396,13 @@ export const Policies: React.FC = () => {
                   value={monitorThreshold}
                   onChange={(e) => setMonitorThreshold(parseFloat(e.target.value) || 0.05)}
                   disabled={!canMutatePolicies}
-                  className="w-full px-3 py-1.5 font-mono text-xs rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50"
+                  className="w-full px-3 py-1.5 font-mono text-xs rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                 />
-                <span className="text-[10px] text-slate-400 block mt-1">Default 0.05</span>
+                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mt-1">Default 0.05</span>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Challenge Threshold (tau_challenge)
                 </label>
                 <input
@@ -385,13 +413,13 @@ export const Policies: React.FC = () => {
                   value={challengeThreshold}
                   onChange={(e) => setChallengeThreshold(parseFloat(e.target.value) || 0.50)}
                   disabled={!canMutatePolicies}
-                  className="w-full px-3 py-1.5 font-mono text-xs rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50"
+                  className="w-full px-3 py-1.5 font-mono text-xs rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                 />
-                <span className="text-[10px] text-slate-400 block mt-1">Default 0.50 (Gray zone start)</span>
+                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mt-1">Default 0.50 (Gray zone start)</span>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Block Threshold (tau_block)
                 </label>
                 <input
@@ -402,59 +430,59 @@ export const Policies: React.FC = () => {
                   value={blockThreshold}
                   onChange={(e) => setBlockThreshold(parseFloat(e.target.value) || 0.85)}
                   disabled={!canMutatePolicies}
-                  className="w-full px-3 py-1.5 font-mono text-xs rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50"
+                  className="w-full px-3 py-1.5 font-mono text-xs rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                 />
-                <span className="text-[10px] text-slate-400 block mt-1">Default 0.85 (Hard block start)</span>
+                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mt-1">Default 0.85 (Hard block start)</span>
               </div>
             </div>
           </div>
 
           {/* Section 3: Feature Toggles & ML Failure Mode */}
-          <div className="p-5 rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] shadow-xs space-y-4">
-            <h2 className="text-sm font-semibold tracking-tight">Inspection Modules & Failsafe Options</h2>
+          <div className="p-5 rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm space-y-4">
+            <h2 className="text-sm font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Inspection Modules & Failsafe Options</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <label className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 cursor-pointer">
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB] dark:bg-[#111111] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={mlEnabled}
                   onChange={(e) => setMlEnabled(e.target.checked)}
                   disabled={!canMutatePolicies}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded text-[#FF6600] accent-[#FF6600] focus:ring-[#FF6600]"
                 />
-                <span className="text-xs font-medium">Layer 2 ML Engine</span>
+                <span className="text-xs font-medium text-[#0A0A0A] dark:text-white">Layer 2 ML Engine</span>
               </label>
 
-              <label className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 cursor-pointer">
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB] dark:bg-[#111111] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={rulesEnabled}
                   onChange={(e) => setRulesEnabled(e.target.checked)}
                   disabled={!canMutatePolicies}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded text-[#FF6600] accent-[#FF6600] focus:ring-[#FF6600]"
                 />
-                <span className="text-xs font-medium">Layer 1 Regex Rules</span>
+                <span className="text-xs font-medium text-[#0A0A0A] dark:text-white">Layer 1 Regex Rules</span>
               </label>
 
-              <label className="flex items-center gap-2.5 p-3 rounded-lg border border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 cursor-pointer">
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB] dark:bg-[#111111] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={challengeEnabled}
                   onChange={(e) => setChallengeEnabled(e.target.checked)}
                   disabled={!canMutatePolicies}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded text-[#FF6600] accent-[#FF6600] focus:ring-[#FF6600]"
                 />
-                <span className="text-xs font-medium">PoW Human Challenge</span>
+                <span className="text-xs font-medium text-[#0A0A0A] dark:text-white">PoW Human Challenge</span>
               </label>
 
-              <div className="p-3 rounded-lg border border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50">
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <div className="p-3 rounded-xl border border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB] dark:bg-[#111111]">
+                <label className="block text-[11px] font-medium text-[#71717A] dark:text-[#A1A1AA] mb-1">
                   ML Failure Mode
                 </label>
                 <select
                   value={mlFailureMode}
                   onChange={(e) => setMlFailureMode(e.target.value)}
                   disabled={!canMutatePolicies}
-                  className="w-full text-xs font-mono rounded border p-1 bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937]"
+                  className="w-full text-xs font-mono rounded-lg border p-1 bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                 >
                   <option value="FAIL_OPEN">FAIL_OPEN (Pass traffic on ML outage)</option>
                   <option value="FAIL_CLOSED">FAIL_CLOSED (Block on ML outage)</option>
@@ -464,11 +492,11 @@ export const Policies: React.FC = () => {
           </div>
 
           {/* Section 4: Scoped Exclusions Editor */}
-          <div className="p-5 rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] shadow-xs space-y-4">
+          <div className="p-5 rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold tracking-tight">Scoped Path / Parameter Exclusions</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <h2 className="text-sm font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Scoped Path / Parameter Exclusions</h2>
+                <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
                   Targeted exceptions to suppress false alarms on third-party webhooks or binary payloads
                 </p>
               </div>
@@ -480,28 +508,28 @@ export const Policies: React.FC = () => {
                 {exclusions.map((exc, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-lg border border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 flex items-center justify-between text-xs"
+                    className="p-3 rounded-xl border border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB] dark:bg-[#111111] flex items-center justify-between text-xs"
                   >
                     <div className="flex flex-col gap-0.5">
-                      <div className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="font-mono font-semibold text-[#0A0A0A] dark:text-white">
                         {exc.pathPrefix}
                         {exc.parameterName && (
-                          <span className="text-blue-600 dark:text-blue-400 font-normal ml-2">
+                          <span className="text-[#FF6600] dark:text-[#FF8800] font-normal ml-2">
                             param: {exc.parameterName}
                           </span>
                         )}
                       </div>
-                      <div className="text-slate-500 dark:text-slate-400 text-[11px]">{exc.reason}</div>
+                      <div className="text-[#71717A] dark:text-[#A1A1AA] text-[11px]">{exc.reason}</div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E5E7EB] dark:bg-[#222222] text-zinc-700 dark:text-zinc-300">
                         {exc.skipMl ? 'Skip ML' : ''} {exc.skipRules ? 'Skip Rules' : ''}
                       </span>
                       {canMutatePolicies && (
                         <button
                           type="button"
                           onClick={() => handleRemoveExclusion(idx)}
-                          className="p-1 text-slate-400 hover:text-red-500 rounded"
+                          className="p-1 text-[#71717A] hover:text-red-500 rounded"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -511,15 +539,15 @@ export const Policies: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="py-4 text-center text-xs text-slate-400 italic">
+              <div className="py-4 text-center text-xs text-[#71717A] dark:text-[#A1A1AA] italic">
                 No active exclusions. Narrow, justified exclusions can be added below.
               </div>
             )}
 
             {/* Add Exclusion Form */}
             {canMutatePolicies && (
-              <div className="p-3.5 rounded-lg border border-dashed border-slate-300 dark:border-[#1F2937] space-y-3 bg-slate-50/30 dark:bg-transparent">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+              <div className="p-3.5 rounded-xl border border-dashed border-[#E5E7EB] dark:border-[#222222] space-y-3 bg-[#F9FAFB]/50 dark:bg-transparent">
+                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 block">
                   Add Narrow Scoped Exclusion
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -528,38 +556,40 @@ export const Policies: React.FC = () => {
                     placeholder="/api/v1/webhooks"
                     value={newPathPrefix}
                     onChange={(e) => setNewPathPrefix(e.target.value)}
-                    className="px-3 py-1.5 text-xs font-mono rounded-lg border bg-white dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937]"
+                    className="px-3 py-1.5 text-xs font-mono rounded-xl border bg-white dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                   />
                   <input
                     type="text"
                     placeholder="payload (optional param)"
                     value={newParameterName}
                     onChange={(e) => setNewParameterName(e.target.value)}
-                    className="px-3 py-1.5 text-xs font-mono rounded-lg border bg-white dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937]"
+                    className="px-3 py-1.5 text-xs font-mono rounded-xl border bg-white dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                   />
                   <input
                     type="text"
                     placeholder="Reason (>= 5 chars)"
                     value={newReason}
                     onChange={(e) => setNewReason(e.target.value)}
-                    className="px-3 py-1.5 text-xs rounded-lg border bg-white dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937]"
+                    className="px-3 py-1.5 text-xs rounded-xl border bg-white dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF6600]"
                   />
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-4 text-xs">
-                    <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                    <label className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                       <input
                         type="checkbox"
                         checked={newSkipMl}
                         onChange={(e) => setNewSkipMl(e.target.checked)}
+                        className="accent-[#FF6600]"
                       />
                       <span>Skip ML</span>
                     </label>
-                    <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                    <label className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                       <input
                         type="checkbox"
                         checked={newSkipRules}
                         onChange={(e) => setNewSkipRules(e.target.checked)}
+                        className="accent-[#FF6600]"
                       />
                       <span>Skip Rules</span>
                     </label>
@@ -567,7 +597,7 @@ export const Policies: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleAddExclusion}
-                    className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-medium"
+                    className="px-3 py-1.5 rounded-xl bg-[#E5E7EB] dark:bg-[#222222] text-[#0A0A0A] dark:text-white hover:bg-[#D1D5DB] dark:hover:bg-[#333333] text-xs font-medium transition-colors"
                   >
                     Add to Policy
                   </button>
@@ -582,7 +612,7 @@ export const Policies: React.FC = () => {
               <button
                 type="submit"
                 disabled={updatePolicyMutation.isPending}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors shadow-sm disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 text-white font-medium text-xs transition-all shadow-[0_0_15px_rgba(255,102,0,0.3)] disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>{updatePolicyMutation.isPending ? 'Publishing Version...' : 'Publish New Policy Version'}</span>
@@ -594,21 +624,21 @@ export const Policies: React.FC = () => {
 
       {/* TAB 2: VERSION HISTORY & 1-CLICK ROLLBACK */}
       {activeTab === 'history' && (
-        <div className="p-5 rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] shadow-xs space-y-4">
+        <div className="p-5 rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm space-y-4">
           <div>
-            <h2 className="text-sm font-semibold tracking-tight">Immutable Policy Audit Trail & Rollback</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <h2 className="text-sm font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Immutable Policy Audit Trail & Rollback</h2>
+            <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
               Every policy update creates a new immutable version. Rolling back restores historical state as a new
               active version without erasing audit records.
             </p>
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-[#1F2937]">
+          <div className="divide-y divide-[#E5E7EB] dark:divide-[#222222]">
             {policyHistory.map((p: any) => (
               <div key={p.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100">
+                    <span className="font-mono font-bold text-sm text-[#0A0A0A] dark:text-white">
                       Version v{p.version}
                     </span>
                     {p.isActive && (
@@ -616,13 +646,13 @@ export const Policies: React.FC = () => {
                         CURRENT ACTIVE
                       </span>
                     )}
-                    <span className="font-mono text-slate-500 dark:text-slate-400">Mode: {p.mode}</span>
+                    <span className="font-mono text-[#71717A] dark:text-[#A1A1AA]">Mode: {p.mode}</span>
                   </div>
-                  <div className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                  <div className="text-[#71717A] dark:text-[#A1A1AA] font-mono text-[11px]">
                     Thresholds: {p.thresholds?.monitorThreshold} / {p.thresholds?.challengeThreshold} /{' '}
                     {p.thresholds?.blockThreshold} • {p.exclusions?.length || 0} exclusions
                   </div>
-                  <div className="text-slate-400 text-[10px]">
+                  <div className="text-[#71717A] dark:text-[#A1A1AA] text-[10px]">
                     Created: {p.createdAt ? new Date(p.createdAt).toLocaleString() : '-'}
                   </div>
                 </div>
@@ -636,9 +666,9 @@ export const Policies: React.FC = () => {
                       }
                     }}
                     disabled={rollbackMutation.isPending}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#1F2937] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-xs transition-colors shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E5E7EB] dark:border-[#222222] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white font-medium text-xs transition-colors shrink-0"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-blue-500" />
+                    <RotateCcw className="w-3.5 h-3.5 text-[#FF6600]" />
                     <span>Rollback to v{p.version}</span>
                   </button>
                 )}
