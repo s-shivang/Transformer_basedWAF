@@ -24,7 +24,7 @@ async function bootstrap() {
 
   // Enable CORS with credentials for HttpOnly cookie authentication
   app.enableCors({
-    origin: true,
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true,
   });
 
