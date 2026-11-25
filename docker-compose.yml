@@ -58,7 +58,10 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_super_secure_32chars!}
       INTERNAL_GATEWAY_SECRET: ${WAF_INGEST_KEY:-waf-internal-ingest-secret-dev}
       CORS_ORIGIN: "http://localhost:5173"
+      WAF_LOCAL_DEV_DNS: "true"
+      WAF_GATEWAY_SYNC_URL: "http://waf-gateway:8001"
       WAF_GATEWAY_ADMIN_URL: "http://waf-gateway:8001"
+      WAF_ALLOW_PRIVATE_ORIGINS: "true"
       WAF_ADMIN_KEY: ${WAF_ADMIN_KEY:-waf-admin-secret-key-local}
     ports:
       - "3000:3000"
@@ -153,6 +156,8 @@ services:
     environment:
       WAF_UPSTREAM_URL: "http://protected-app:8002"
       WAF_ML_SERVICE_URL: "http://ml-service:8000"
+      WAF_DYNAMIC_ROUTING_ENABLED: "true"
+      WAF_ALLOW_PRIVATE_ORIGINS: "true"
       WAF_ADMIN_KEY: ${WAF_ADMIN_KEY:-waf-admin-secret-key-local}
       WAF_CHALLENGE_SECRET: ${WAF_CHALLENGE_SECRET:-dev_challenge_secret_super_secure_32chars!}
       WAF_CONTROL_PLANE_URL: "http://api:3000"

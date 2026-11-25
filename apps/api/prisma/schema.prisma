@@ -53,6 +53,20 @@ enum OnboardingStatus {
   REMOVED
 }
 
+enum TlsStatus {
+  NONE
+  PENDING
+  PROVISIONED
+  RENEWING
+  FAILED
+}
+
+enum OriginHealthStatus {
+  UNKNOWN
+  HEALTHY
+  UNHEALTHY
+}
+
 enum WafMode {
   MONITOR
   BLOCKING
@@ -191,6 +205,12 @@ model ProtectedSite {
   gatewayAckVersion   Int?             @map("gateway_ack_version")
   lastSyncedAt        DateTime?        @map("last_synced_at")
   lastOnboardingError String?          @map("last_onboarding_error") @db.Text
+  tlsStatus           TlsStatus        @default(NONE) @map("tls_status")
+  tlsIssuer           String?          @map("tls_issuer") @db.VarChar(100)
+  tlsExpiresAt        DateTime?        @map("tls_expires_at")
+  originHealthStatus  OriginHealthStatus @default(UNKNOWN) @map("origin_health_status")
+  lastHealthCheckAt   DateTime?        @map("last_health_check_at")
+  activatedAt         DateTime?        @map("activated_at")
   createdAt           DateTime         @default(now()) @map("created_at")
   updatedAt           DateTime         @updatedAt @map("updated_at")
 

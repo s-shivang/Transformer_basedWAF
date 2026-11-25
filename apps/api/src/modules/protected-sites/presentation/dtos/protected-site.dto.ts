@@ -1,6 +1,11 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SiteStatus, OnboardingStatus } from '../../domain/protected-site.entity';
+import {
+  SiteStatus,
+  OnboardingStatus,
+  TlsStatus,
+  OriginHealthStatus,
+} from '../../domain/protected-site.entity';
 
 export class CreateProtectedSiteDto {
   @ApiProperty({ example: 'Main Production API' })
@@ -86,6 +91,24 @@ export interface OnboardingInstructionsResponseDto {
     host: string;
     target: string;
   };
+  tlsStatus: TlsStatus;
+  tlsIssuer: string | null;
+  tlsExpiresAt: string | null;
+  originHealthStatus: OriginHealthStatus;
+  lastHealthCheckAt: string | null;
+  activatedAt: string | null;
   lastError: string | null;
   verifiedAt: string | null;
+}
+
+export interface SiteHealthCheckResponseDto {
+  siteId: string;
+  domain: string;
+  originUrl: string;
+  healthy: boolean;
+  statusCode?: number;
+  latencyMs: number;
+  originHealthStatus: OriginHealthStatus;
+  lastHealthCheckAt: string | null;
+  error?: string;
 }

@@ -28,6 +28,10 @@ import {
   RetrySiteOnboardingUseCase,
   PauseResumeSiteUseCase,
   ConfigureSiteOnGatewayUseCase,
+  VerifyDnsRoutingUseCase,
+  ProvisionSiteTlsUseCase,
+  ActivateSiteUseCase,
+  CheckSiteOriginHealthUseCase,
 } from '../application/protected-site-onboarding.use-cases';
 import {
   CreateProtectedSiteDto,
@@ -58,6 +62,10 @@ export class ProtectedSitesController {
     private readonly configureGatewayUseCase: ConfigureSiteOnGatewayUseCase,
     private readonly retryOnboardingUseCase: RetrySiteOnboardingUseCase,
     private readonly pauseResumeUseCase: PauseResumeSiteUseCase,
+    private readonly verifyDnsRoutingUseCase: VerifyDnsRoutingUseCase,
+    private readonly provisionTlsUseCase: ProvisionSiteTlsUseCase,
+    private readonly activateSiteUseCase: ActivateSiteUseCase,
+    private readonly checkOriginHealthUseCase: CheckSiteOriginHealthUseCase,
   ) {}
 
   @Post('onboarding')
@@ -151,6 +159,105 @@ export class ProtectedSitesController {
     const clientIp = req.ip;
 
     const result = await this.configureGatewayUseCase.execute(tenantId, siteId, dto, userId, clientIp);
+    if (result.isFailure) {
+      const err = result.getError();
+      const status = err.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+      throw new HttpException(err, status);
+    }
+
+    return result.getValue();
+  }
+
+  @Post(':siteId/onboarding/verify-dns-routing')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Verify DNS routing record points to WAF edge before TLS provisioning' })
+  @ApiResponse({ status: 200, description: 'DNS traffic routing verified successfully, advanced to TLS_PENDING' })
+  @ApiResponse({ status: 400, description: 'DNS routing verification failed or record mismatch' })
+  async verifyDnsRouting(@Param('siteId') siteId: string, @Req() req: Request) {
+    const tenantId = req.tenantContext?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
+    }
+
+    const userId = (req as any).user?.sub;
+    const clientIp = req.ip;
+
+    const result = await this.verifyDnsRoutingUseCase.execute(tenantId, siteId, userId, clientIp);
+    if (result.isFailure) {
+      const err = result.getError();
+      const status = err.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+      throw new HttpException(err, status);
+    }
+
+    return result.getValue();
+  }
+
+  @Post(':siteId/onboarding/provision-tls')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Provision TLS certificate for protected site' })
+  @ApiResponse({ status: 200, description: 'TLS certificate provisioned successfully, advanced to HEALTH_CHECK' })
+  @ApiResponse({ status: 400, description: 'TLS provisioning failed' })
+  async provisionTls(@Param('siteId') siteId: string, @Req() req: Request) {
+    const tenantId = req.tenantContext?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
+    }
+
+    const userId = (req as any).user?.sub;
+    const clientIp = req.ip;
+
+    const result = await this.provisionTlsUseCase.execute(tenantId, siteId, userId, clientIp);
+    if (result.isFailure) {
+      const err = result.getError();
+      const status = err.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+      throw new HttpException(err, status);
+    }
+
+    return result.getValue();
+  }
+
+  @Post(':siteId/onboarding/activate')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Execute pre-activation origin health probe and activate protected site' })
+  @ApiResponse({ status: 200, description: 'Site activated successfully' })
+  @ApiResponse({ status: 400, description: 'Origin health probe failed or activation preconditions unmet' })
+  async activateSite(@Param('siteId') siteId: string, @Req() req: Request) {
+    const tenantId = req.tenantContext?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
+    }
+
+    const userId = (req as any).user?.sub;
+    const clientIp = req.ip;
+
+    const result = await this.activateSiteUseCase.execute(tenantId, siteId, userId, clientIp);
+    if (result.isFailure) {
+      const err = result.getError();
+      const status = err.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+      throw new HttpException(err, status);
+    }
+
+    return result.getValue();
+  }
+
+  @Post(':siteId/health-check')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Perform on-demand origin health probe for protected site' })
+  @ApiResponse({ status: 200, description: 'Origin health probe completed' })
+  async checkOriginHealth(@Param('siteId') siteId: string, @Req() req: Request) {
+    const tenantId = req.tenantContext?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
+    }
+
+    const userId = (req as any).user?.sub;
+    const clientIp = req.ip;
+
+    const result = await this.checkOriginHealthUseCase.execute(tenantId, siteId, userId, clientIp);
     if (result.isFailure) {
       const err = result.getError();
       const status = err.includes('not found') ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;

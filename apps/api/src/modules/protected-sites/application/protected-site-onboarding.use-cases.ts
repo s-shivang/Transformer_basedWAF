@@ -1,6 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { Result } from '@shared/application/result';
-import { ProtectedSite, OnboardingStatus, SiteStatus } from '../domain/protected-site.entity';
+import {
+  ProtectedSite,
+  OnboardingStatus,
+  SiteStatus,
+  TlsStatus,
+  OriginHealthStatus,
+} from '../domain/protected-site.entity';
 import { SiteDomain } from '../domain/site-domain.vo';
 import { OriginUrl } from '../domain/origin-url.vo';
 import {
@@ -32,10 +39,24 @@ import {
   GatewaySiteSyncPayload,
 } from '../domain/site-config-sync.interface';
 import {
+  ITlsProvisioner,
+  TLS_PROVISIONER,
+} from '../domain/tls-provisioner.interface';
+import {
+  IOriginHealthChecker,
+  ORIGIN_HEALTH_CHECKER,
+} from '../domain/origin-health-checker.interface';
+import {
+  NOTIFICATION_REPOSITORY,
+  INotificationRepository,
+} from '../../notifications/domain/repositories/notification.repository.interface';
+import { Notification } from '../../notifications/domain/notification.entity';
+import {
   StartSiteOnboardingDto,
   RetryOnboardingDto,
   ConfigureSiteDto,
   OnboardingInstructionsResponseDto,
+  SiteHealthCheckResponseDto,
 } from '../presentation/dtos/protected-site.dto';
 
 export function toInstructionResponse(site: ProtectedSite): OnboardingInstructionsResponseDto {
@@ -59,6 +80,12 @@ export function toInstructionResponse(site: ProtectedSite): OnboardingInstructio
       host: site.domain.value,
       target: 'edge.waf-network.internal',
     },
+    tlsStatus: site.tlsStatus,
+    tlsIssuer: site.tlsIssuer,
+    tlsExpiresAt: site.tlsExpiresAt ? site.tlsExpiresAt.toISOString() : null,
+    originHealthStatus: site.originHealthStatus,
+    lastHealthCheckAt: site.lastHealthCheckAt ? site.lastHealthCheckAt.toISOString() : null,
+    activatedAt: site.activatedAt ? site.activatedAt.toISOString() : null,
     lastError: site.lastOnboardingError,
     verifiedAt: site.verifiedAt ? site.verifiedAt.toISOString() : null,
   };
@@ -502,5 +529,308 @@ export class PauseResumeSiteUseCase {
     await this.auditRepo.save(audit);
 
     return Result.ok(toInstructionResponse(site));
+  }
+}
+
+@Injectable()
+export class VerifyDnsRoutingUseCase {
+  constructor(
+    @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(DNS_VERIFIER) private readonly dnsVerifier: IDnsVerifier,
+    @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+  ) {}
+
+  async execute(
+    tenantId: string,
+    siteId: string,
+    userId?: string,
+    clientIp?: string,
+  ): Promise<Result<OnboardingInstructionsResponseDto>> {
+    const site = await this.siteRepo.findById(tenantId, siteId);
+    if (!site) {
+      return Result.fail(`Protected site '${siteId}' not found`);
+    }
+
+    if (site.onboardingStatus !== OnboardingStatus.DNS_PENDING) {
+      return Result.fail(
+        `Site must be in DNS_PENDING state to verify DNS routing (current: ${site.onboardingStatus})`,
+      );
+    }
+
+    const expectedTarget = process.env.WAF_EDGE_TARGET || 'edge.waf-network.internal';
+    const trafficResult = await this.dnsVerifier.verifyTrafficRecord(
+      site.domain.value,
+      expectedTarget,
+    );
+
+    if (trafficResult.pointed) {
+      const transRes = site.markDnsRoutingVerified();
+      if (transRes.isFailure) {
+        return Result.fail(transRes.getError());
+      }
+
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_DNS_ROUTING_VERIFIED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          target: expectedTarget,
+          onboardingStatus: site.onboardingStatus,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.ok(toInstructionResponse(site));
+    } else {
+      const errorMsg =
+        trafficResult.error ||
+        `Domain '${site.domain.value}' does not point to '${expectedTarget}'. Ensure CNAME or A record is created at your DNS provider.`;
+      return Result.fail(errorMsg);
+    }
+  }
+}
+
+@Injectable()
+export class ProvisionSiteTlsUseCase {
+  constructor(
+    @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(TLS_PROVISIONER) private readonly tlsProvisioner: ITlsProvisioner,
+    @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+  ) {}
+
+  async execute(
+    tenantId: string,
+    siteId: string,
+    userId?: string,
+    clientIp?: string,
+  ): Promise<Result<OnboardingInstructionsResponseDto>> {
+    const site = await this.siteRepo.findById(tenantId, siteId);
+    if (!site) {
+      return Result.fail(`Protected site '${siteId}' not found`);
+    }
+
+    if (site.onboardingStatus !== OnboardingStatus.TLS_PENDING) {
+      return Result.fail(
+        `Site must be in TLS_PENDING state to provision TLS (current: ${site.onboardingStatus})`,
+      );
+    }
+
+    const provisionResult = await this.tlsProvisioner.provisionCertificate(site.domain.value);
+
+    if (provisionResult.provisioned) {
+      const transRes = site.markTlsProvisioned(provisionResult.issuer, provisionResult.expiresAt);
+      if (transRes.isFailure) {
+        return Result.fail(transRes.getError());
+      }
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_TLS_PROVISIONED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          issuer: provisionResult.issuer,
+          expiresAt: provisionResult.expiresAt.toISOString(),
+          onboardingStatus: site.onboardingStatus,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.ok(toInstructionResponse(site));
+    } else {
+      const errorMsg = provisionResult.error || 'TLS certificate provisioning failed';
+      site.markTlsFailed(errorMsg);
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_TLS_FAILED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          error: errorMsg,
+          onboardingStatus: site.onboardingStatus,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.fail(errorMsg);
+    }
+  }
+}
+
+@Injectable()
+export class ActivateSiteUseCase {
+  constructor(
+    @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(ORIGIN_HEALTH_CHECKER) private readonly originHealthChecker: IOriginHealthChecker,
+    @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+  ) {}
+
+  async execute(
+    tenantId: string,
+    siteId: string,
+    userId?: string,
+    clientIp?: string,
+  ): Promise<Result<OnboardingInstructionsResponseDto>> {
+    const site = await this.siteRepo.findById(tenantId, siteId);
+    if (!site) {
+      return Result.fail(`Protected site '${siteId}' not found`);
+    }
+
+    if (site.onboardingStatus !== OnboardingStatus.HEALTH_CHECK) {
+      return Result.fail(
+        `Site must be in HEALTH_CHECK state to activate (current: ${site.onboardingStatus})`,
+      );
+    }
+
+    // Run pre-activation origin health probe
+    const healthResult = await this.originHealthChecker.checkOriginHealth(site.originUrl.value);
+
+    if (healthResult.healthy) {
+      const actRes = site.activate(OriginHealthStatus.HEALTHY);
+      if (actRes.isFailure) {
+        return Result.fail(actRes.getError());
+      }
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_ACTIVATED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          originUrl: site.originUrl.value,
+          latencyMs: healthResult.latencyMs,
+          statusCode: healthResult.statusCode,
+          onboardingStatus: site.onboardingStatus,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.ok(toInstructionResponse(site));
+    } else {
+      const errorMsg =
+        healthResult.error || `Origin health check failed (status ${healthResult.statusCode || 'timeout'})`;
+      site.activate(OriginHealthStatus.UNHEALTHY);
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_ACTIVATION_FAILED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          originUrl: site.originUrl.value,
+          error: errorMsg,
+          onboardingStatus: site.onboardingStatus,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.fail(errorMsg);
+    }
+  }
+}
+
+@Injectable()
+export class CheckSiteOriginHealthUseCase {
+  constructor(
+    @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(ORIGIN_HEALTH_CHECKER) private readonly originHealthChecker: IOriginHealthChecker,
+    @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+    @Optional() @Inject(NOTIFICATION_REPOSITORY) private readonly notificationRepo?: INotificationRepository,
+  ) {}
+
+  async execute(
+    tenantId: string,
+    siteId: string,
+    userId?: string,
+    clientIp?: string,
+  ): Promise<Result<SiteHealthCheckResponseDto>> {
+    const site = await this.siteRepo.findById(tenantId, siteId);
+    if (!site) {
+      return Result.fail(`Protected site '${siteId}' not found`);
+    }
+
+    const healthResult = await this.originHealthChecker.checkOriginHealth(site.originUrl.value);
+    const healthStatus = healthResult.healthy
+      ? OriginHealthStatus.HEALTHY
+      : OriginHealthStatus.UNHEALTHY;
+
+    site.updateOriginHealth(healthStatus);
+    await this.siteRepo.save(site);
+
+    if (!healthResult.healthy && this.notificationRepo) {
+      try {
+        const notif = Notification.create(crypto.randomUUID(), {
+          tenantId,
+          siteId: site.id,
+          severity: 'WARNING',
+          type: 'ML_DEGRADED',
+          title: `Origin Health Warning for ${site.domain.value}`,
+          message:
+            healthResult.error ||
+            `Origin health probe failed with status ${healthResult.statusCode || 'unknown'}`,
+          metadataJson: {
+            domain: site.domain.value,
+            originUrl: site.originUrl.value,
+            latencyMs: healthResult.latencyMs,
+            statusCode: healthResult.statusCode,
+          },
+        });
+        await this.notificationRepo.save(notif);
+      } catch {
+        // Notification emission is non-blocking
+      }
+    }
+
+    const audit = AuditLog.create({
+      tenantId,
+      userId,
+      action: 'SITE_HEALTH_CHECKED',
+      resource: 'ProtectedSite',
+      resourceId: site.id,
+      metadata: {
+        domain: site.domain.value,
+        originHealthStatus: healthStatus,
+        healthy: healthResult.healthy,
+        latencyMs: healthResult.latencyMs,
+        statusCode: healthResult.statusCode,
+      },
+      ipAddress: clientIp,
+    }).getValue();
+    await this.auditRepo.save(audit);
+
+    return Result.ok({
+      siteId: site.id,
+      domain: site.domain.value,
+      originUrl: site.originUrl.value,
+      healthy: healthResult.healthy,
+      statusCode: healthResult.statusCode,
+      latencyMs: healthResult.latencyMs,
+      originHealthStatus: site.originHealthStatus,
+      lastHealthCheckAt: site.lastHealthCheckAt ? site.lastHealthCheckAt.toISOString() : null,
+      error: healthResult.error,
+    });
   }
 }

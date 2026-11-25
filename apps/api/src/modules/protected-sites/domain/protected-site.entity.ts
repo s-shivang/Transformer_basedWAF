@@ -23,6 +23,20 @@ export enum OnboardingStatus {
   REMOVED = 'REMOVED',
 }
 
+export enum TlsStatus {
+  NONE = 'NONE',
+  PENDING = 'PENDING',
+  PROVISIONED = 'PROVISIONED',
+  RENEWING = 'RENEWING',
+  FAILED = 'FAILED',
+}
+
+export enum OriginHealthStatus {
+  UNKNOWN = 'UNKNOWN',
+  HEALTHY = 'HEALTHY',
+  UNHEALTHY = 'UNHEALTHY',
+}
+
 const VALID_TRANSITIONS: Record<OnboardingStatus, OnboardingStatus[]> = {
   [OnboardingStatus.DRAFT]: [OnboardingStatus.PENDING_VERIFICATION, OnboardingStatus.REMOVED],
   [OnboardingStatus.PENDING_VERIFICATION]: [
@@ -53,6 +67,9 @@ const VALID_TRANSITIONS: Record<OnboardingStatus, OnboardingStatus[]> = {
   [OnboardingStatus.FAILED]: [
     OnboardingStatus.PENDING_VERIFICATION,
     OnboardingStatus.CONFIGURING,
+    OnboardingStatus.DNS_PENDING,
+    OnboardingStatus.TLS_PENDING,
+    OnboardingStatus.HEALTH_CHECK,
     OnboardingStatus.REMOVED,
   ],
   [OnboardingStatus.REMOVED]: [],
@@ -71,6 +88,12 @@ export interface ProtectedSiteProps {
   gatewayAckVersion: number | null;
   lastSyncedAt: Date | null;
   lastOnboardingError: string | null;
+  tlsStatus: TlsStatus;
+  tlsIssuer: string | null;
+  tlsExpiresAt: Date | null;
+  originHealthStatus: OriginHealthStatus;
+  lastHealthCheckAt: Date | null;
+  activatedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -131,6 +154,30 @@ export class ProtectedSite extends Entity<string> {
     return this._props.lastOnboardingError;
   }
 
+  get tlsStatus(): TlsStatus {
+    return this._props.tlsStatus;
+  }
+
+  get tlsIssuer(): string | null {
+    return this._props.tlsIssuer;
+  }
+
+  get tlsExpiresAt(): Date | null {
+    return this._props.tlsExpiresAt;
+  }
+
+  get originHealthStatus(): OriginHealthStatus {
+    return this._props.originHealthStatus;
+  }
+
+  get lastHealthCheckAt(): Date | null {
+    return this._props.lastHealthCheckAt;
+  }
+
+  get activatedAt(): Date | null {
+    return this._props.activatedAt;
+  }
+
   get createdAt(): Date {
     return this._props.createdAt;
   }
@@ -185,6 +232,57 @@ export class ProtectedSite extends Entity<string> {
 
   public verifyDomain(): Result<void> {
     return this.transitionTo(OnboardingStatus.VERIFIED);
+  }
+
+  public markDnsRoutingVerified(): Result<void> {
+    return this.transitionTo(OnboardingStatus.TLS_PENDING);
+  }
+
+  public markTlsProvisioned(issuer: string, expiresAt: Date): Result<void> {
+    this._props.tlsStatus = TlsStatus.PROVISIONED;
+    this._props.tlsIssuer = issuer;
+    this._props.tlsExpiresAt = expiresAt;
+    this._props.lastOnboardingError = null;
+    return this.transitionTo(OnboardingStatus.HEALTH_CHECK);
+  }
+
+  public markTlsFailed(reason: string): Result<void> {
+    this._props.tlsStatus = TlsStatus.FAILED;
+    return this.transitionTo(OnboardingStatus.FAILED, reason);
+  }
+
+  public activate(healthStatus: OriginHealthStatus): Result<void> {
+    if (this._props.onboardingStatus !== OnboardingStatus.HEALTH_CHECK) {
+      return Result.fail<void>('Site must be in HEALTH_CHECK state to activate');
+    }
+    if (!this._props.verifiedAt) {
+      return Result.fail<void>('Site domain ownership must be verified before activation');
+    }
+    if (this._props.gatewayAckVersion === null) {
+      return Result.fail<void>('Site configuration must be synced to gateway before activation');
+    }
+    if (this._props.tlsStatus !== TlsStatus.PROVISIONED) {
+      return Result.fail<void>('TLS certificate must be provisioned before activation');
+    }
+
+    if (healthStatus === OriginHealthStatus.HEALTHY) {
+      this._props.originHealthStatus = OriginHealthStatus.HEALTHY;
+      this._props.lastHealthCheckAt = new Date();
+      this._props.activatedAt = new Date();
+      this._props.lastOnboardingError = null;
+      return this.transitionTo(OnboardingStatus.ACTIVE);
+    } else {
+      this._props.originHealthStatus = OriginHealthStatus.UNHEALTHY;
+      this._props.lastHealthCheckAt = new Date();
+      return this.transitionTo(OnboardingStatus.FAILED, 'Origin health probe failed before activation');
+    }
+  }
+
+  public updateOriginHealth(status: OriginHealthStatus): Result<void> {
+    this._props.originHealthStatus = status;
+    this._props.lastHealthCheckAt = new Date();
+    this._props.updatedAt = new Date();
+    return Result.ok<void>();
   }
 
   public failOnboarding(reason: string): Result<void> {
@@ -261,6 +359,12 @@ export class ProtectedSite extends Entity<string> {
       gatewayAckVersion?: number | null;
       lastSyncedAt?: Date | null;
       lastOnboardingError?: string | null;
+      tlsStatus?: TlsStatus;
+      tlsIssuer?: string | null;
+      tlsExpiresAt?: Date | null;
+      originHealthStatus?: OriginHealthStatus;
+      lastHealthCheckAt?: Date | null;
+      activatedAt?: Date | null;
     },
     id?: string,
   ): Result<ProtectedSite> {
@@ -304,6 +408,12 @@ export class ProtectedSite extends Entity<string> {
       gatewayAckVersion: props.gatewayAckVersion ?? null,
       lastSyncedAt: props.lastSyncedAt ?? null,
       lastOnboardingError: props.lastOnboardingError ?? null,
+      tlsStatus: props.tlsStatus ?? (initialOnboarding === OnboardingStatus.ACTIVE ? TlsStatus.PROVISIONED : TlsStatus.NONE),
+      tlsIssuer: props.tlsIssuer ?? (initialOnboarding === OnboardingStatus.ACTIVE ? 'local-dev-acme' : null),
+      tlsExpiresAt: props.tlsExpiresAt ?? (initialOnboarding === OnboardingStatus.ACTIVE ? new Date(now.getTime() + 90 * 86400000) : null),
+      originHealthStatus: props.originHealthStatus ?? (initialOnboarding === OnboardingStatus.ACTIVE ? OriginHealthStatus.HEALTHY : OriginHealthStatus.UNKNOWN),
+      lastHealthCheckAt: props.lastHealthCheckAt ?? (initialOnboarding === OnboardingStatus.ACTIVE ? now : null),
+      activatedAt: props.activatedAt ?? (initialOnboarding === OnboardingStatus.ACTIVE ? now : null),
       createdAt: now,
       updatedAt: now,
     });
@@ -326,6 +436,12 @@ export class ProtectedSite extends Entity<string> {
       gatewayAckVersion?: number | null;
       lastSyncedAt?: Date | null;
       lastOnboardingError?: string | null;
+      tlsStatus?: TlsStatus;
+      tlsIssuer?: string | null;
+      tlsExpiresAt?: Date | null;
+      originHealthStatus?: OriginHealthStatus;
+      lastHealthCheckAt?: Date | null;
+      activatedAt?: Date | null;
       createdAt: Date;
       updatedAt: Date;
     },
@@ -343,6 +459,12 @@ export class ProtectedSite extends Entity<string> {
       gatewayAckVersion: props.gatewayAckVersion ?? null,
       lastSyncedAt: props.lastSyncedAt ?? null,
       lastOnboardingError: props.lastOnboardingError ?? null,
+      tlsStatus: props.tlsStatus ?? TlsStatus.NONE,
+      tlsIssuer: props.tlsIssuer ?? null,
+      tlsExpiresAt: props.tlsExpiresAt ?? null,
+      originHealthStatus: props.originHealthStatus ?? OriginHealthStatus.UNKNOWN,
+      lastHealthCheckAt: props.lastHealthCheckAt ?? null,
+      activatedAt: props.activatedAt ?? null,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
     });
