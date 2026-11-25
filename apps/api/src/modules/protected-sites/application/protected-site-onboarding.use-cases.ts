@@ -27,8 +27,14 @@ import {
   DNS_VERIFIER,
 } from '../domain/dns-verifier.interface';
 import {
+  ISiteConfigSyncClient,
+  SITE_CONFIG_SYNC_CLIENT,
+  GatewaySiteSyncPayload,
+} from '../domain/site-config-sync.interface';
+import {
   StartSiteOnboardingDto,
   RetryOnboardingDto,
+  ConfigureSiteDto,
   OnboardingInstructionsResponseDto,
 } from '../presentation/dtos/protected-site.dto';
 
@@ -41,6 +47,8 @@ export function toInstructionResponse(site: ProtectedSite): OnboardingInstructio
     onboardingStatus: site.onboardingStatus,
     verificationToken: site.verificationToken,
     configVersion: site.configVersion,
+    gatewayAckVersion: site.gatewayAckVersion,
+    lastSyncedAt: site.lastSyncedAt ? site.lastSyncedAt.toISOString() : null,
     txtRecord: {
       host: `_waf-challenge.${site.domain.value}`,
       value: site.verificationToken,
@@ -227,6 +235,128 @@ export class VerifySiteDomainUseCase {
 }
 
 @Injectable()
+export class ConfigureSiteOnGatewayUseCase {
+  constructor(
+    @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(WAF_POLICY_REPOSITORY) private readonly policyRepo: IWafPolicyRepository,
+    @Inject(SITE_CONFIG_SYNC_CLIENT) private readonly syncClient: ISiteConfigSyncClient,
+    @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
+  ) {}
+
+  async execute(
+    tenantId: string,
+    siteId: string,
+    dto?: ConfigureSiteDto,
+    userId?: string,
+    clientIp?: string,
+  ): Promise<Result<OnboardingInstructionsResponseDto>> {
+    const site = await this.siteRepo.findById(tenantId, siteId);
+    if (!site) {
+      return Result.fail(`Protected site '${siteId}' not found`);
+    }
+
+    if (
+      site.onboardingStatus !== OnboardingStatus.VERIFIED &&
+      site.onboardingStatus !== OnboardingStatus.ACTIVE &&
+      site.onboardingStatus !== OnboardingStatus.CONFIGURING
+    ) {
+      return Result.fail(
+        `Site must be VERIFIED before configuring gateway (current: ${site.onboardingStatus})`,
+      );
+    }
+
+    // Advance to CONFIGURING
+    if (site.onboardingStatus !== OnboardingStatus.CONFIGURING) {
+      const transRes = site.transitionTo(OnboardingStatus.CONFIGURING);
+      if (transRes.isFailure) {
+        return Result.fail(transRes.getError());
+      }
+      await this.siteRepo.save(site);
+    }
+
+    // Resolve active WAF policy
+    const policy = await this.policyRepo.findActiveBySite(tenantId, site.id);
+    const policyPayload = policy
+      ? {
+          mode: policy.mode.toLowerCase(),
+          block_threshold: policy.blockThreshold,
+          challenge_threshold: policy.challengeThreshold,
+          monitor_threshold: policy.monitorThreshold,
+          ml_enabled: policy.mlEnabled,
+          rules_enabled: policy.rulesEnabled,
+          challenge_enabled: policy.challengeEnabled,
+          exclusions: (policy.exclusionsJson as any[]) || [],
+        }
+      : {
+          mode: 'monitor',
+          block_threshold: 0.85,
+          challenge_threshold: 0.50,
+          monitor_threshold: 0.20,
+          ml_enabled: true,
+          rules_enabled: true,
+          challenge_enabled: true,
+          exclusions: [],
+        };
+
+    const syncPayload: GatewaySiteSyncPayload = {
+      site_id: site.id,
+      tenant_id: site.tenantId,
+      domain: site.domain.value,
+      origin_url: site.originUrl.value,
+      enabled: site.status === SiteStatus.ACTIVE,
+      config_version: site.configVersion,
+      policy: policyPayload,
+      force_rollback: Boolean(dto?.forceRollback),
+    };
+
+    const syncResult = await this.syncClient.syncSiteConfig(syncPayload);
+
+    if (syncResult.acknowledged) {
+      site.acknowledgeGatewaySync(syncResult.config_version);
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_CONFIG_SYNCED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          configVersion: site.configVersion,
+          gatewayAckVersion: site.gatewayAckVersion,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.ok(toInstructionResponse(site));
+    } else {
+      const errorMsg = syncResult.error || 'Gateway configuration sync failed';
+      site.failOnboarding(errorMsg);
+      await this.siteRepo.save(site);
+
+      const audit = AuditLog.create({
+        tenantId,
+        userId,
+        action: 'SITE_CONFIG_SYNC_FAILED',
+        resource: 'ProtectedSite',
+        resourceId: site.id,
+        metadata: {
+          domain: site.domain.value,
+          configVersion: site.configVersion,
+          error: errorMsg,
+        },
+        ipAddress: clientIp,
+      }).getValue();
+      await this.auditRepo.save(audit);
+
+      return Result.fail(errorMsg);
+    }
+  }
+}
+
+@Injectable()
 export class RetrySiteOnboardingUseCase {
   constructor(
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
@@ -272,6 +402,8 @@ export class RetrySiteOnboardingUseCase {
 export class PauseResumeSiteUseCase {
   constructor(
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(SITE_CONFIG_SYNC_CLIENT) private readonly syncClient: ISiteConfigSyncClient,
+    @Inject(WAF_POLICY_REPOSITORY) private readonly policyRepo: IWafPolicyRepository,
     @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
   ) {}
 
@@ -292,6 +424,13 @@ export class PauseResumeSiteUseCase {
     }
 
     await this.siteRepo.save(site);
+
+    // Evict from Gateway HostRegistry
+    try {
+      await this.syncClient.removeSiteConfig(site.domain.value);
+    } catch {
+      // Non-blocking
+    }
 
     const audit = AuditLog.create({
       tenantId,
@@ -324,6 +463,31 @@ export class PauseResumeSiteUseCase {
     }
 
     await this.siteRepo.save(site);
+
+    // Re-sync route config to Gateway
+    try {
+      const policy = await this.policyRepo.findActiveBySite(tenantId, site.id);
+      await this.syncClient.syncSiteConfig({
+        site_id: site.id,
+        tenant_id: site.tenantId,
+        domain: site.domain.value,
+        origin_url: site.originUrl.value,
+        enabled: true,
+        config_version: site.configVersion,
+        policy: policy ? {
+          mode: policy.mode.toLowerCase(),
+          block_threshold: policy.blockThreshold,
+          challenge_threshold: policy.challengeThreshold,
+          monitor_threshold: policy.monitorThreshold,
+          ml_enabled: policy.mlEnabled,
+          rules_enabled: policy.rulesEnabled,
+          challenge_enabled: policy.challengeEnabled,
+          exclusions: (policy.exclusionsJson as any[]) || [],
+        } : undefined,
+      });
+    } catch {
+      // Non-blocking resume sync attempt
+    }
 
     const audit = AuditLog.create({
       tenantId,

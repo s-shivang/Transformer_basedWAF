@@ -23,6 +23,8 @@ import { WAF_POLICY_REPOSITORY } from '../src/modules/waf-policies/domain/waf-po
 import { InMemoryWafPolicyRepository } from '../src/modules/waf-policies/infrastructure/in-memory-waf-policy.repository';
 import { DNS_VERIFIER } from '../src/modules/protected-sites/domain/dns-verifier.interface';
 import { LocalDevDnsVerifier } from '../src/modules/protected-sites/infrastructure/dns/local-dev-dns.verifier';
+import { SITE_CONFIG_SYNC_CLIENT } from '../src/modules/protected-sites/domain/site-config-sync.interface';
+import { InMemorySiteConfigSyncClient } from '../src/modules/protected-sites/infrastructure/gateway/in-memory-site-config-sync.client';
 import { TOKEN_SERVICE, ITokenService } from '../src/modules/identity/infrastructure/token.service';
 import { UserRole } from '../src/modules/identity/domain/user-role';
 
@@ -36,6 +38,7 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
   let siteRepo: InMemoryProtectedSiteRepository;
   let policyRepo: InMemoryWafPolicyRepository;
   let dnsVerifier: LocalDevDnsVerifier;
+  let syncClient: InMemorySiteConfigSyncClient;
   let tokenService: ITokenService;
 
   let ownerTokenA: string;
@@ -54,6 +57,7 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
     siteRepo = new InMemoryProtectedSiteRepository();
     policyRepo = new InMemoryWafPolicyRepository();
     dnsVerifier = new LocalDevDnsVerifier();
+    syncClient = new InMemorySiteConfigSyncClient();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -74,6 +78,8 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
       .useValue(policyRepo)
       .overrideProvider(DNS_VERIFIER)
       .useValue(dnsVerifier)
+      .overrideProvider(SITE_CONFIG_SYNC_CLIENT)
+      .useValue(syncClient)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -365,6 +371,106 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
         .expect(200);
 
       expect(res.body.onboardingStatus).toBe('ACTIVE');
+    });
+  });
+
+  describe('6. Phase 17B Atomic Gateway Configuration Sync', () => {
+    let verifiedSiteId: string;
+    let pendingSiteId: string;
+
+    beforeAll(async () => {
+      // 1. Create a site in PENDING_VERIFICATION
+      const pendingRes = await request(app.getHttpServer())
+        .post('/api/v1/sites/onboarding')
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({
+          name: 'Pending Sync Test',
+          domain: 'pending-sync.acme-onboarding.com',
+          originUrl: 'https://pending.internal:443',
+        })
+        .expect(201);
+      pendingSiteId = pendingRes.body.siteId;
+
+      // 2. Create another site and verify domain
+      const verifiedRes = await request(app.getHttpServer())
+        .post('/api/v1/sites/onboarding')
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({
+          name: 'Verified Sync Test',
+          domain: 'verified-sync.acme-onboarding.com',
+          originUrl: 'https://verified.internal:443',
+        })
+        .expect(201);
+      verifiedSiteId = verifiedRes.body.siteId;
+
+      dnsVerifier.registerTxtRecord(
+        'verified-sync.acme-onboarding.com',
+        verifiedRes.body.verificationToken,
+      );
+
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${verifiedSiteId}/onboarding/verify-domain`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+    });
+
+    it('rejects gateway configure on unverified site with 400 Bad Request', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${pendingSiteId}/onboarding/configure`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({})
+        .expect(400);
+
+      expect(res.body.message).toContain('Site must be VERIFIED');
+    });
+
+    it('rejects cross-tenant configure with 404 Not Found', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${verifiedSiteId}/onboarding/configure`)
+        .set('Authorization', `Bearer ${ownerTokenB}`)
+        .send({})
+        .expect(404);
+    });
+
+    it('pushes configuration to gateway atomically and transitions VERIFIED -> DNS_PENDING', async () => {
+      syncClient.clear();
+
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${verifiedSiteId}/onboarding/configure`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({})
+        .expect(200);
+
+      expect(res.body.onboardingStatus).toBe('DNS_PENDING');
+      expect(res.body.gatewayAckVersion).toBe(res.body.configVersion);
+      expect(res.body.lastSyncedAt).toBeDefined();
+
+      // Check sync client received the payload
+      expect(syncClient.syncedConfigs.has('verified-sync.acme-onboarding.com')).toBe(true);
+      const synced = syncClient.syncedConfigs.get('verified-sync.acme-onboarding.com');
+      expect(synced?.site_id).toBe(verifiedSiteId);
+      expect(synced?.origin_url).toBe('https://verified.internal:443');
+    });
+
+    it('transitions to FAILED when gateway sync returns error', async () => {
+      syncClient.setShouldFail(true, 'Gateway connection timeout');
+
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${verifiedSiteId}/onboarding/configure`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({})
+        .expect(400);
+
+      expect(res.body.message).toContain('Gateway connection timeout');
+
+      // Check site status transitioned to FAILED
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/v1/sites/${verifiedSiteId}/onboarding`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(getRes.body.onboardingStatus).toBe('FAILED');
+      expect(getRes.body.lastError).toContain('Gateway connection timeout');
     });
   });
 });

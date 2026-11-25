@@ -27,12 +27,14 @@ import {
   VerifySiteDomainUseCase,
   RetrySiteOnboardingUseCase,
   PauseResumeSiteUseCase,
+  ConfigureSiteOnGatewayUseCase,
 } from '../application/protected-site-onboarding.use-cases';
 import {
   CreateProtectedSiteDto,
   UpdateProtectedSiteDto,
   StartSiteOnboardingDto,
   RetryOnboardingDto,
+  ConfigureSiteDto,
 } from './dtos/protected-site.dto';
 import { JwtAuthGuard } from '../../identity/presentation/guards/jwt-auth.guard';
 import { RolesGuard } from '../../identity/presentation/guards/roles.guard';
@@ -53,6 +55,7 @@ export class ProtectedSitesController {
     private readonly startOnboardingUseCase: StartSiteOnboardingUseCase,
     private readonly getInstructionsUseCase: GetOnboardingInstructionsUseCase,
     private readonly verifyDomainUseCase: VerifySiteDomainUseCase,
+    private readonly configureGatewayUseCase: ConfigureSiteOnGatewayUseCase,
     private readonly retryOnboardingUseCase: RetrySiteOnboardingUseCase,
     private readonly pauseResumeUseCase: PauseResumeSiteUseCase,
   ) {}
@@ -121,6 +124,33 @@ export class ProtectedSitesController {
     const clientIp = req.ip;
 
     const result = await this.verifyDomainUseCase.execute(tenantId, siteId, userId, clientIp);
+    if (result.isFailure) {
+      throw new HttpException(result.getError(), HttpStatus.BAD_REQUEST);
+    }
+
+    return result.getValue();
+  }
+
+  @Post(':siteId/onboarding/configure')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Push validated site route and policy config atomically to WAF Gateway' })
+  @ApiResponse({ status: 200, description: 'Gateway configuration synced and acknowledged' })
+  @ApiResponse({ status: 400, description: 'Site not in VERIFIED status or sync error' })
+  async configureGateway(
+    @Param('siteId') siteId: string,
+    @Body() dto: ConfigureSiteDto,
+    @Req() req: Request,
+  ) {
+    const tenantId = req.tenantContext?.tenantId;
+    if (!tenantId) {
+      throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
+    }
+
+    const userId = (req as any).user?.sub;
+    const clientIp = req.ip;
+
+    const result = await this.configureGatewayUseCase.execute(tenantId, siteId, dto, userId, clientIp);
     if (result.isFailure) {
       throw new HttpException(result.getError(), HttpStatus.BAD_REQUEST);
     }

@@ -11,6 +11,7 @@ import {
   StartSiteOnboardingUseCase,
   GetOnboardingInstructionsUseCase,
   VerifySiteDomainUseCase,
+  ConfigureSiteOnGatewayUseCase,
   RetrySiteOnboardingUseCase,
   PauseResumeSiteUseCase,
 } from './application/protected-site-onboarding.use-cases';
@@ -19,6 +20,9 @@ import { PrismaProtectedSiteRepository } from './infrastructure/prisma-protected
 import { DNS_VERIFIER } from './domain/dns-verifier.interface';
 import { NodeDnsVerifier } from './infrastructure/dns/node-dns.verifier';
 import { LocalDevDnsVerifier } from './infrastructure/dns/local-dev-dns.verifier';
+import { SITE_CONFIG_SYNC_CLIENT } from './domain/site-config-sync.interface';
+import { HttpSiteConfigSyncClient } from './infrastructure/gateway/http-site-config-sync.client';
+import { InMemorySiteConfigSyncClient } from './infrastructure/gateway/in-memory-site-config-sync.client';
 import { WafPoliciesModule } from '../waf-policies/waf-policies.module';
 import { IdentityModule } from '../identity/identity.module';
 import { TenantsModule } from '../tenants/tenants.module';
@@ -40,6 +44,7 @@ import { PrismaService } from '@shared/infrastructure/prisma.service';
     StartSiteOnboardingUseCase,
     GetOnboardingInstructionsUseCase,
     VerifySiteDomainUseCase,
+    ConfigureSiteOnGatewayUseCase,
     RetrySiteOnboardingUseCase,
     PauseResumeSiteUseCase,
     PrismaService,
@@ -54,12 +59,22 @@ import { PrismaService } from '@shared/infrastructure/prisma.service';
           ? LocalDevDnsVerifier
           : NodeDnsVerifier,
     },
+    {
+      provide: SITE_CONFIG_SYNC_CLIENT,
+      useClass:
+        process.env.NODE_ENV === 'test' || process.env.WAF_LOCAL_DEV_DNS === 'true'
+          ? InMemorySiteConfigSyncClient
+          : HttpSiteConfigSyncClient,
+    },
     LocalDevDnsVerifier,
     NodeDnsVerifier,
+    InMemorySiteConfigSyncClient,
+    HttpSiteConfigSyncClient,
   ],
   exports: [
     PROTECTED_SITE_REPOSITORY,
     DNS_VERIFIER,
+    SITE_CONFIG_SYNC_CLIENT,
     CreateProtectedSiteUseCase,
     ListProtectedSitesUseCase,
     GetProtectedSiteUseCase,
@@ -68,9 +83,11 @@ import { PrismaService } from '@shared/infrastructure/prisma.service';
     StartSiteOnboardingUseCase,
     GetOnboardingInstructionsUseCase,
     VerifySiteDomainUseCase,
+    ConfigureSiteOnGatewayUseCase,
     RetrySiteOnboardingUseCase,
     PauseResumeSiteUseCase,
     LocalDevDnsVerifier,
+    InMemorySiteConfigSyncClient,
   ],
 })
 export class ProtectedSitesModule {}
