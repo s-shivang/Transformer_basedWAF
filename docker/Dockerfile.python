@@ -23,7 +23,6 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 # Copy source code and frozen production model weights
 COPY src/ ./src/
 COPY models/frozen/ ./models/frozen/
-COPY config/ ./config/
 
 EXPOSE 8000 8001 8002
 

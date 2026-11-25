@@ -1,0 +1,195 @@
+# ==============================================================================
+# Transformer-Based WAF: Local Production-Grade Multi-Service Stack
+# ==============================================================================
+
+services:
+  # 1. PostgreSQL Database for Control Plane
+  postgres:
+    image: postgres:16-alpine
+    container_name: waf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-waf_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-waf_secret_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-transformer_waf}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    networks:
+      - waf-internal
+
+  # 2. Redis for BullMQ Asynchronous Queues
+  redis:
+    image: redis:7-alpine
+    container_name: waf-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    networks:
+      - waf-internal
+
+  # 3. Control Plane: NestJS SaaS API
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: waf-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-waf_admin}:${POSTGRES_PASSWORD:-waf_secret_pass_2026}@postgres:5432/${POSTGRES_DB:-transformer_waf}?schema=public
+      DATABASE_CONNECT_ON_INIT: "true"
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_jwt_access_secret_super_secure_32chars!}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_super_secure_32chars!}
+      INTERNAL_GATEWAY_SECRET: ${WAF_INGEST_KEY:-waf-internal-ingest-secret-dev}
+      CORS_ORIGIN: "http://localhost:5173"
+      WAF_GATEWAY_ADMIN_URL: "http://waf-gateway:8001"
+      WAF_ADMIN_KEY: ${WAF_ADMIN_KEY:-waf-admin-secret-key-local}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/v1/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+    networks:
+      - waf-internal
+
+  # 4. React SOC SaaS Dashboard
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: waf-web
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - waf-internal
+
+  # 5. Core ML Inference Service (CPU-optimized for reliable local startup)
+  ml-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+    container_name: waf-ml-service
+    restart: unless-stopped
+    command: ["python", "-m", "uvicorn", "src.inference_service.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      WAF_MODEL_DIR: "/app/models/frozen/v1_0"
+      WAF_BATCH_SIZE: "32"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/health || exit 1"]
+      interval: 5s
+      timeout: 4s
+      retries: 6
+    networks:
+      - waf-internal
+
+  # 6. Upstream Protected Test Application
+  protected-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+    container_name: waf-protected-app
+    restart: unless-stopped
+    command: ["python", "src/protected_app/app.py", "--host", "0.0.0.0", "--port", "8002"]
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8002/health || exit 1"]
+      interval: 4s
+      timeout: 3s
+      retries: 5
+    networks:
+      - waf-internal
+
+  # 7. WAF Inspection Reverse-Proxy Gateway
+  waf-gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+    container_name: waf-gateway
+    restart: unless-stopped
+    command: ["python", "-m", "uvicorn", "src.waf_gateway.app:app", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      WAF_UPSTREAM_URL: "http://protected-app:8002"
+      WAF_ML_SERVICE_URL: "http://ml-service:8000"
+      WAF_ADMIN_KEY: ${WAF_ADMIN_KEY:-waf-admin-secret-key-local}
+      WAF_CHALLENGE_SECRET: ${WAF_CHALLENGE_SECRET:-dev_challenge_secret_super_secure_32chars!}
+      WAF_CONTROL_PLANE_URL: "http://api:3000"
+      WAF_INGEST_KEY: ${WAF_INGEST_KEY:-waf-internal-ingest-secret-dev}
+      WAF_DEFAULT_TENANT_ID: "default-tenant"
+      WAF_DEFAULT_SITE_ID: "default-site"
+    ports:
+      - "8001:8001"
+    depends_on:
+      ml-service:
+        condition: service_healthy
+      protected-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8001/health || exit 1"]
+      interval: 4s
+      timeout: 3s
+      retries: 5
+    networks:
+      - waf-internal
+
+  # 8. Public WAF Reverse Proxy Entrypoint (Nginx)
+  nginx:
+    image: nginx:alpine
+    container_name: waf-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/waf_reverse_proxy.docker.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      waf-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/health || exit 1"]
+      interval: 4s
+      timeout: 3s
+      retries: 5
+    networks:
+      - waf-internal
+
+volumes:
+  pg_data:
+  redis_data:
+
+networks:
+  waf-internal:
+    driver: bridge

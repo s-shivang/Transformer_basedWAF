@@ -1,0 +1,13 @@
+# Optional GPU passthrough override for local NVIDIA RTX 2050 (4 GB VRAM)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+services:
+  ml-service:
+    environment:
+      WAF_DEVICE: "cuda"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
