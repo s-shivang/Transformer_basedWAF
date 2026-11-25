@@ -380,7 +380,15 @@ async def reverse_proxy_handler(request: Request, full_path: str):
 
     lines = [f"{request.method} {raw_path} HTTP/1.1"]
     for hk, hv in request.headers.items():
-        lines.append(f"{hk}: {hv}")
+        # Exclude internal clearance cookie from raw_http so v1_0 Representation D does not treat
+        # our own HMAC clearance token as an anomaly
+        if hk.lower() == "cookie":
+            # Strip waf_clearance from Cookie header for inspection
+            cookie_parts = [c.strip() for c in hv.split(";") if not c.strip().startswith("waf_clearance=")]
+            if cookie_parts:
+                lines.append(f"cookie: {'; '.join(cookie_parts)}")
+        else:
+            lines.append(f"{hk}: {hv}")
     if body_str:
         lines.append("")
         lines.append(body_str)

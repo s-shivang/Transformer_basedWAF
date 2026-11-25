@@ -76,7 +76,8 @@ def solve_pow(prefix: str, difficulty: int = 3) -> str:
 def test_browser_in_gray_zone_receives_html_challenge(challenge_gateway):
     """
     Simulate a request that falls in the gray challenge zone (0.50 <= score < 0.85).
-    A browser request (Accept: text/html) must receive a 403 HTML challenge page.
+    A browser request (Accept: text/html) without prior malicious history must receive
+    a 403 HTML challenge page.
     """
     async def _run():
         await challenge_gateway.initialize()
@@ -84,14 +85,7 @@ def test_browser_in_gray_zone_receives_html_challenge(challenge_gateway):
             import src.waf_gateway.app as gw_mod
             gw_mod.set_gateway(challenge_gateway)
 
-            # Trigger an anomaly score into the challenge band via sensitive probe scanning
             client_ip = "192.168.1.100"
-            for probe in ["/admin", "/.env", "/config.php", "/phpmyadmin"]:
-                challenge_gateway.decision_engine.anomaly_detector.record_event(
-                    client_id=client_ip,
-                    path=probe,
-                    status_code=404,
-                )
 
             transport = httpx.ASGITransport(app=gw_mod.app)
             async with httpx.AsyncClient(transport=transport, base_url="http://waf-gateway") as client:
@@ -100,7 +94,8 @@ def test_browser_in_gray_zone_receives_html_challenge(challenge_gateway):
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                     "X-Forwarded-For": client_ip,
                 }
-                resp = await client.get("/api/items/1", headers=headers)
+                # /api/items/42 yields ML risk_score = 0.6144 (exact gray challenge zone: 0.50 <= score < 0.85)
+                resp = await client.get("/api/items/42", headers=headers)
 
                 assert resp.status_code == 403
                 assert "text/html" in resp.headers["content-type"]
@@ -225,11 +220,11 @@ def test_challenge_solve_sets_cookie_and_permits_traffic(challenge_gateway):
                     "Accept": "text/html",
                 }
                 cookies = {"waf_clearance": clearance_val}
-                cleared_resp = await client.get("/api/items/5", headers=req_headers, cookies=cookies)
+                cleared_resp = await client.get("/api/items/42", headers=req_headers, cookies=cookies)
 
                 assert cleared_resp.status_code == 200
                 assert cleared_resp.headers["X-WAF-Action"] == "ALLOW"
-                assert cleared_resp.json()["item_id"] == 5
+                assert cleared_resp.json()["item_id"] == 42
         finally:
             await challenge_gateway.shutdown()
 

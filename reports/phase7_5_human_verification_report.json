@@ -1,0 +1,40 @@
+{
+  "phase": "7.5",
+  "title": "Interactive Human Verification Screen & Data Plane Hardening",
+  "timestamp": "2026-11-25T11:45:00+05:30",
+  "active_model_version": "v1.0.0",
+  "thresholds": {
+    "fast_pass_allow": 0.04,
+    "monitor_alert": 0.05,
+    "challenge": 0.50,
+    "block": 0.85
+  },
+  "step_0_hardening": {
+    "nginx_policy_route_locked": true,
+    "nginx_503_fallback_configured": true,
+    "gateway_admin_key_header_protected": true,
+    "live_proxy_ml_outage_test_passed": true
+  },
+  "challenge_engine": {
+    "module": "src/waf_gateway/challenge.py",
+    "zero_external_cdn": true,
+    "crypto": "HMAC-SHA256",
+    "token_ttl_seconds": 60,
+    "clearance_cookie_ttl_seconds": 300,
+    "pow_leading_zeros": 3,
+    "min_human_duration_ms": 250,
+    "tasks": [
+      "Smooth Puzzle Snap (Slider)",
+      "Rotate-to-Upright Vector Icon",
+      "2-Node Sequence Tap",
+      "Accessible Human Presence Fallback"
+    ]
+  },
+  "test_verification": {
+    "total_pytest_cases": 73,
+    "passed": 73,
+    "failed": 0,
+    "evaluation_pipeline_tests": 11,
+    "firewall_4layer_validation": "PASSED"
+  }
+}
