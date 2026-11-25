@@ -39,10 +39,17 @@ enum SiteStatus {
   MAINTENANCE
 }
 
-enum InspectionMode {
+enum WafMode {
   MONITOR
-  BLOCK
-  SIMULATION
+  BLOCKING
+  STRICT
+  CORROBORATED
+  DISABLED
+}
+
+enum MlFailureMode {
+  FAIL_OPEN
+  FAIL_CLOSED
 }
 
 enum PolicyAction {
@@ -140,6 +147,7 @@ model RefreshSession {
 model ProtectedSite {
   id          String     @id @default(uuid()) @db.Uuid
   tenantId    String     @map("tenant_id") @db.Uuid
+  name        String     @db.VarChar(100)
   domain      String     @db.VarChar(255)
   upstreamUrl String     @map("upstream_url") @db.VarChar(500)
   status      SiteStatus @default(ACTIVE)
@@ -157,27 +165,32 @@ model ProtectedSite {
 }
 
 model WafPolicy {
-  id                   String         @id @default(uuid()) @db.Uuid
-  tenantId             String         @map("tenant_id") @db.Uuid
-  siteId               String?        @map("site_id") @db.Uuid
-  name                 String         @db.VarChar(100)
-  mode                 InspectionMode @default(MONITOR)
-  fastPassThreshold    Float          @default(0.04) @map("fast_pass_threshold")
-  monitorThreshold     Float          @default(0.05) @map("monitor_threshold")
-  challengeThreshold   Float          @default(0.50) @map("challenge_threshold")
-  blockThreshold       Float          @default(0.85) @map("block_threshold")
-  rateLimitPerMinute   Int            @default(300) @map("rate_limit_per_minute")
-  modelId              String         @default("v1_0") @map("model_id") @db.VarChar(50)
-  rulesJson            Json           @default("[]") @map("rules_json")
-  isDefault            Boolean        @default(false) @map("is_default")
-  createdAt            DateTime       @default(now()) @map("created_at")
-  updatedAt            DateTime       @updatedAt @map("updated_at")
+  id                   String        @id @default(uuid()) @db.Uuid
+  tenantId             String        @map("tenant_id") @db.Uuid
+  siteId               String?       @map("site_id") @db.Uuid
+  name                 String        @default("Default Policy") @db.VarChar(100)
+  mode                 WafMode       @default(MONITOR)
+  mlEnabled            Boolean       @default(true) @map("ml_enabled")
+  rulesEnabled         Boolean       @default(true) @map("rules_enabled")
+  challengeEnabled     Boolean       @default(true) @map("challenge_enabled")
+  monitorThreshold     Float         @default(0.05) @map("monitor_threshold")
+  challengeThreshold   Float         @default(0.50) @map("challenge_threshold")
+  blockThreshold       Float         @default(0.85) @map("block_threshold")
+  mlFailureMode        MlFailureMode @default(FAIL_OPEN) @map("ml_failure_mode")
+  exclusionsJson       Json          @default("[]") @map("exclusions_json")
+  modelVersion         String        @default("v1_0") @map("model_version") @db.VarChar(50)
+  version              Int           @default(1)
+  isActive             Boolean       @default(true) @map("is_active")
+  updatedByUserId      String?       @map("updated_by_user_id") @db.Uuid
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
 
   tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   site   ProtectedSite? @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([siteId])
+  @@index([tenantId, siteId, version])
   @@map("waf_policies")
 }
 
