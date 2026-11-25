@@ -11,6 +11,19 @@ export default defineConfig({
     server: {
         port: 5173,
     },
+    build: {
+        chunkSizeWarningLimit: 600,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                    'vendor-query': ['@tanstack/react-query'],
+                    'vendor-charts': ['recharts'],
+                    'vendor-icons': ['lucide-react'],
+                },
+            },
+        },
+    },
     // @ts-expect-error Vitest configuration field
     test: {
         globals: true,

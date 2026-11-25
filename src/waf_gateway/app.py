@@ -19,8 +19,9 @@ from contextlib import asynccontextmanager
 import time
 import os
 import json
+import asyncio
 import httpx
-from fastapi import FastAPI, Request, Response, status, HTTPException, Header
+from fastapi import FastAPI, Request, Response, status, HTTPException, Header, BackgroundTasks
 from fastapi.responses import JSONResponse, Response as FastAPIResponse
 from pydantic import BaseModel
 
@@ -103,6 +104,10 @@ class WAFGatewayApp:
 
         self.in_process_upstream_app = in_process_upstream_app
         self.upstream_client: Optional[httpx.AsyncClient] = None
+        self.control_plane_url = os.getenv("WAF_CONTROL_PLANE_URL", "").rstrip("/")
+        self.ingest_key = os.getenv("WAF_INGEST_KEY", "")
+        self.default_tenant_id = os.getenv("WAF_DEFAULT_TENANT_ID", "")
+        self.default_site_id = os.getenv("WAF_DEFAULT_SITE_ID", "")
 
     async def initialize(self):
         """Initializes async HTTP client for upstream forwarding."""
@@ -124,7 +129,7 @@ class WAFGatewayApp:
         self.ml_client.close()
 
     def log_security_event(self, parsed_req: ParsedRequest, decision: WAFDecision, client_ip: str, extra_event_type: Optional[str] = None):
-        """Persists privacy-safe redacted security event to JSONL file."""
+        """Persists privacy-safe redacted security event to JSONL file and optionally forwards to Control Plane asynchronously."""
         try:
             event = redact_request_for_event(parsed_req, decision, client_ip=client_ip)
             if extra_event_type:
@@ -132,8 +137,43 @@ class WAFGatewayApp:
             line = json.dumps(event) + "\n"
             with open(self.security_log_path, "a", encoding="utf-8") as f:
                 f.write(line)
+
+            # Non-blocking async event dispatch to Control Plane if configured
+            if self.control_plane_url and self.ingest_key:
+                tenant_id = self.policy.tenant_id or self.default_tenant_id
+                site_id = self.policy.site_id or self.default_site_id
+                if tenant_id:
+                    control_event = {
+                        "tenantId": tenant_id,
+                        "siteId": site_id or None,
+                        "requestId": decision.request_id,
+                        "clientIpHash": event.get("client_ip_hash"),
+                        "method": parsed_req.method or "GET",
+                        "path": parsed_req.path or "/",
+                        "action": decision.action,
+                        "wouldAction": decision.would_action or decision.action,
+                        "reason": decision.reason,
+                        "riskScore": float(decision.risk_score),
+                        "stageUsed": decision.stage_used,
+                        "ruleMatches": decision.rule_matches or [],
+                        "degradedMode": bool(decision.degraded_mode),
+                        "latencyMs": float(decision.latency_ms),
+                    }
+                    asyncio.create_task(self._forward_event_to_control_plane(control_event))
         except Exception as e:
-            print(f"[WAFGateway] Warning: Failed to write security event log: {e}")
+            print(f"[WAFGateway] Warning: Failed to write or dispatch security event log: {e}")
+
+    async def _forward_event_to_control_plane(self, payload: Dict[str, Any]):
+        """Non-blocking background HTTP post to Control Plane with short timeout."""
+        try:
+            async with httpx.AsyncClient(timeout=1.5) as client:
+                await client.post(
+                    f"{self.control_plane_url}/api/v1/internal/events",
+                    json=payload,
+                    headers={"X-WAF-Ingest-Key": self.ingest_key},
+                )
+        except Exception as e:
+            print(f"[WAFGateway] Notice: Async control-plane event forward failed (non-blocking): {e}")
 
 
 # Global Gateway Instance
