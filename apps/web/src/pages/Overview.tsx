@@ -110,15 +110,15 @@ export const Overview: React.FC = () => {
         { day: 'Sun', layer1: 24, layer2: 16, layer3: 9 },
       ];
 
-  // Threat tactics 7x7 matrix data
+  // Threat tactics 7x7 matrix data (MITRE ATT&CK & OWASP Top 10)
   const heatmapTactics = [
-    'Initial Access',
-    'Execution',
-    'SQL Injection',
-    'XSS',
-    'Path Traversal',
-    'Defense Evasion',
-    'Lateral Movement',
+    'Initial Access (T1190)',
+    'Execution (T1059)',
+    'Credential Stuffing',
+    'SQL Injection (CWE-89)',
+    'Cross-Site Scripting',
+    'Path Traversal (CWE-22)',
+    'Defense Evasion (T1562)',
   ];
   const heatmapDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -133,12 +133,12 @@ export const Overview: React.FC = () => {
     [1, 0, 0, 1, 0, 2, 3],
   ];
 
-  // Security Threats list (derived from live eventsData with fallback matching screenshot)
+  // Security Threats list (derived from live eventsData with fallback matching enterprise SOC threats)
   const rawEvents = eventsData?.items || [];
   const securityThreats: ThreatItem[] = rawEvents.length > 0
     ? rawEvents.slice(0, 4).map((e: any, idx: number) => ({
         id: e.id,
-        threatType: e.action === 'BLOCK' ? 'Brute Force Attempt' : e.action === 'CHALLENGE' ? 'Suspicious Login' : 'API Abuse',
+        threatType: e.action === 'BLOCK' ? 'Credential Stuffing (T1110)' : e.action === 'CHALLENGE' ? 'Suspicious Login Anomaly' : 'Automated API Scraper',
         code: `SEC-${100 + idx}`,
         asset: e.path || `/api/v1/resource-${idx}`,
         riskScore: e.riskScore || 0.85,
@@ -152,33 +152,33 @@ export const Overview: React.FC = () => {
     : [
         {
           id: 't1',
-          threatType: 'Brute Force Attempt',
-          code: 'SSH-102',
-          asset: 'AWS Gateway-93',
+          threatType: 'Credential Stuffing (T1110)',
+          code: 'AUTH-102',
+          asset: 'production-auth-gateway',
           riskScore: 0.95,
           status: 'Blocked',
           method: 'POST',
           path: '/api/v1/auth/token',
           clientIp: '185.190.110.23',
-          reason: 'REPEATED_FAILED_ATTEMPTS',
+          reason: 'BURST_FAILED_AUTH_THRESHOLD_EXCEEDED',
         },
         {
           id: 't2',
-          threatType: 'API Abuse',
-          code: 'VSG-309',
-          asset: 'EU-West-1-API',
-          riskScore: 0.68,
-          status: 'Investigating',
+          threatType: 'SQL Injection (CWE-89)',
+          code: 'OWASP-A03',
+          asset: 'checkout-api-ingress',
+          riskScore: 0.88,
+          status: 'Blocked',
           method: 'GET',
-          path: '/v1/users/export',
+          path: '/api/v1/orders/search',
           clientIp: '198.51.100.55',
-          reason: 'RATE_ANOMALY',
+          reason: 'UNION_SELECT_INJECTION_SIGNATURE',
         },
         {
           id: 't3',
-          threatType: 'Suspicious Login',
-          code: 'VEM-309',
-          asset: 'IAM User VEM-204',
+          threatType: 'Suspicious Login Anomaly',
+          code: 'IAM-309',
+          asset: 'identity-service-prod',
           riskScore: 0.62,
           status: 'Investigating',
           method: 'POST',
@@ -188,15 +188,15 @@ export const Overview: React.FC = () => {
         },
         {
           id: 't4',
-          threatType: 'Data Exfiltration',
-          code: 'DLP-117',
-          asset: 'Finance DB',
-          riskScore: 0.45,
-          status: 'Resolved',
+          threatType: 'Remote Code Execution Probe',
+          code: 'CVE-2021-44228',
+          asset: 'telemetry-event-worker',
+          riskScore: 0.92,
+          status: 'Blocked',
           method: 'POST',
-          path: '/internal/query',
+          path: '/telemetry/ingest',
           clientIp: '192.0.2.88',
-          reason: 'LARGE_PAYLOAD_TRANSFER',
+          reason: 'JNDI_LOOKUP_LOG4J_SIGNATURE',
         },
       ];
 
@@ -208,12 +208,12 @@ export const Overview: React.FC = () => {
       {/* 1. Hero Command Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
             <span className="text-[#0A0A0A] dark:text-white">Threat </span>
             <span className="text-[#EA580C] dark:text-[#FF7A1A]">Center</span>
           </h1>
-          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5">
-            AI-powered threat intelligence for a safer tomorrow.
+          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5 font-normal">
+            Autonomous multi-tenant neural inspection engine & real-time perimeter telemetry
           </p>
         </div>
 
@@ -227,7 +227,7 @@ export const Overview: React.FC = () => {
               onChange={(e) => setTimeWindow(e.target.value as any)}
               className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-[#0A0A0A] dark:text-white"
             >
-              <option value="24h" className="dark:bg-[#111111]">08 - 14 June 2026 (24h)</option>
+              <option value="24h" className="dark:bg-[#111111]">Last 24 Hours (Realtime UTC)</option>
               <option value="7d" className="dark:bg-[#111111]">Past 7 Days (7d)</option>
               <option value="30d" className="dark:bg-[#111111]">Past 30 Days (30d)</option>
             </select>
@@ -259,7 +259,7 @@ export const Overview: React.FC = () => {
               onChange={(e) => setSelectedSiteId(e.target.value || null)}
               className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-[#0A0A0A] dark:text-white"
             >
-              <option value="" className="dark:bg-[#111111]">All Assets & Gateways</option>
+              <option value="" className="dark:bg-[#111111]">All Perimeter Gateways</option>
               {sites.map((s: any) => (
                 <option key={s.id} value={s.id} className="dark:bg-[#111111]">
                   {s.name} ({s.domain})
@@ -303,18 +303,18 @@ export const Overview: React.FC = () => {
           {/* Card 1: Active Threats */}
           <div className="flex-1 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
             <div className="flex items-center justify-between text-xs text-[#71717A] dark:text-[#A1A1AA]">
-              <span className="font-medium">Active Threats</span>
+              <span className="font-medium">Active Threat Detections</span>
             </div>
             <div className="flex items-baseline gap-3 my-2">
-              <span className="text-3xl font-bold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
+              <span className="text-3xl font-semibold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
                 {metrics.blockedCount || 126}
               </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#FFF7ED] text-[#EA580C] border border-[#FFEDD5] dark:bg-[#FF6600]/15 dark:text-[#FF8800] dark:border-[#FF6600]/30">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#FFF7ED] text-[#EA580C] border border-[#FFEDD5] dark:bg-[#FF6600]/15 dark:text-[#FF8800] dark:border-[#FF6600]/30">
                 +12.4%
               </span>
             </div>
-            <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mb-2">
-              Compared to last 7 days
+            <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] block mb-2 font-normal">
+              Compared to 7-day rolling baseline
             </span>
             {/* Sparkline Area */}
             <div className="h-16 w-full -mb-2">
@@ -341,7 +341,7 @@ export const Overview: React.FC = () => {
           {/* Card 2: Threat Exposure Arc Gauge */}
           <div className="flex-1 rounded-2xl border p-5 flex flex-col justify-between items-center text-center bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm relative overflow-hidden">
             <div className="w-full flex items-center justify-between text-xs text-[#71717A] dark:text-[#A1A1AA] mb-2">
-              <span className="font-medium">Threat Exposure</span>
+              <span className="font-medium">Threat Exposure Index</span>
             </div>
 
             {/* Radial Arc SVG Gauge */}
@@ -359,7 +359,7 @@ export const Overview: React.FC = () => {
                   d="M 15 80 A 65 65 0 0 1 145 80"
                   fill="none"
                   stroke={isDark ? '#1C1C1C' : '#E5E7EB'}
-                  strokeWidth="12"
+                  strokeWidth="11"
                   strokeLinecap="round"
                 />
                 {/* Active Score Arc (78%) */}
@@ -367,7 +367,7 @@ export const Overview: React.FC = () => {
                   d="M 15 80 A 65 65 0 0 1 145 80"
                   fill="none"
                   stroke="url(#gaugeGradient)"
-                  strokeWidth="12"
+                  strokeWidth="11"
                   strokeLinecap="round"
                   strokeDasharray="204"
                   strokeDashoffset={204 * (1 - 0.78)}
@@ -376,11 +376,11 @@ export const Overview: React.FC = () => {
               </svg>
               {/* Inner Center Label */}
               <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-                <span className="text-2xl font-bold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
+                <span className="text-2xl font-semibold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
                   78%
                 </span>
-                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] leading-none">
-                  Network protection score
+                <span className="text-[10px] text-[#71717A] dark:text-[#A1A1AA] leading-none font-medium">
+                  Perimeter Defense Coverage
                 </span>
               </div>
             </div>
@@ -499,7 +499,7 @@ export const Overview: React.FC = () => {
                     >
                       <td className="py-3">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[#0A0A0A] dark:text-white group-hover:text-[#FF6600] transition-colors">
+                          <span className="font-medium text-[#0A0A0A] dark:text-white group-hover:text-[#FF6600] transition-colors">
                             {threat.threatType}
                           </span>
                           <span className="text-[10px] font-mono text-[#71717A] dark:text-[#A1A1AA]">
@@ -562,7 +562,7 @@ export const Overview: React.FC = () => {
         <div className="lg:col-span-5 rounded-2xl border p-5 flex flex-col justify-between bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-[#0A0A0A] dark:text-white">
-              Network Traffic Chart
+              Perimeter Edge Traffic
             </span>
             <button
               type="button"
@@ -576,23 +576,23 @@ export const Overview: React.FC = () => {
           {/* Traffic Count & Legend Row */}
           <div className="flex items-baseline justify-between mb-4">
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
+              <span className="text-3xl font-semibold font-mono tabular-nums text-[#0A0A0A] dark:text-white">
                 40.3M
               </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
-                +6.2% Traffic increase
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
+                +6.2% throughput surge
               </span>
             </div>
             {/* Series Legend */}
             <div className="flex items-center gap-3 text-[10px] font-mono">
-              <span className="flex items-center gap-1.5 text-[#A1A1AA]">
-                <span className="w-2 h-2 rounded-full bg-[#FF6600]" /> AWS
+              <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
+                <span className="w-2 h-2 rounded-full bg-[#FF6600]" /> AWS Ingress
               </span>
-              <span className="flex items-center gap-1.5 text-[#A1A1AA]">
-                <span className="w-2 h-2 rounded-full bg-[#FB923C]" /> Azure
+              <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
+                <span className="w-2 h-2 rounded-full bg-[#FB923C]" /> Azure Gateway
               </span>
-              <span className="flex items-center gap-1.5 text-[#A1A1AA]">
-                <span className="w-2 h-2 rounded-full bg-[#FACC15]" /> On-Prem
+              <span className="flex items-center gap-1.5 text-[#71717A] dark:text-[#A1A1AA]">
+                <span className="w-2 h-2 rounded-full bg-[#FACC15]" /> On-Prem DMZ
               </span>
             </div>
           </div>
@@ -661,7 +661,7 @@ export const Overview: React.FC = () => {
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB] dark:border-[#222222]">
                 <div>
-                  <h3 className="text-base font-bold text-[#0A0A0A] dark:text-white">
+                  <h3 className="text-base font-semibold text-[#0A0A0A] dark:text-white">
                     {selectedThreat.threatType}
                   </h3>
                   <span className="text-xs font-mono text-[#71717A] dark:text-[#A1A1AA]">
@@ -685,7 +685,7 @@ export const Overview: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center py-2 border-y border-[#E5E7EB] dark:border-[#222222]">
                   <span className="text-[#71717A] dark:text-[#A1A1AA]">Risk Probability</span>
-                  <span className="font-mono font-bold text-red-500">
+                  <span className="font-mono font-semibold text-red-500">
                     {selectedThreat.riskScore.toFixed(4)}
                   </span>
                 </div>

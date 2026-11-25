@@ -90,7 +90,7 @@ export const FeedbackPage: React.FC = () => {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
+        <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-[#FF6600]" />
           False-Positive Feedback Queue
         </h1>

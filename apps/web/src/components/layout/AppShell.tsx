@@ -94,31 +94,59 @@ export const AppShell: React.FC = () => {
         )}
       >
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#E5E7EB] dark:border-[#222222]">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6600] to-[#EA580C] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(255,102,0,0.3)]">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col leading-tight overflow-hidden">
-                <div className="flex items-center gap-1.5 font-bold text-sm tracking-tight">
-                  <span className="text-[#0A0A0A] dark:text-white">Transformer</span>
-                  <span className="text-[#FF6600]">WAF</span>
+        <div
+          className={cn(
+            'h-16 flex items-center border-b border-[#E5E7EB] dark:border-[#222222] transition-all relative',
+            collapsed ? 'justify-center px-2' : 'justify-between px-4',
+          )}
+        >
+          {collapsed ? (
+            /* Collapsed State: Centered Shield Logo matching reference ss2 */
+            <>
+              <button
+                type="button"
+                onClick={() => setCollapsed(false)}
+                title="Expand sidebar"
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6600] to-[#EA580C] flex items-center justify-center shrink-0 shadow-[0_0_16px_rgba(255,102,0,0.35)] hover:scale-105 transition-transform cursor-pointer"
+              >
+                <Shield className="w-5 h-5 text-white" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCollapsed(false)}
+                aria-label="Expand sidebar"
+                className="absolute -right-3 top-5 w-6 h-6 rounded-full border bg-white dark:bg-[#111111] border-[#E5E7EB] dark:border-[#333333] flex items-center justify-center shadow-md text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white hover:border-[#FF6600] z-40 transition-transform hover:scale-110"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            /* Expanded State: Logo + Title + Collapse Chevron */
+            <>
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6600] to-[#EA580C] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(255,102,0,0.3)]">
+                  <Shield className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] truncate">
-                  {tenant?.name || 'Threat Intelligence'}
-                </span>
+                <div className="flex flex-col leading-tight overflow-hidden">
+                  <div className="flex items-center gap-1.5 font-semibold text-sm tracking-tight">
+                    <span className="text-[#0A0A0A] dark:text-white">Transformer</span>
+                    <span className="text-[#EA580C] dark:text-[#FF7A1A]">WAF</span>
+                  </div>
+                  <span className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] truncate font-normal">
+                    {tenant?.name || 'Threat Intelligence'}
+                  </span>
+                </div>
               </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1 rounded text-[#71717A] hover:text-[#0A0A0A] dark:text-[#A1A1AA] dark:hover:text-white hover:bg-[#F3F4F6] dark:hover:bg-[#161616]"
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                aria-label="Collapse sidebar"
+                className="p-1.5 rounded-lg text-[#71717A] hover:text-[#0A0A0A] dark:text-[#A1A1AA] dark:hover:text-white hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Primary Navigation Links */}
@@ -130,23 +158,23 @@ export const AppShell: React.FC = () => {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all relative group',
+                  'flex items-center gap-3 rounded-xl text-xs transition-all relative group',
+                  collapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'px-3 py-2.5',
                   isActive
                     ? 'bg-[#FFF7ED] border border-[#FFEDD5] text-[#EA580C] font-semibold dark:bg-gradient-to-r dark:from-[#FF6600]/80 dark:to-[#EA580C]/40 dark:border-[#FF6600]/40 dark:text-white dark:shadow-[0_0_15px_rgba(255,102,0,0.35)]'
                     : 'text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white',
-                  collapsed && 'justify-center px-0',
                 )
               }
               title={collapsed ? item.label : undefined}
             >
               <item.icon className="w-4 h-4 shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate font-medium">{item.label}</span>}
               {item.badge !== undefined && (
                 <span
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none',
+                    'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium leading-none',
                     'bg-[#F3F4F6] text-[#71717A] border border-[#E5E7EB] dark:bg-[#161616] dark:text-[#A1A1AA] dark:border-[#262626]',
-                    collapsed ? 'absolute top-1.5 right-1.5 text-[9px]' : 'ml-auto',
+                    collapsed ? 'absolute top-1 right-1 text-[9px] px-1 py-0' : 'ml-auto',
                   )}
                 >
                   {item.badge}
@@ -158,32 +186,37 @@ export const AppShell: React.FC = () => {
 
         {/* Bottom Pinned Status & Settings Cards */}
         <div className="p-3 border-t border-[#E5E7EB] dark:border-[#222222] space-y-2">
-          {!collapsed && (
-            <NavLink
-              to="/policies"
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Settings</span>
-            </NavLink>
-          )}
+          <NavLink
+            to="/policies"
+            className={cn(
+              'flex items-center gap-3 rounded-xl text-xs text-[#71717A] dark:text-[#A1A1AA] hover:bg-[#F3F4F6] dark:hover:bg-[#161616] hover:text-[#0A0A0A] dark:hover:text-white transition-colors',
+              collapsed ? 'w-10 h-10 mx-auto justify-center' : 'px-3 py-2',
+            )}
+            title={collapsed ? 'Settings' : undefined}
+          >
+            <Settings className="w-4 h-4 shrink-0" />
+            {!collapsed && <span className="font-medium">Settings</span>}
+          </NavLink>
 
           {/* System Online Status Card */}
           <div
             className={cn(
-              'flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors',
+              'flex items-center rounded-xl border transition-colors',
               'bg-[#F9FAFB] border-[#E5E7EB] dark:bg-[#111111] dark:border-[#222222]',
-              collapsed ? 'justify-center' : 'justify-between',
+              collapsed
+                ? 'w-10 h-10 mx-auto justify-center p-0'
+                : 'justify-between p-2.5 gap-2.5',
             )}
+            title={collapsed ? 'System Online: Latency <2ms' : undefined}
           >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <Pin className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
-              {!collapsed && (
+            {!collapsed && (
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Pin className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
                 <span className="text-xs font-medium text-[#0A0A0A] dark:text-white truncate">
                   System Online
                 </span>
-              )}
-            </div>
+              </div>
+            )}
             <span className="relative flex h-2.5 w-2.5 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#10B981]" />

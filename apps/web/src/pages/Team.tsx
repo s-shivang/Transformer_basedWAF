@@ -85,7 +85,7 @@ export const TeamPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
+          <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
             <Users className="w-5 h-5 text-[#FF6600]" />
             Team & Access Control (RBAC)
           </h1>

@@ -59,7 +59,7 @@ export const Register: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF6600] to-[#EA580C] flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,102,0,0.35)]">
             <Shield className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white">
             <span>Onboard New </span>
             <span className="text-[#FF6600]">Tenant</span>
           </h1>

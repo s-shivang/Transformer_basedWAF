@@ -90,8 +90,8 @@ export const Events: React.FC = () => {
     <div className="space-y-4">
       {/* Page Title */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight">Security Events Explorer</h1>
-        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
+        <h1 className="text-xl font-semibold tracking-tight text-[#0A0A0A] dark:text-white">Security Events Explorer</h1>
+        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-0.5 font-normal">
           Inspect, filter, and audit deep inspection telemetry across all protected routes
         </p>
       </div>
@@ -192,7 +192,7 @@ export const Events: React.FC = () => {
                       </span>
                       <span className="text-[#0A0A0A] dark:text-white">{event.path}</span>
                     </td>
-                    <td className="py-2 px-3 font-mono font-bold tabular-nums text-right">
+                    <td className="py-2 px-3 font-mono font-medium tabular-nums text-right">
                       <span
                         className={cn(
                           event.riskScore >= 0.85
@@ -289,7 +289,7 @@ export const Events: React.FC = () => {
             <div className="space-y-1.5">
               <span className="text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">Request Target</span>
               <div className="p-3 rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] font-mono text-xs break-all">
-                <span className="text-[#FF6600] dark:text-[#FF8800] font-bold mr-2">{selectedEvent.method}</span>
+                <span className="text-[#FF6600] dark:text-[#FF8800] font-semibold mr-2">{selectedEvent.method}</span>
                 <span className="text-[#0A0A0A] dark:text-zinc-100">{selectedEvent.path}</span>
               </div>
             </div>
@@ -312,7 +312,7 @@ export const Events: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[#71717A] dark:text-[#A1A1AA] block text-[10px]">DEGRADED MODE</span>
-                  <span className={selectedEvent.degradedMode ? 'text-amber-500 font-bold' : 'text-zinc-400'}>
+                  <span className={selectedEvent.degradedMode ? 'text-amber-500 font-semibold' : 'text-zinc-400'}>
                     {selectedEvent.degradedMode ? 'TRUE' : 'FALSE'}
                   </span>
                 </div>
