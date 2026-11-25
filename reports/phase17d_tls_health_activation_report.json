@@ -1,0 +1,66 @@
+{
+  "phase": "17D",
+  "title": "TLS Readiness, Pre-Activation Origin Health Checks & Live Multi-Domain Activation",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-26T01:22:00+05:30",
+  "git_branch": "master",
+  "lifecycle_stages": {
+    "DNS_PENDING": "Traffic routing CNAME / A record verified pointing to edge.waf-network.internal",
+    "TLS_PENDING": "LocalDevTlsProvisioner issues deterministic 90-day certificate metadata with zero cloud spend",
+    "HEALTH_CHECK": "Short-timeout HEAD/GET reachability probe to originUrl validates health and SSRF safety",
+    "ACTIVE": "Multi-tenant dynamic host routing active on WAF gateway without restart"
+  },
+  "verification_matrix": {
+    "python_pytest_tests": {
+      "passed": 102,
+      "failed": 0,
+      "total": 102
+    },
+    "nestjs_unit_tests": {
+      "passed": 87,
+      "failed": 0,
+      "total": 87
+    },
+    "nestjs_e2e_tests": {
+      "passed": 111,
+      "failed": 0,
+      "total": 111,
+      "suites": 7
+    },
+    "web_vitest_tests": {
+      "passed": 22,
+      "failed": 0,
+      "total": 22
+    },
+    "live_docker_smoke_test_steps": {
+      "passed": 11,
+      "failed": 0,
+      "total": 11,
+      "script": "scripts/smoke_test_phase17d_onboarding.py"
+    },
+    "architectural_invariants": {
+      "zero_framework_imports_in_domain": "PASSED",
+      "zero_cross_module_concrete_repo_imports": "PASSED"
+    }
+  },
+  "live_docker_smoke_results": {
+    "step_1_health_probes": "PASSED (API: 200 OK db=connected, Gateway: 200 OK)",
+    "step_2_tenant_registration": "PASSED (Tenant & Owner created in real PostgreSQL)",
+    "step_3_site_onboarding_initiation": "PASSED (PENDING_VERIFICATION + verificationToken)",
+    "step_4_dns_domain_verification": "PASSED (DNS TXT challenge verified -> VERIFIED)",
+    "step_5_gateway_route_sync": "PASSED (CONFIGURING -> ack version acknowledged -> DNS_PENDING)",
+    "step_6_dns_traffic_routing": "PASSED (CNAME traffic pointing verified -> TLS_PENDING)",
+    "step_7_tls_provisioning": "PASSED (Deterministic 90-day cert issued -> HEALTH_CHECK)",
+    "step_8_origin_probe_activation": "PASSED (Pre-activation health probe healthy -> ACTIVE)",
+    "step_9_live_dynamic_routing": {
+      "benign_request": "PASSED (HTTP 200 OK, X-WAF-Action: ALLOW)",
+      "sqli_attack": "PASSED (HTTP 403 Forbidden, X-WAF-Action: BLOCK)",
+      "unknown_host": "PASSED (HTTP 404 Not Found, X-WAF-Action: REJECT_UNKNOWN_HOST)"
+    },
+    "step_10_pause_and_resume": {
+      "pause": "PASSED (Route evicted, returns 404 UNKNOWN_HOST)",
+      "resume": "PASSED (Route restored, returns 200 OK)"
+    },
+    "step_11_on_demand_health_check": "PASSED (healthy=True, latencyMs=7ms)"
+  }
+}

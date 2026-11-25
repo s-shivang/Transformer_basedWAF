@@ -9,6 +9,8 @@ Verifies:
 5. SSRF & DNS-rebinding guard: blocks metadata, link-local, private IPs based on policy.
 """
 import pytest
+import asyncio
+import httpx
 from unittest.mock import patch
 from fastapi import FastAPI, Response
 from starlette.testclient import TestClient
@@ -144,152 +146,159 @@ def dynamic_routing_gateway(shared_ml_engine, tmp_path):
     )
     set_gateway(gw)
 
-    client = TestClient(app)
-    yield client
+    yield gw
 
     host_registry.clear()
     clear_dns_cache()
 
 
 def test_dynamic_host_routing_and_policy_isolation(dynamic_routing_gateway):
-    client = dynamic_routing_gateway
+    gw = dynamic_routing_gateway
 
-    # 1. Sync Site A -> mode="blocking", points to Upstream A
-    res_a = client.post(
-        "/_waf/sites/sync",
-        json={
-            "site_id": "site-a-id",
-            "tenant_id": "tenant-alpha",
-            "domain": "app-a.local.test",
-            "origin_url": "http://127.0.0.1:8002",  # valid format for origin guard
-            "config_version": 1,
-            "policy": {
-                "mode": "blocking",
-                "block_threshold": 0.85,
-                "challenge_threshold": 0.50,
-                "monitor_threshold": 0.05,
-                "ml_enabled": True,
-                "rules_enabled": True,
-            },
-        },
-        headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-    )
-    assert res_a.status_code == 200
-    assert res_a.json()["acknowledged"] is True
+    async def _run():
+        await gw.initialize()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://waf-gateway") as client:
+            # 1. Sync Site A -> mode="blocking", points to Upstream A
+            res_a = await client.post(
+                "/_waf/sites/sync",
+                json={
+                    "site_id": "site-a-id",
+                    "tenant_id": "tenant-alpha",
+                    "domain": "app-a.local.test",
+                    "origin_url": "http://127.0.0.1:8002",
+                    "config_version": 1,
+                    "policy": {
+                        "mode": "blocking",
+                        "block_threshold": 0.85,
+                        "challenge_threshold": 0.50,
+                        "monitor_threshold": 0.05,
+                        "ml_enabled": True,
+                        "rules_enabled": True,
+                    },
+                },
+                headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+            )
+            assert res_a.status_code == 200
+            assert res_a.json()["acknowledged"] is True
 
-    # 2. Sync Site B -> mode="monitor", points to Upstream B
-    res_b = client.post(
-        "/_waf/sites/sync",
-        json={
-            "site_id": "site-b-id",
-            "tenant_id": "tenant-beta",
-            "domain": "app-b.local.test",
-            "origin_url": "http://127.0.0.1:8002",
-            "config_version": 1,
-            "policy": {
-                "mode": "monitor",
-                "block_threshold": 0.85,
-                "challenge_threshold": 0.50,
-                "monitor_threshold": 0.05,
-                "ml_enabled": True,
-                "rules_enabled": True,
-            },
-        },
-        headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-    )
-    assert res_b.status_code == 200
-    assert res_b.json()["acknowledged"] is True
+            # 2. Sync Site B -> mode="monitor", points to Upstream B
+            res_b = await client.post(
+                "/_waf/sites/sync",
+                json={
+                    "site_id": "site-b-id",
+                    "tenant_id": "tenant-beta",
+                    "domain": "app-b.local.test",
+                    "origin_url": "http://127.0.0.1:8002",
+                    "config_version": 1,
+                    "policy": {
+                        "mode": "monitor",
+                        "block_threshold": 0.85,
+                        "challenge_threshold": 0.50,
+                        "monitor_threshold": 0.05,
+                        "ml_enabled": True,
+                        "rules_enabled": True,
+                    },
+                },
+                headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+            )
+            assert res_b.status_code == 200
+            assert res_b.json()["acknowledged"] is True
 
-    # Override origin URLs to in-process mock apps for exact response verification
-    host_registry.upsert_site({
-        "site_id": "site-a-id",
-        "tenant_id": "tenant-alpha",
-        "domain": "app-a.local.test",
-        "origin_url": "http://app-a-backend.internal",
-        "config_version": 2,
-        "policy": {
-            "mode": "blocking",
-            "block_threshold": 0.85,
-            "rules_enabled": True,
-        },
-    })
-    host_registry.upsert_site({
-        "site_id": "site-b-id",
-        "tenant_id": "tenant-beta",
-        "domain": "app-b.local.test",
-        "origin_url": "http://app-b-backend.internal",
-        "config_version": 2,
-        "policy": {
-            "mode": "monitor",
-            "block_threshold": 0.85,
-            "rules_enabled": True,
-        },
-    })
+            # Override origin URLs to in-process mock apps for exact response verification
+            host_registry.upsert_site({
+                "site_id": "site-a-id",
+                "tenant_id": "tenant-alpha",
+                "domain": "app-a.local.test",
+                "origin_url": "http://app-a-backend.internal",
+                "config_version": 2,
+                "policy": {
+                    "mode": "blocking",
+                    "block_threshold": 0.85,
+                    "rules_enabled": True,
+                },
+            })
+            host_registry.upsert_site({
+                "site_id": "site-b-id",
+                "tenant_id": "tenant-beta",
+                "domain": "app-b.local.test",
+                "origin_url": "http://app-b-backend.internal",
+                "config_version": 2,
+                "policy": {
+                    "mode": "monitor",
+                    "block_threshold": 0.85,
+                    "rules_enabled": True,
+                },
+            })
 
-    # Bypass DNS for internal mock hostnames during test
-    with patch("src.waf_gateway.app.validate_origin_before_connect") as mock_val:
-        mock_val.return_value = ["127.0.0.1"]
+            # Bypass DNS for internal mock hostnames during test
+            with patch("src.waf_gateway.app.validate_origin_before_connect") as mock_val:
+                mock_val.return_value = ["127.0.0.1"]
 
-        # A. Benign request to Site A -> hits Upstream A
-        resp_a = client.get("/api/items/42", headers={"Host": "app-a.local.test"})
-        assert resp_a.status_code == 200, f"Error: {resp_a.headers} {resp_a.text}"
-        assert resp_a.json()["app"] == "site-a"
-        assert resp_a.headers["X-WAF-Action"] in ("ALLOW", "MONITOR")
+                # A. Benign request to Site A -> hits Upstream A
+                resp_a = await client.get("/api/items/42", headers={"Host": "app-a.local.test"})
+                assert resp_a.status_code == 200, f"Error: {resp_a.headers} {resp_a.text}"
+                assert resp_a.json()["app"] == "site-a"
+                assert resp_a.headers["X-WAF-Action"] in ("ALLOW", "MONITOR")
 
-        # B. Benign request to Site B -> hits Upstream B
-        resp_b = client.get("/api/items/42", headers={"Host": "app-b.local.test"})
-        assert resp_b.status_code == 200
-        assert resp_b.json()["app"] == "site-b"
-        assert resp_b.headers["X-WAF-Action"] in ("ALLOW", "MONITOR")
+                # B. Benign request to Site B -> hits Upstream B
+                resp_b = await client.get("/api/items/42", headers={"Host": "app-b.local.test"})
+                assert resp_b.status_code == 200
+                assert resp_b.json()["app"] == "site-b"
+                assert resp_b.headers["X-WAF-Action"] in ("ALLOW", "MONITOR")
 
-        # C. SQL Injection on Site A (mode="blocking") -> Hard 403 BLOCK, NEVER hits Upstream A
-        app_a_hits_before = len(app_a_hits)
-        resp_sqli_a = client.get(
-            "/search?q=1%20UNION%20SELECT%201,2,3--",
-            headers={"Host": "app-a.local.test"},
-        )
-        assert resp_sqli_a.status_code == 403
-        assert resp_sqli_a.headers["X-WAF-Action"] == "BLOCK"
-        assert len(app_a_hits) == app_a_hits_before  # Upstream A never touched!
+                # C. SQL Injection on Site A (mode="blocking") -> Hard 403 BLOCK, NEVER hits Upstream A
+                app_a_hits_before = len(app_a_hits)
+                resp_sqli_a = await client.get(
+                    "/search?q=1%20UNION%20SELECT%201,2,3--",
+                    headers={"Host": "app-a.local.test"},
+                )
+                assert resp_sqli_a.status_code == 403
+                assert resp_sqli_a.headers["X-WAF-Action"] == "BLOCK"
+                assert len(app_a_hits) == app_a_hits_before
 
-        # D. Exact same SQL Injection on Site B (mode="monitor") -> 200 MONITOR, REACHES Upstream B
-        app_b_hits_before = len(app_b_hits)
-        resp_sqli_b = client.get(
-            "/search?q=1%20UNION%20SELECT%201,2,3--",
-            headers={"Host": "app-b.local.test"},
-        )
-        assert resp_sqli_b.status_code == 200
-        assert resp_sqli_b.headers["X-WAF-Action"] == "MONITOR"
-        assert len(app_b_hits) == app_b_hits_before + 1  # Reached Upstream B!
-        assert resp_sqli_b.json()["app"] == "site-b"
+                # D. Exact same SQL Injection on Site B (mode="monitor") -> 200 MONITOR, REACHES Upstream B
+                app_b_hits_before = len(app_b_hits)
+                resp_sqli_b = await client.get(
+                    "/search?q=1%20UNION%20SELECT%201,2,3--",
+                    headers={"Host": "app-b.local.test"},
+                )
+                assert resp_sqli_b.status_code == 200
+                assert resp_sqli_b.headers["X-WAF-Action"] == "MONITOR"
+                assert len(app_b_hits) == app_b_hits_before + 1
+                assert resp_sqli_b.json()["app"] == "site-b"
 
-        # E. Unregistered domain -> 404 UNKNOWN_HOST, hits NEITHER upstream
-        resp_unknown = client.get("/", headers={"Host": "unregistered.example.com"})
-        assert resp_unknown.status_code == 404
-        assert resp_unknown.headers["X-WAF-Action"] == "REJECT_UNKNOWN_HOST"
-        assert resp_unknown.json()["error"] == "UNKNOWN_HOST"
+                # E. Unregistered domain -> 404 UNKNOWN_HOST, hits NEITHER upstream
+                resp_unknown = await client.get("/", headers={"Host": "unregistered.example.com"})
+                assert resp_unknown.status_code == 404
+                assert resp_unknown.headers["X-WAF-Action"] == "REJECT_UNKNOWN_HOST"
+                assert resp_unknown.json()["error"] == "UNKNOWN_HOST"
 
-        # F. Evict Site A dynamically without restart
-        res_del = client.delete(
-            "/_waf/sites/app-a.local.test",
-            headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-        )
-        assert res_del.status_code == 200
-        assert res_del.json()["removed"] is True
+                # F. Evict Site A dynamically without restart
+                res_del = await client.delete(
+                    "/_waf/sites/app-a.local.test",
+                    headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+                )
+                assert res_del.status_code == 200
+                assert res_del.json()["removed"] is True
 
-        # Subsequent requests to app-a.local.test now return 404 UNKNOWN_HOST
-        resp_a_post_del = client.get("/", headers={"Host": "app-a.local.test"})
-        assert resp_a_post_del.status_code == 404
-        assert resp_a_post_del.headers["X-WAF-Action"] == "REJECT_UNKNOWN_HOST"
+                # Subsequent requests to app-a.local.test now return 404 UNKNOWN_HOST
+                resp_a_post_del = await client.get("/", headers={"Host": "app-a.local.test"})
+                assert resp_a_post_del.status_code == 404
+                assert resp_a_post_del.headers["X-WAF-Action"] == "REJECT_UNKNOWN_HOST"
 
-        # Site B is completely unaffected
-        resp_b_still_alive = client.get("/", headers={"Host": "app-b.local.test"})
-        assert resp_b_still_alive.status_code == 200
-        assert resp_b_still_alive.json()["app"] == "site-b"
+                # Site B is completely unaffected
+                resp_b_still_alive = await client.get("/", headers={"Host": "app-b.local.test"})
+                assert resp_b_still_alive.status_code == 200
+                assert resp_b_still_alive.json()["app"] == "site-b"
+
+        await gw.shutdown()
+
+    asyncio.run(_run())
 
 
 def test_dynamic_routing_blocks_ssrf_origin_at_runtime(dynamic_routing_gateway):
-    client = dynamic_routing_gateway
+    gw = dynamic_routing_gateway
     clear_dns_cache()
 
     # Register site with valid hostname
@@ -301,14 +310,21 @@ def test_dynamic_routing_blocks_ssrf_origin_at_runtime(dynamic_routing_gateway):
         "config_version": 1,
     })
 
-    # At connection time, simulate DNS resolution rebinding to AWS metadata IP 169.254.169.254
-    with patch("src.waf_gateway.origin_guard.socket.getaddrinfo") as mock_dns:
-        mock_dns.return_value = [
-            (2, 1, 6, "", ("169.254.169.254", 80))
-        ]
+    async def _run():
+        await gw.initialize()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://waf-gateway") as client:
+            with patch("src.waf_gateway.origin_guard.socket.getaddrinfo") as mock_dns:
+                mock_dns.return_value = [
+                    (2, 1, 6, "", ("169.254.169.254", 80))
+                ]
 
-        # Incoming request must be rejected with 502 ORIGIN_BLOCKED_SSRF
-        resp = client.get("/", headers={"Host": "rebind.attacker.test"})
-        assert resp.status_code == 502
-        assert resp.headers["X-WAF-Action"] == "BLOCKED_SSRF"
-        assert resp.json()["error"] == "ORIGIN_BLOCKED_SSRF"
+                # Incoming request must be rejected with 502 ORIGIN_BLOCKED_SSRF
+                resp = await client.get("/", headers={"Host": "rebind.attacker.test"})
+                assert resp.status_code == 502
+                assert resp.headers["X-WAF-Action"] == "BLOCKED_SSRF"
+                assert resp.json()["error"] == "ORIGIN_BLOCKED_SSRF"
+
+        await gw.shutdown()
+
+    asyncio.run(_run())

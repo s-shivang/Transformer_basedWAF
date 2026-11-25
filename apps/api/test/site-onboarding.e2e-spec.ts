@@ -25,6 +25,10 @@ import { DNS_VERIFIER } from '../src/modules/protected-sites/domain/dns-verifier
 import { LocalDevDnsVerifier } from '../src/modules/protected-sites/infrastructure/dns/local-dev-dns.verifier';
 import { SITE_CONFIG_SYNC_CLIENT } from '../src/modules/protected-sites/domain/site-config-sync.interface';
 import { InMemorySiteConfigSyncClient } from '../src/modules/protected-sites/infrastructure/gateway/in-memory-site-config-sync.client';
+import { TLS_PROVISIONER } from '../src/modules/protected-sites/domain/tls-provisioner.interface';
+import { LocalDevTlsProvisioner } from '../src/modules/protected-sites/infrastructure/tls/local-dev-tls.provisioner';
+import { ORIGIN_HEALTH_CHECKER } from '../src/modules/protected-sites/domain/origin-health-checker.interface';
+import { InMemoryOriginHealthChecker } from '../src/modules/protected-sites/infrastructure/health/in-memory-origin-health.checker';
 import { TOKEN_SERVICE, ITokenService } from '../src/modules/identity/infrastructure/token.service';
 import { UserRole } from '../src/modules/identity/domain/user-role';
 
@@ -39,6 +43,8 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
   let policyRepo: InMemoryWafPolicyRepository;
   let dnsVerifier: LocalDevDnsVerifier;
   let syncClient: InMemorySiteConfigSyncClient;
+  let tlsProvisioner: LocalDevTlsProvisioner;
+  let originHealthChecker: InMemoryOriginHealthChecker;
   let tokenService: ITokenService;
 
   let ownerTokenA: string;
@@ -58,6 +64,8 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
     policyRepo = new InMemoryWafPolicyRepository();
     dnsVerifier = new LocalDevDnsVerifier();
     syncClient = new InMemorySiteConfigSyncClient();
+    tlsProvisioner = new LocalDevTlsProvisioner();
+    originHealthChecker = new InMemoryOriginHealthChecker();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -80,6 +88,10 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
       .useValue(dnsVerifier)
       .overrideProvider(SITE_CONFIG_SYNC_CLIENT)
       .useValue(syncClient)
+      .overrideProvider(TLS_PROVISIONER)
+      .useValue(tlsProvisioner)
+      .overrideProvider(ORIGIN_HEALTH_CHECKER)
+      .useValue(originHealthChecker)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -478,6 +490,190 @@ describe('Phase 17A Site Onboarding & Domain Verification (E2E)', () => {
 
       expect(getRes.body.onboardingStatus).toBe('FAILED');
       expect(getRes.body.lastError).toContain('Gateway connection timeout');
+    });
+  });
+
+  describe('7. Phase 17D Full Lifecycle: DNS Routing -> TLS -> Health Check -> Activation', () => {
+    let siteId: string;
+    const testDomain = 'pipeline.acme-onboarding.test';
+    const originUrl = 'https://pipeline-origin.internal:8443';
+
+    beforeAll(async () => {
+      // 1. Initiate onboarding
+      const startRes = await request(app.getHttpServer())
+        .post('/api/v1/sites/onboarding')
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({
+          name: 'Phase 17D Pipeline Test',
+          domain: testDomain,
+          originUrl,
+        })
+        .expect(201);
+
+      siteId = startRes.body.siteId;
+      expect(startRes.body.onboardingStatus).toBe('PENDING_VERIFICATION');
+
+      // 2. Verify domain ownership
+      dnsVerifier.registerTxtRecord(testDomain, startRes.body.verificationToken);
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/verify-domain`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      // 3. Configure on Gateway (advances to DNS_PENDING)
+      syncClient.clear();
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/configure`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({})
+        .expect(200);
+    });
+
+    it('rejects verify-dns-routing for unauthorized tenant with 404 Not Found', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/verify-dns-routing`)
+        .set('Authorization', `Bearer ${ownerTokenB}`)
+        .expect(404);
+    });
+
+    it('stays in DNS_PENDING and returns 400 when traffic record does not point to WAF edge', async () => {
+      // dnsVerifier does not have the record registered, and domain is not localhost/.test default without pointing
+      // LocalDevDnsVerifier verifies .test automatically unless not matched; let's test with custom domain or simulate fail
+      // Let's create an unpointed site to test mismatch
+      const unpointedRes = await request(app.getHttpServer())
+        .post('/api/v1/sites/onboarding')
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({
+          name: 'Unpointed Test',
+          domain: 'unpointed.custom-network.com',
+          originUrl: 'https://backend.internal',
+        })
+        .expect(201);
+
+      const unpointedId = unpointedRes.body.siteId;
+      dnsVerifier.registerTxtRecord('unpointed.custom-network.com', unpointedRes.body.verificationToken);
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${unpointedId}/onboarding/verify-domain`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${unpointedId}/onboarding/configure`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({})
+        .expect(200);
+
+      const failRes = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${unpointedId}/onboarding/verify-dns-routing`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(400);
+
+      expect(failRes.body.message).toContain('does not point to');
+
+      // Verify site stayed in DNS_PENDING
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/v1/sites/${unpointedId}/onboarding`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(getRes.body.onboardingStatus).toBe('DNS_PENDING');
+    });
+
+    it('verifies DNS traffic routing and transitions DNS_PENDING -> TLS_PENDING', async () => {
+      dnsVerifier.registerTrafficRecord(testDomain, 'edge.waf-network.internal');
+
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/verify-dns-routing`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(res.body.onboardingStatus).toBe('TLS_PENDING');
+    });
+
+    it('rejects provision-tls for unauthorized tenant with 404 Not Found', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/provision-tls`)
+        .set('Authorization', `Bearer ${ownerTokenB}`)
+        .expect(404);
+    });
+
+    it('provisions TLS certificate and transitions TLS_PENDING -> HEALTH_CHECK', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/provision-tls`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(res.body.onboardingStatus).toBe('HEALTH_CHECK');
+      expect(res.body.tlsStatus).toBe('PROVISIONED');
+      expect(res.body.tlsIssuer).toBe('local-dev-acme');
+      expect(res.body.tlsExpiresAt).toBeDefined();
+    });
+
+    it('rejects activate for unauthorized tenant with 404 Not Found', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/activate`)
+        .set('Authorization', `Bearer ${ownerTokenB}`)
+        .expect(404);
+    });
+
+    it('transitions to FAILED when origin health check fails during activation', async () => {
+      // Temporarily mark origin as unhealthy
+      originHealthChecker.setDefaultHealthy(false);
+
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/activate`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(400);
+
+      expect(res.body.message).toContain('unreachable');
+
+      // Check site transitioned to FAILED
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/v1/sites/${siteId}/onboarding`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(getRes.body.onboardingStatus).toBe('FAILED');
+      expect(getRes.body.originHealthStatus).toBe('UNHEALTHY');
+
+      // Reset origin health and retry back to HEALTH_CHECK
+      originHealthChecker.setDefaultHealthy(true);
+
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/retry`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .send({ targetStatus: 'HEALTH_CHECK' })
+        .expect(200);
+    });
+
+    it('activates protected site when origin is healthy: HEALTH_CHECK -> ACTIVE', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/onboarding/activate`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(res.body.onboardingStatus).toBe('ACTIVE');
+      expect(res.body.originHealthStatus).toBe('HEALTHY');
+      expect(res.body.activatedAt).toBeDefined();
+    });
+
+    it('performs on-demand origin health check on active site', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/health-check`)
+        .set('Authorization', `Bearer ${ownerTokenA}`)
+        .expect(200);
+
+      expect(res.body.healthy).toBe(true);
+      expect(res.body.originHealthStatus).toBe('HEALTHY');
+      expect(res.body.latencyMs).toBeGreaterThanOrEqual(0);
+      expect(res.body.lastHealthCheckAt).toBeDefined();
+    });
+
+    it('rejects health-check for cross-tenant request with 404 Not Found', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/sites/${siteId}/health-check`)
+        .set('Authorization', `Bearer ${ownerTokenB}`)
+        .expect(404);
     });
   });
 });
