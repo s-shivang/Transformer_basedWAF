@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   HttpStatus,
@@ -15,10 +16,14 @@ import { CreateTenantUseCase } from '../application/create-tenant.use-case';
 import { GetTenantByIdUseCase } from '../application/get-tenant-by-id.use-case';
 import { GetTenantBySlugUseCase } from '../application/get-tenant-by-slug.use-case';
 import { ListTenantsUseCase } from '../application/list-tenants.use-case';
+import { UpdateTenantQuotaUseCase } from '../application/update-tenant-quota.use-case';
 import { CreateTenantRequestDto } from './dtos/create-tenant.request.dto';
-import { TenantResponseDto } from '../application/dtos/tenant.dto';
+import { TenantResponseDto, UpdateTenantQuotaDto } from '../application/dtos/tenant.dto';
 import { JwtAuthGuard } from '../../identity/presentation/guards/jwt-auth.guard';
 import { TenantScopeGuard } from '../../identity/presentation/guards/tenant-scope.guard';
+import { RolesGuard } from '../../identity/presentation/guards/roles.guard';
+import { Roles } from '../../identity/presentation/guards/roles.decorator';
+import { UserRole } from '../../identity/domain/user-role';
 
 @ApiTags('Tenants')
 @Controller('tenants')
@@ -28,6 +33,7 @@ export class TenantsController {
     private readonly getTenantByIdUseCase: GetTenantByIdUseCase,
     private readonly getTenantBySlugUseCase: GetTenantBySlugUseCase,
     private readonly listTenantsUseCase: ListTenantsUseCase,
+    private readonly updateQuotaUseCase: UpdateTenantQuotaUseCase,
   ) {}
 
   @Post()
@@ -74,6 +80,29 @@ export class TenantsController {
     return result.getValue();
   }
 
+  @Patch(':id/quota')
+  @UseGuards(JwtAuthGuard, TenantScopeGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update tenant max protected site quota (OWNER only)' })
+  @ApiResponse({ status: 200, description: 'Tenant quota updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid quota limit' })
+  @ApiResponse({ status: 403, description: 'Forbidden: Requires OWNER role' })
+  async updateQuota(
+    @Param('id') id: string,
+    @Body() body: UpdateTenantQuotaDto,
+    @Req() req: Request,
+  ): Promise<TenantResponseDto> {
+    const userId = (req as any).user?.sub;
+    const clientIp = req.ip;
+
+    const result = await this.updateQuotaUseCase.execute(id, body, userId, clientIp);
+    if (result.isFailure) {
+      throw new HttpException(result.getError(), HttpStatus.BAD_REQUEST);
+    }
+    return result.getValue();
+  }
+
   @Get('slug/:slug')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -87,7 +116,6 @@ export class TenantsController {
       throw new HttpException(result.getError(), HttpStatus.NOT_FOUND);
     }
     const tenant = result.getValue();
-    // Validate caller belongs to this tenant
     if (req.tenantContext && tenant.id !== req.tenantContext.tenantId) {
       throw new HttpException('Access to requested tenant is forbidden', HttpStatus.FORBIDDEN);
     }

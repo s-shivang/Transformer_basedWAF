@@ -1,6 +1,6 @@
 import { SiteDomain } from './site-domain.vo';
 import { OriginUrl } from './origin-url.vo';
-import { ProtectedSite, SiteStatus } from './protected-site.entity';
+import { ProtectedSite, SiteStatus, OnboardingStatus } from './protected-site.entity';
 
 describe('Protected Sites Domain Value Objects & Entity', () => {
   describe('SiteDomain VO', () => {
@@ -80,8 +80,8 @@ describe('Protected Sites Domain Value Objects & Entity', () => {
     });
   });
 
-  describe('ProtectedSite Entity', () => {
-    it('creates active site with valid domain and origin', () => {
+  describe('ProtectedSite Entity & Onboarding State Machine', () => {
+    it('creates active site with valid domain and origin (legacy path)', () => {
       const domain = SiteDomain.create('app.tenant.com').getValue();
       const origin = OriginUrl.create('https://internal-lb.aws.local').getValue();
 
@@ -95,31 +95,120 @@ describe('Protected Sites Domain Value Objects & Entity', () => {
       expect(siteRes.isSuccess).toBe(true);
       const site = siteRes.getValue();
       expect(site.status).toBe(SiteStatus.ACTIVE);
+      expect(site.onboardingStatus).toBe(OnboardingStatus.ACTIVE);
       expect(site.name).toBe('Main App');
       expect(site.domain.value).toBe('app.tenant.com');
       expect(site.originUrl.value).toBe('https://internal-lb.aws.local');
     });
 
-    it('updates site name, status, and origin', () => {
-      const domain = SiteDomain.create('app.tenant.com').getValue();
-      const origin = OriginUrl.create('https://old.local').getValue();
+    it('creates site in PENDING_VERIFICATION state with generated verification token', () => {
+      const domain = SiteDomain.create('checkout.tenant.com').getValue();
+      const origin = OriginUrl.create('https://checkout-internal.aws.local').getValue();
+
       const site = ProtectedSite.create({
         tenantId: 'tenant-123',
-        name: 'Old Name',
+        name: 'Checkout Service',
         domain,
         originUrl: origin,
+        onboardingStatus: OnboardingStatus.PENDING_VERIFICATION,
       }).getValue();
 
-      const newOrigin = OriginUrl.create('https://new.local').getValue();
-      site.update({
-        name: 'Updated Name',
-        status: SiteStatus.PAUSED,
-        originUrl: newOrigin,
-      });
+      expect(site.onboardingStatus).toBe(OnboardingStatus.PENDING_VERIFICATION);
+      expect(site.verificationToken).toMatch(/^waf-verify-[a-f0-9]{32}$/);
+      expect(site.verifiedAt).toBeNull();
+      expect(site.configVersion).toBe(1);
+    });
 
-      expect(site.name).toBe('Updated Name');
+    it('progresses through happy path state transitions', () => {
+      const domain = SiteDomain.create('portal.tenant.com').getValue();
+      const origin = OriginUrl.create('https://portal-internal.local').getValue();
+
+      const site = ProtectedSite.create({
+        tenantId: 'tenant-123',
+        name: 'Portal Service',
+        domain,
+        originUrl: origin,
+        onboardingStatus: OnboardingStatus.PENDING_VERIFICATION,
+      }).getValue();
+
+      // PENDING_VERIFICATION -> VERIFIED
+      const verifyRes = site.verifyDomain();
+      expect(verifyRes.isSuccess).toBe(true);
+      expect(site.onboardingStatus).toBe(OnboardingStatus.VERIFIED);
+      expect(site.verifiedAt).toBeInstanceOf(Date);
+      expect(site.configVersion).toBe(2);
+
+      // VERIFIED -> CONFIGURING
+      expect(site.transitionTo(OnboardingStatus.CONFIGURING).isSuccess).toBe(true);
+
+      // CONFIGURING -> DNS_PENDING
+      expect(site.transitionTo(OnboardingStatus.DNS_PENDING).isSuccess).toBe(true);
+
+      // DNS_PENDING -> HEALTH_CHECK
+      expect(site.transitionTo(OnboardingStatus.HEALTH_CHECK).isSuccess).toBe(true);
+
+      // HEALTH_CHECK -> ACTIVE
+      expect(site.transitionTo(OnboardingStatus.ACTIVE).isSuccess).toBe(true);
+      expect(site.status).toBe(SiteStatus.ACTIVE);
+
+      // ACTIVE -> PAUSED -> ACTIVE
+      expect(site.pause().isSuccess).toBe(true);
       expect(site.status).toBe(SiteStatus.PAUSED);
-      expect(site.originUrl.value).toBe('https://new.local');
+      expect(site.onboardingStatus).toBe(OnboardingStatus.PAUSED);
+
+      expect(site.resume().isSuccess).toBe(true);
+      expect(site.status).toBe(SiteStatus.ACTIVE);
+      expect(site.onboardingStatus).toBe(OnboardingStatus.ACTIVE);
+    });
+
+    it('handles failure and retry transitions correctly', () => {
+      const domain = SiteDomain.create('fail-test.tenant.com').getValue();
+      const origin = OriginUrl.create('https://fail-test.local').getValue();
+
+      const site = ProtectedSite.create({
+        tenantId: 'tenant-123',
+        name: 'Fail Test',
+        domain,
+        originUrl: origin,
+        onboardingStatus: OnboardingStatus.PENDING_VERIFICATION,
+      }).getValue();
+
+      // PENDING_VERIFICATION -> FAILED
+      const failRes = site.failOnboarding('DNS record missing');
+      expect(failRes.isSuccess).toBe(true);
+      expect(site.onboardingStatus).toBe(OnboardingStatus.FAILED);
+      expect(site.lastOnboardingError).toBe('DNS record missing');
+
+      // Cannot jump from FAILED directly to ACTIVE
+      const directActive = site.transitionTo(OnboardingStatus.ACTIVE);
+      expect(directActive.isFailure).toBe(true);
+      expect(directActive.getError()).toContain('Invalid state transition');
+
+      // Retry to PENDING_VERIFICATION
+      const retryRes = site.retryOnboarding(OnboardingStatus.PENDING_VERIFICATION);
+      expect(retryRes.isSuccess).toBe(true);
+      expect(site.onboardingStatus).toBe(OnboardingStatus.PENDING_VERIFICATION);
+    });
+
+    it('rejects illegal state jumps', () => {
+      const domain = SiteDomain.create('illegal-jump.tenant.com').getValue();
+      const origin = OriginUrl.create('https://jump.local').getValue();
+
+      const site = ProtectedSite.create({
+        tenantId: 'tenant-123',
+        name: 'Illegal Jump Test',
+        domain,
+        originUrl: origin,
+        onboardingStatus: OnboardingStatus.PENDING_VERIFICATION,
+      }).getValue();
+
+      // Cannot jump from PENDING_VERIFICATION to ACTIVE directly
+      const jumpRes = site.transitionTo(OnboardingStatus.ACTIVE);
+      expect(jumpRes.isFailure).toBe(true);
+      expect(jumpRes.getError()).toContain('Invalid state transition from PENDING_VERIFICATION to ACTIVE');
+
+      // Cannot jump to HEALTH_CHECK
+      expect(site.transitionTo(OnboardingStatus.HEALTH_CHECK).isFailure).toBe(true);
     });
   });
 });

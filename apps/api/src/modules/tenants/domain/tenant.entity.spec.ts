@@ -42,8 +42,8 @@ describe('Tenant Domain Model', () => {
     });
   });
 
-  describe('Tenant Entity', () => {
-    it('should create a valid tenant entity', () => {
+  describe('Tenant Entity & Site Quota Invariants', () => {
+    it('should create a valid tenant entity with default maxSites = 5', () => {
       const slug = TenantSlug.create('acme-corp').getValue();
       const result = Tenant.create({
         name: 'Acme Corporation',
@@ -57,7 +57,45 @@ describe('Tenant Domain Model', () => {
       expect(tenant.slug.value).toBe('acme-corp');
       expect(tenant.tier).toBe(TenantTier.PRO);
       expect(tenant.status).toBe(TenantStatus.ACTIVE);
+      expect(tenant.maxSites).toBe(5);
       expect(tenant.id).toBeDefined();
+    });
+
+    it('should accept custom initial maxSites within bounds (1..100)', () => {
+      const slug = TenantSlug.create('custom-quota').getValue();
+      const result = Tenant.create({
+        name: 'Custom Quota Corp',
+        slug,
+        maxSites: 25,
+      });
+
+      expect(result.isSuccess).toBe(true);
+      expect(result.getValue().maxSites).toBe(25);
+    });
+
+    it('should update site quota within allowed bounds', () => {
+      const slug = TenantSlug.create('quota-update').getValue();
+      const tenant = Tenant.create({ name: 'Quota Update Corp', slug }).getValue();
+
+      expect(tenant.updateSiteQuota(12).isSuccess).toBe(true);
+      expect(tenant.maxSites).toBe(12);
+
+      expect(tenant.updateSiteQuota(100).isSuccess).toBe(true);
+      expect(tenant.maxSites).toBe(100);
+
+      expect(tenant.updateSiteQuota(1).isSuccess).toBe(true);
+      expect(tenant.maxSites).toBe(1);
+    });
+
+    it('should reject invalid site quotas (< 1, > 100, NaN)', () => {
+      const slug = TenantSlug.create('quota-invalid').getValue();
+      const tenant = Tenant.create({ name: 'Invalid Quota Corp', slug }).getValue();
+
+      expect(tenant.updateSiteQuota(0).isFailure).toBe(true);
+      expect(tenant.updateSiteQuota(-10).isFailure).toBe(true);
+      expect(tenant.updateSiteQuota(101).isFailure).toBe(true);
+      expect(tenant.updateSiteQuota(NaN).isFailure).toBe(true);
+      expect(tenant.updateSiteQuota(undefined as any).isFailure).toBe(true);
     });
 
     it('should fail when tenant name is empty', () => {

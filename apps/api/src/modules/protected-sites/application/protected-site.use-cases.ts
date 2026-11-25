@@ -1,12 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Result } from '@shared/application/result';
-import { ProtectedSite, SiteStatus } from '../domain/protected-site.entity';
+import { ProtectedSite, SiteStatus, OnboardingStatus } from '../domain/protected-site.entity';
 import { SiteDomain } from '../domain/site-domain.vo';
 import { OriginUrl } from '../domain/origin-url.vo';
 import {
   IProtectedSiteRepository,
   PROTECTED_SITE_REPOSITORY,
 } from '../domain/protected-site.repository.interface';
+import {
+  ITenantRepository,
+  TENANT_REPOSITORY,
+} from '../../tenants/domain/tenant.repository.interface';
+import { TenantId } from '../../tenants/domain/tenant-id.vo';
 import {
   IWafPolicyRepository,
   WAF_POLICY_REPOSITORY,
@@ -23,6 +28,7 @@ import { CreateProtectedSiteDto, UpdateProtectedSiteDto } from '../presentation/
 export class CreateProtectedSiteUseCase {
   constructor(
     @Inject(PROTECTED_SITE_REPOSITORY) private readonly siteRepo: IProtectedSiteRepository,
+    @Inject(TENANT_REPOSITORY) private readonly tenantRepo: ITenantRepository,
     @Inject(WAF_POLICY_REPOSITORY) private readonly policyRepo: IWafPolicyRepository,
     @Inject(AUDIT_LOG_REPOSITORY) private readonly auditRepo: IAuditLogRepository,
   ) {}
@@ -37,9 +43,24 @@ export class CreateProtectedSiteUseCase {
     const domain = domainRes.getValue();
     const origin = originRes.getValue();
 
-    const exists = await this.siteRepo.exists(tenantId, domain);
-    if (exists) {
-      return Result.fail(`Site with domain '${domain.value}' already exists for this tenant`);
+    // Check global domain uniqueness
+    const globalExists = await this.siteRepo.findGlobalByDomain(domain);
+    if (globalExists) {
+      return Result.fail(`Site with domain '${domain.value}' already exists`);
+    }
+
+    // Check tenant quota
+    const currentCount = await this.siteRepo.countByTenant(tenantId);
+    const tenantIdVo = TenantId.create(tenantId);
+    let maxSites = 5;
+    if (tenantIdVo.isSuccess) {
+      const tenant = await this.tenantRepo.findById(tenantIdVo.getValue());
+      if (tenant) {
+        maxSites = tenant.maxSites;
+      }
+    }
+    if (currentCount >= maxSites) {
+      return Result.fail(`Site quota exceeded for this tenant (${maxSites} max protected sites)`);
     }
 
     const site = ProtectedSite.create({
@@ -47,6 +68,8 @@ export class CreateProtectedSiteUseCase {
       name: dto.name,
       domain,
       originUrl: origin,
+      status: SiteStatus.ACTIVE,
+      onboardingStatus: OnboardingStatus.ACTIVE,
     }).getValue();
 
     await this.siteRepo.save(site);
@@ -74,6 +97,7 @@ export class CreateProtectedSiteUseCase {
       domain: site.domain.value,
       originUrl: site.originUrl.value,
       status: site.status,
+      onboardingStatus: site.onboardingStatus,
       createdAt: site.createdAt.toISOString(),
       updatedAt: site.updatedAt.toISOString(),
       defaultPolicyVersion: defaultPolicy.version,
@@ -95,6 +119,10 @@ export class ListProtectedSitesUseCase {
         domain: s.domain.value,
         originUrl: s.originUrl.value,
         status: s.status,
+        onboardingStatus: s.onboardingStatus,
+        verificationToken: s.verificationToken,
+        verifiedAt: s.verifiedAt ? s.verifiedAt.toISOString() : null,
+        configVersion: s.configVersion,
         createdAt: s.createdAt.toISOString(),
         updatedAt: s.updatedAt.toISOString(),
       })),
@@ -117,6 +145,10 @@ export class GetProtectedSiteUseCase {
       domain: site.domain.value,
       originUrl: site.originUrl.value,
       status: site.status,
+      onboardingStatus: site.onboardingStatus,
+      verificationToken: site.verificationToken,
+      verifiedAt: site.verifiedAt ? site.verifiedAt.toISOString() : null,
+      configVersion: site.configVersion,
       createdAt: site.createdAt.toISOString(),
       updatedAt: site.updatedAt.toISOString(),
     });
@@ -166,6 +198,8 @@ export class UpdateProtectedSiteUseCase {
       domain: site.domain.value,
       originUrl: site.originUrl.value,
       status: site.status,
+      onboardingStatus: site.onboardingStatus,
+      configVersion: site.configVersion,
       updatedAt: site.updatedAt.toISOString(),
     });
   }
