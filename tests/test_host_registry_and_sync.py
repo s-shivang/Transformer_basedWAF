@@ -9,7 +9,7 @@ Verifies:
 5. Last-Known-Good preservation on invalid updates.
 """
 import pytest
-from starlette.testclient import TestClient
+import httpx
 from src.waf_gateway.host_registry import (
     HostRegistry,
     SiteRouteConfig,
@@ -27,8 +27,9 @@ def clean_registry():
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def async_client():
+    transport = httpx.ASGITransport(app=app)
+    return httpx.AsyncClient(transport=transport, base_url="http://testserver")
 
 
 # ============================================================================
@@ -201,10 +202,11 @@ def test_host_registry_snapshot_atomicity():
 
 
 # ============================================================================
-# 2. FastAPI Gateway Sync Endpoints Tests
+# 2. FastAPI Gateway Sync Endpoints Tests (Async)
 # ============================================================================
 
-def test_sync_site_auth_protection(client):
+@pytest.mark.anyio
+async def test_sync_site_auth_protection(async_client):
     payload = {
         "site_id": "site-test",
         "tenant_id": "tenant-test",
@@ -213,20 +215,22 @@ def test_sync_site_auth_protection(client):
         "config_version": 1,
     }
 
-    # Missing X-WAF-Admin-Key -> 401
-    res = client.post("/_waf/sites/sync", json=payload)
-    assert res.status_code == 401
+    async with async_client as client:
+        # Missing X-WAF-Admin-Key -> 401
+        res = await client.post("/_waf/sites/sync", json=payload)
+        assert res.status_code == 401
 
-    # Wrong key -> 403
-    res = client.post(
-        "/_waf/sites/sync",
-        json=payload,
-        headers={"X-WAF-Admin-Key": "wrong-secret-key"},
-    )
-    assert res.status_code == 403
+        # Wrong key -> 403
+        res = await client.post(
+            "/_waf/sites/sync",
+            json=payload,
+            headers={"X-WAF-Admin-Key": "wrong-secret-key"},
+        )
+        assert res.status_code == 403
 
 
-def test_sync_site_success_and_ack(client):
+@pytest.mark.anyio
+async def test_sync_site_success_and_ack(async_client):
     payload = {
         "site_id": "site-prod",
         "tenant_id": "tenant-acme",
@@ -242,17 +246,18 @@ def test_sync_site_success_and_ack(client):
         },
     }
 
-    res = client.post(
-        "/_waf/sites/sync",
-        json=payload,
-        headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-    )
-    assert res.status_code == 200
-    data = res.json()
-    assert data["acknowledged"] is True
-    assert data["domain"] == "prod.acme.com"
-    assert data["config_version"] == 4
-    assert data["active_sites_count"] == 1
+    async with async_client as client:
+        res = await client.post(
+            "/_waf/sites/sync",
+            json=payload,
+            headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["acknowledged"] is True
+        assert data["domain"] == "prod.acme.com"
+        assert data["config_version"] == 4
+        assert data["active_sites_count"] == 1
 
     # Verify lookup via HostRegistry
     route = host_registry.lookup("prod.acme.com")
@@ -261,36 +266,38 @@ def test_sync_site_success_and_ack(client):
     assert route.policy.mode == "blocking"
 
 
-def test_sync_site_invalid_payload_preserves_lkg(client):
-    # First establish valid config
-    valid_payload = {
-        "site_id": "site-lkg",
-        "tenant_id": "tenant-1",
-        "domain": "lkg.example.com",
-        "origin_url": "https://healthy-origin.internal",
-        "config_version": 2,
-    }
-    res = client.post(
-        "/_waf/sites/sync",
-        json=valid_payload,
-        headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-    )
-    assert res.status_code == 200
+@pytest.mark.anyio
+async def test_sync_site_invalid_payload_preserves_lkg(async_client):
+    async with async_client as client:
+        # First establish valid config
+        valid_payload = {
+            "site_id": "site-lkg",
+            "tenant_id": "tenant-1",
+            "domain": "lkg.example.com",
+            "origin_url": "https://healthy-origin.internal",
+            "config_version": 2,
+        }
+        res = await client.post(
+            "/_waf/sites/sync",
+            json=valid_payload,
+            headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+        )
+        assert res.status_code == 200
 
-    # Attempt to sync invalid update with SSRF origin
-    invalid_payload = {
-        "site_id": "site-lkg",
-        "tenant_id": "tenant-1",
-        "domain": "lkg.example.com",
-        "origin_url": "http://169.254.169.254/secret",
-        "config_version": 3,
-    }
-    res_bad = client.post(
-        "/_waf/sites/sync",
-        json=invalid_payload,
-        headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-    )
-    assert res_bad.status_code in (400, 422)
+        # Attempt to sync invalid update with SSRF origin
+        invalid_payload = {
+            "site_id": "site-lkg",
+            "tenant_id": "tenant-1",
+            "domain": "lkg.example.com",
+            "origin_url": "http://169.254.169.254/secret",
+            "config_version": 3,
+        }
+        res_bad = await client.post(
+            "/_waf/sites/sync",
+            json=invalid_payload,
+            headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+        )
+        assert res_bad.status_code in (400, 422)
 
     # Last-known-good config is preserved intact
     route = host_registry.lookup("lkg.example.com")
@@ -299,34 +306,36 @@ def test_sync_site_invalid_payload_preserves_lkg(client):
     assert route.origin_url == "https://healthy-origin.internal"
 
 
-def test_delete_and_list_sites(client):
-    # Sync two domains
-    for domain in ("site1.example.com", "site2.example.com"):
-        client.post(
-            "/_waf/sites/sync",
-            json={
-                "site_id": f"id-{domain}",
-                "tenant_id": "tenant-1",
-                "domain": domain,
-                "origin_url": "https://upstream.internal",
-                "config_version": 1,
-            },
+@pytest.mark.anyio
+async def test_delete_and_list_sites(async_client):
+    async with async_client as client:
+        # Sync two domains
+        for domain in ("site1.example.com", "site2.example.com"):
+            await client.post(
+                "/_waf/sites/sync",
+                json={
+                    "site_id": f"id-{domain}",
+                    "tenant_id": "tenant-1",
+                    "domain": domain,
+                    "origin_url": "https://upstream.internal",
+                    "config_version": 1,
+                },
+                headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
+            )
+
+        # List sites
+        res_list = await client.get("/_waf/sites", headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY})
+        assert res_list.status_code == 200
+        assert res_list.json()["active_sites_count"] == 2
+
+        # Delete site1
+        res_del = await client.delete(
+            "/_waf/sites/site1.example.com",
             headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
         )
-
-    # List sites
-    res_list = client.get("/_waf/sites", headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY})
-    assert res_list.status_code == 200
-    assert res_list.json()["active_sites_count"] == 2
-
-    # Delete site1
-    res_del = client.delete(
-        "/_waf/sites/site1.example.com",
-        headers={"X-WAF-Admin-Key": DEFAULT_ADMIN_KEY},
-    )
-    assert res_del.status_code == 200
-    assert res_del.json()["removed"] is True
-    assert res_del.json()["active_sites_count"] == 1
+        assert res_del.status_code == 200
+        assert res_del.json()["removed"] is True
+        assert res_del.json()["active_sites_count"] == 1
 
     # site1 should be gone, site2 remains
     assert host_registry.lookup("site1.example.com") is None
