@@ -1,0 +1,161 @@
+{
+  "phase": 15,
+  "title": "Live End-to-End Security, Penetration & Cross-Tenant Isolation Testing",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-25T17:35:00+05:30",
+  "environment": {
+    "target": "Docker Compose 8-Service Stack",
+    "host": "127.0.0.1",
+    "ports": {
+      "controlPlaneApi": 3000,
+      "socDashboard": 5173,
+      "mlInference": 8000,
+      "protectedApp": 8002,
+      "wafGateway": 8001,
+      "nginxReverseProxy": 8080,
+      "postgres": 5432,
+      "redis": 6379
+    },
+    "operatingSystem": "Windows 11 (Docker Desktop 29.9.3)"
+  },
+  "summary": {
+    "totalChecks": 42,
+    "passed": 42,
+    "failed": 0,
+    "passRate": "100.0%",
+    "vulnerabilitiesFound": 5,
+    "vulnerabilitiesRemediated": 5,
+    "unresolvedVulnerabilities": 0
+  },
+  "categoryBreakdown": {
+    "categoryA_CrossTenantIsolation": {
+      "name": "Real-PostgreSQL Multi-Tenant Isolation (IDOR / BOLA)",
+      "total": 14,
+      "passed": 14,
+      "failed": 0,
+      "checks": [
+        "Tenant B cannot query Tenant A by ID (403)",
+        "Tenant B cannot query Tenant A by slug (403)",
+        "Tenant B cannot read Tenant A site (404)",
+        "Tenant B cannot patch Tenant A site (404)",
+        "Tenant B cannot delete Tenant A site (404)",
+        "Tenant B cannot read Tenant A policy (404)",
+        "Tenant B cannot mutate Tenant A policy (404)",
+        "Tenant B cannot rollback Tenant A policy (404)",
+        "Tenant B cannot read Tenant A security event (404)",
+        "Tenant B cannot submit feedback on Tenant A event (404)",
+        "Tenant B cannot review Tenant A feedback item (404)",
+        "Tenant B event queries return zero Tenant A records (200)",
+        "Tenant B cannot delete Tenant A webhook endpoint (404)",
+        "Tenant B cannot add members to Tenant A (403)"
+      ]
+    },
+    "categoryB_AuthAndRBAC": {
+      "name": "Auth, Cookie, JWT & RBAC Privilege Escalation",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        "Auth cookies enforce HttpOnly and SameSite",
+        "Tampered alg:none JWT is rejected (401)",
+        "Valid refresh token rotation succeeds (200)",
+        "Replaying used refresh token is detected and rejected (401)",
+        "VIEWER cannot create protected site (403)",
+        "VIEWER cannot mutate policy (403)",
+        "VIEWER cannot create webhook (403)",
+        "User payload never leaks passwordHash"
+      ]
+    },
+    "categoryC_SSRFAndInputValidation": {
+      "name": "Control-Plane SSRF, Input Validation & API Abuse",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "checks": [
+        "Protected site rejects cloud metadata originUrl (400)",
+        "Webhook rejects 169.254.169.254 SSRF target (400)",
+        "Webhook rejects 0.0.0.0 internal SSRF target (400)",
+        "Internal event ingestion rejects missing ingest key (401)",
+        "Internal event ingestion rejects wrong ingest key (401)",
+        "Malformed UUID in route param returns clean 400/404 (not 500)"
+      ]
+    },
+    "categoryD_DataPlaneAndNginxHardening": {
+      "name": "Live Data Plane & Nginx Reverse Proxy Hardening",
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "checks": [
+        "External access to /_waf/policy is blocked by Nginx (403)",
+        "External access to /_waf/health is blocked by Nginx (403)",
+        "Path traversal bypass /_waf//policy is blocked (403/404)",
+        "Challenge endpoint /_waf/challenge/verify is reachable and rejects bad solution (403)",
+        "Attack blocked: SQLi Tautology (403 BLOCK)",
+        "Attack blocked: SQLi UNION SELECT (403 BLOCK)",
+        "Attack blocked: XSS Injection (403 BLOCK)",
+        "Attack blocked: Path Traversal (403 BLOCK)",
+        "Attack blocked: Double-Encoded Traversal (403 BLOCK)",
+        "Attack blocked: Command Injection (403 BLOCK)",
+        "Forged clearance cookie NEVER bypasses hard SQLi block (403 BLOCK)"
+      ]
+    },
+    "categoryE_FailSafeResilience": {
+      "name": "Live Container Outage & Fail-Safe Resilience",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "checks": [
+        "Layer 1 rules STILL block attacks while ML service is DOWN (403 BLOCK)",
+        "Benign traffic safely fails open (200 OK + X-WAF-Degraded: true)",
+        "ML Service recovered and scoring normally (X-WAF-Degraded: false/none)"
+      ]
+    }
+  },
+  "remediationsApplied": [
+    {
+      "issue": "Authorization header vs cookie precedence collision across concurrent clients",
+      "remediation": "Updated JwtAuthGuard to check Bearer token header before falling back to cookies."
+    },
+    {
+      "issue": "Algorithm confusion / alg:none token acceptance in TokenService verification",
+      "remediation": "Explicitly restricted algorithms to ['HS256'] in TokenService.verifyAccessToken."
+    },
+    {
+      "issue": "Prisma P2023 malformed UUID query throwing unhandled 500 error",
+      "remediation": "Mapped Prisma P2023 to 400 Bad Request and P2025 to 404 Not Found in GlobalExceptionFilter."
+    },
+    {
+      "issue": "Nginx container internal health check routed through WAF triggering false-positive scanner alert",
+      "remediation": "Configured dedicated internal location = /nginx-health bypass in Nginx docker config."
+    },
+    {
+      "issue": "DNS getaddrinfo blocking latency on ml-service container restart in MLClient",
+      "remediation": "Added IP caching and resilient reconnect loop in MLClient."
+    }
+  ],
+  "verificationMatrix": {
+    "nestjsUnit": {
+      "passed": 81,
+      "total": 81,
+      "status": "PASSED"
+    },
+    "nestjsE2E": {
+      "passed": 82,
+      "total": 82,
+      "status": "PASSED"
+    },
+    "reactVitest": {
+      "passed": 22,
+      "total": 22,
+      "status": "PASSED"
+    },
+    "pythonPytest": {
+      "passed": 77,
+      "total": 77,
+      "status": "PASSED"
+    },
+    "totalRegressionTests": 262,
+    "totalRegressionPassed": 262,
+    "status": "ALL GREEN"
+  }
+}
