@@ -5,24 +5,39 @@ import { cn } from '../../lib/utils';
 
 export const ThemeToggle: React.FC<{ className?: string }> = ({ className }) => {
   const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label="Toggle dark/light mode"
+      aria-label="Toggle theme"
       className={cn(
-        'p-2 rounded-lg transition-colors border text-slate-500 dark:text-slate-400',
-        'hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800',
+        'relative inline-flex items-center h-8 px-1.5 py-1 rounded-full transition-colors border select-none',
+        'bg-[#161616] border-[#222222] text-[#A1A1AA]',
+        'light:bg-white light:border-[#E5E7EB] light:text-[#52525B]',
         className,
       )}
-      title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
+      title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}
     >
-      {theme === 'dark' ? (
-        <Sun className="w-4 h-4 text-amber-400 transition-transform rotate-0 hover:rotate-45" />
-      ) : (
-        <Moon className="w-4 h-4 text-blue-600 transition-transform -rotate-12 hover:rotate-0" />
-      )}
+      <div className="flex items-center gap-1">
+        <span
+          className={cn(
+            'flex items-center justify-center w-6 h-6 rounded-full transition-all duration-200',
+            !isDark ? 'bg-[#FFF7ED] text-[#EA580C] shadow-xs' : 'text-[#71717A] hover:text-[#A1A1AA]',
+          )}
+        >
+          <Sun className="w-3.5 h-3.5" />
+        </span>
+        <span
+          className={cn(
+            'flex items-center justify-center w-6 h-6 rounded-full transition-all duration-200',
+            isDark ? 'bg-[#262626] text-[#FF8800] shadow-xs' : 'text-[#A1A1AA] hover:text-[#71717A]',
+          )}
+        >
+          <Moon className="w-3.5 h-3.5" />
+        </span>
+      </div>
     </button>
   );
 };

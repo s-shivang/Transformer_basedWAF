@@ -5,21 +5,24 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
-        canvas: {
-          dark: '#090D16',
-          light: '#F8FAFC',
+        brand: {
+          orange: '#FF6600',
+          'orange-glow': '#FF8800',
+          ember: '#EA580C',
+          peach: '#FFF7ED',
+          'peach-dark': '#FFEDD5',
         },
-        card: {
-          dark: '#111827',
-          light: '#FFFFFF',
-        },
-        border: {
-          dark: '#1F2937',
-          light: '#E2E8F0',
+        pitch: {
+          DEFAULT: '#000000',
+          card: '#0A0A0A',
+          surface: '#111111',
+          hover: '#161616',
+          active: '#1C1C1C',
+          border: '#222222',
         },
       },
     },

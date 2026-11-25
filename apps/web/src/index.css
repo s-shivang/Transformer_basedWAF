@@ -9,15 +9,23 @@
 
   html.dark {
     color-scheme: dark;
+    background-color: #000000;
+    color: #FFFFFF;
   }
 
-  html.light {
+  html.light, html:not(.dark) {
     color-scheme: light;
+    background-color: #F9FAFB;
+    color: #0A0A0A;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: inherit;
+    color: inherit;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
@@ -31,11 +39,20 @@
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+html.dark ::-webkit-scrollbar-thumb {
+  background: #222222;
   border-radius: 9999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #333333;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 9999px;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
 }

@@ -41,8 +41,8 @@ export const ActionBadge: React.FC<ActionBadgeProps> = ({ action, className }) =
         <span
           className={cn(
             'inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border',
-            'bg-cyan-50 text-cyan-700 border-cyan-200',
-            'dark:bg-cyan-500/15 dark:text-cyan-400 dark:border-cyan-500/30',
+            'bg-orange-50 text-orange-700 border-orange-200',
+            'dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30',
             className,
           )}
         >
