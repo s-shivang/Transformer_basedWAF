@@ -4,12 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppShell } from './components/layout/AppShell';
-import { LoginPage } from './pages/Login';
-import { RegisterPage } from './pages/Register';
-import { OverviewPage } from './pages/Overview';
-import { EventsPage } from './pages/Events';
-import { SitesPage } from './pages/Sites';
-import { PoliciesPage } from './pages/Policies';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { Overview } from './pages/Overview';
+import { Events } from './pages/Events';
+import { Sites } from './pages/Sites';
+import { Policies } from './pages/Policies';
 import { FeedbackPage } from './pages/Feedback';
 import { TeamPage } from './pages/Team';
 
@@ -52,8 +52,8 @@ export const App: React.FC = () => {
           <BrowserRouter>
             <Routes>
               {/* Public Auth Routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
               {/* Protected SOC Dashboard Routes */}
               <Route
@@ -64,10 +64,10 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<OverviewPage />} />
-                <Route path="events" element={<EventsPage />} />
-                <Route path="sites" element={<SitesPage />} />
-                <Route path="policies" element={<PoliciesPage />} />
+                <Route index element={<Overview />} />
+                <Route path="events" element={<Events />} />
+                <Route path="sites" element={<Sites />} />
+                <Route path="policies" element={<Policies />} />
                 <Route path="feedback" element={<FeedbackPage />} />
                 <Route path="team" element={<TeamPage />} />
               </Route>

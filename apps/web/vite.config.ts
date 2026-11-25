@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -13,6 +12,7 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  // @ts-expect-error Vitest configuration field
   test: {
     globals: true,
     environment: 'jsdom',
