@@ -34,7 +34,9 @@ export class JwtTokenService implements ITokenService {
 
   verifyAccessToken(token: string): AccessTokenPayload | null {
     try {
-      const decoded = jwt.verify(token, this.accessSecret) as AccessTokenPayload;
+      const decoded = jwt.verify(token, this.accessSecret, {
+        algorithms: ['HS256'],
+      }) as AccessTokenPayload;
       return decoded;
     } catch {
       return null;

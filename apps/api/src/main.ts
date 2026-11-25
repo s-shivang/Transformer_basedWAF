@@ -3,12 +3,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './shared/infrastructure/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Set global API route prefix
   app.setGlobalPrefix('api/v1');
+
+  // Global exception filter to sanitize errors and prevent 500 stack leaks
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Parse cookies for HttpOnly authentication tokens
   app.use(cookieParser());

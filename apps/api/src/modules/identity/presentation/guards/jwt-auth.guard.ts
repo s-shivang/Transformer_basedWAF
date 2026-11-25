@@ -30,15 +30,18 @@ export class JwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
 
-    // 1. Extract token from HttpOnly cookie 'waf_access_token'
-    let token = request.cookies?.['waf_access_token'];
-
-    // 2. Fallback to Authorization: Bearer <token> header for CLI/Swagger testing
-    if (!token && request.headers.authorization) {
+    // 1. Prefer Authorization: Bearer <token> header if present (for API clients / tests)
+    let token: string | undefined;
+    if (request.headers.authorization) {
       const parts = request.headers.authorization.split(' ');
       if (parts.length === 2 && parts[0].toLowerCase() === 'bearer') {
         token = parts[1];
       }
+    }
+
+    // 2. Fallback to HttpOnly cookie 'waf_access_token' (for web clients)
+    if (!token) {
+      token = request.cookies?.['waf_access_token'];
     }
 
     if (!token) {

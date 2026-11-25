@@ -105,7 +105,7 @@ async function main() {
         tenantId: tenant.id,
         name: 'Production API Gateway',
         domain: 'api.acme.com',
-        originUrl: 'https://backend.internal.acme.com',
+        upstreamUrl: 'https://backend.internal.acme.com',
         status: 'ACTIVE',
       },
     });
@@ -138,7 +138,7 @@ async function main() {
         tenantId: tenant.id,
         name: 'Customer Portal',
         domain: 'portal.acme.com',
-        originUrl: 'https://portal.internal.acme.com',
+        upstreamUrl: 'https://portal.internal.acme.com',
         status: 'ACTIVE',
       },
     });
