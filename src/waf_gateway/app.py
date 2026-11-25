@@ -30,6 +30,12 @@ from src.firewall.policy import FirewallPolicy, ThresholdConfig
 from src.firewall.decision_engine import CentralDecisionEngine, WAFDecision
 from src.firewall.ml_client import MLClient
 from src.firewall.redaction import redact_request_for_event
+from src.waf_gateway.challenge import (
+    challenge_manager,
+    render_challenge_page,
+    sanitize_redirect_url,
+    CLEARANCE_TTL_SECONDS,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGS_DIR = ROOT / "logs"
@@ -56,6 +62,14 @@ class PolicyUpdateRequest(BaseModel):
     anomaly_enabled: Optional[bool] = None
     ml_failure_mode: Optional[str] = None
     thresholds: Optional[Dict[str, float]] = None
+
+
+class ChallengeVerifyRequest(BaseModel):
+    token: str
+    answer: str
+    pow_nonce: str
+    duration_ms: int
+    redirect_url: Optional[str] = "/"
 
 
 class WAFGatewayApp:
@@ -109,10 +123,12 @@ class WAFGatewayApp:
             await self.upstream_client.aclose()
         self.ml_client.close()
 
-    def log_security_event(self, parsed_req: ParsedRequest, decision: WAFDecision, client_ip: str):
+    def log_security_event(self, parsed_req: ParsedRequest, decision: WAFDecision, client_ip: str, extra_event_type: Optional[str] = None):
         """Persists privacy-safe redacted security event to JSONL file."""
         try:
             event = redact_request_for_event(parsed_req, decision, client_ip=client_ip)
+            if extra_event_type:
+                event["event_type"] = extra_event_type
             line = json.dumps(event) + "\n"
             with open(self.security_log_path, "a", encoding="utf-8") as f:
                 f.write(line)
@@ -154,6 +170,82 @@ app.state.gateway = gateway
 # ============================================================================
 # Admin / Management Endpoints (/_waf/ prefix)
 # ============================================================================
+
+@app.post("/_waf/challenge/verify", tags=["WAF Challenge"])
+async def verify_challenge(request: Request, body: ChallengeVerifyRequest):
+    """
+    Validates a completed human verification challenge:
+    1. Checks HMAC signature, expiration (60s), single-use nonce, Proof-of-Work, and duration.
+    2. On success: issues HttpOnly SameSite=Lax clearance cookie and returns verified: true.
+    3. On failure: returns 403 Forbidden with details.
+    """
+    gw = get_gateway()
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    user_agent = request.headers.get("user-agent", "")
+
+    valid, reason, meta = challenge_manager.verify_solution(
+        token=body.token,
+        answer=body.answer,
+        pow_nonce=body.pow_nonce,
+        duration_ms=body.duration_ms,
+        client_ip=client_ip,
+        user_agent=user_agent,
+    )
+
+    safe_redirect = sanitize_redirect_url(body.redirect_url)
+
+    if not valid:
+        # Log CHALLENGE_FAILED
+        dummy_req = ParsedRequest(
+            method="POST", path="/_waf/challenge/verify",
+            headers=dict(request.headers), request_id=f"chk_{int(time.time()*1000)}"
+        )
+        dummy_dec = WAFDecision(
+            action="CHALLENGE", would_action="CHALLENGE",
+            inspection_mode=gw.policy.inspection_mode,
+            risk_score=0.75, reason=f"CHALLENGE_FAILED_{reason}",
+            request_id=dummy_req.request_id, latency_ms=0.0
+        )
+        gw.log_security_event(dummy_req, dummy_dec, client_ip=client_ip, extra_event_type="CHALLENGE_FAILED")
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Challenge verification failed: {reason}",
+        )
+
+    # Issue clearance cookie
+    clearance_token = challenge_manager.issue_clearance_cookie(client_ip=client_ip, user_agent=user_agent)
+
+    # Log CHALLENGE_PASSED
+    dummy_req = ParsedRequest(
+        method="POST", path="/_waf/challenge/verify",
+        headers=dict(request.headers), request_id=f"chk_{int(time.time()*1000)}"
+    )
+    dummy_dec = WAFDecision(
+        action="ALLOW", would_action="ALLOW",
+        inspection_mode=gw.policy.inspection_mode,
+        risk_score=0.0, reason="CHALLENGE_PASSED",
+        request_id=dummy_req.request_id, latency_ms=float(body.duration_ms)
+    )
+    gw.log_security_event(dummy_req, dummy_dec, client_ip=client_ip, extra_event_type="CHALLENGE_PASSED")
+
+    resp = JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "verified": True,
+            "redirect_url": safe_redirect,
+            "task_type": meta.get("task_type"),
+        },
+    )
+    resp.set_cookie(
+        key="waf_clearance",
+        value=clearance_token,
+        max_age=CLEARANCE_TTL_SECONDS,
+        httponly=True,
+        samesite="lax",
+        path="/",
+    )
+    return resp
 
 @app.get("/_waf/health", tags=["WAF Admin"])
 async def waf_health():
@@ -280,6 +372,7 @@ async def reverse_proxy_handler(request: Request, full_path: str):
 
     # 4. Enforce Decision
     # A. BLOCK -> Return 403 Forbidden immediately (never forward upstream)
+    # INVARIANT: waf_clearance cookie MUST NEVER bypass a confirmed hard block or Layer 1 attack!
     if decision.action == "BLOCK":
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -298,23 +391,70 @@ async def reverse_proxy_handler(request: Request, full_path: str):
             },
         )
 
-    # B. CHALLENGE -> Return 429 Too Many Requests (never forward upstream)
+    # B. CHALLENGE -> Gray-zone verification check
     if decision.action == "CHALLENGE":
-        return JSONResponse(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            headers={
-                "X-WAF-Action": "CHALLENGE",
-                "X-WAF-Request-ID": decision.request_id,
-                "X-WAF-Mode": decision.inspection_mode,
-                "X-WAF-Reason": decision.reason,
-            },
-            content={
-                "challenge_required": True,
-                "type": "behavioral_rate_challenge",
-                "request_id": decision.request_id,
-                "reason": decision.reason,
-            },
-        )
+        user_agent = request.headers.get("user-agent", "")
+        clearance_cookie = request.cookies.get("waf_clearance")
+
+        # 1. Check if client possesses a valid, unexpired clearance cookie bound to IP + UA
+        if challenge_manager.validate_clearance_cookie(clearance_cookie, client_ip=client_ip, user_agent=user_agent):
+            # Downgrade decision to ALLOW
+            decision.action = "ALLOW"
+            decision.reason = "CHALLENGE_CLEARANCE_VALID"
+            # Fall through to upstream forwarding (with X-WAF-Action: ALLOW)
+        else:
+            # Client has no valid clearance cookie: issue challenge
+            gw.log_security_event(parsed_req, decision, client_ip=client_ip, extra_event_type="CHALLENGE_ISSUED")
+
+            accept_header = request.headers.get("accept", "").lower()
+            is_browser = "text/html" in accept_header and not (
+                "application/json" in accept_header and accept_header.find("application/json") < accept_header.find("text/html")
+            )
+
+            # (a) Browser client -> Render Interactive Human Verification Screen
+            if is_browser:
+                challenge_pkg = challenge_manager.generate_challenge(
+                    client_ip=client_ip,
+                    user_agent=user_agent,
+                    redirect_url=raw_path,
+                )
+                html_content = render_challenge_page(
+                    challenge_data=challenge_pkg,
+                    request_id=decision.request_id,
+                    target_path=raw_path,
+                )
+                return FastAPIResponse(
+                    content=html_content,
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    media_type="text/html; charset=utf-8",
+                    headers={
+                        "X-WAF-Action": "CHALLENGE",
+                        "X-WAF-Request-ID": decision.request_id,
+                        "X-WAF-Mode": decision.inspection_mode,
+                        "X-WAF-Reason": decision.reason,
+                        "Cache-Control": "no-store, no-cache, must-revalidate",
+                    },
+                )
+
+            # (b) API / Non-browser client (curl, JSON API) -> Return 429 JSON
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={
+                    "X-WAF-Action": "CHALLENGE",
+                    "X-WAF-Request-ID": decision.request_id,
+                    "X-WAF-Mode": decision.inspection_mode,
+                    "X-WAF-Reason": decision.reason,
+                    "Cache-Control": "no-store",
+                },
+                content={
+                    "error": "Human verification required",
+                    "action": "CHALLENGE",
+                    "challenge_required": True,
+                    "type": "interactive_human_verification",
+                    "request_id": decision.request_id,
+                    "reason": decision.reason,
+                },
+            )
 
     # C. ALLOW or MONITOR -> Forward upstream
     forward_headers = {
