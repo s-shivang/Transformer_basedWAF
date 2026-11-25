@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   HttpStatus,
+  HttpCode,
   HttpException,
   UseGuards,
   Req,
@@ -106,6 +107,7 @@ export class WafPoliciesController {
   }
 
   @Post('rollback/:version')
+  @HttpCode(HttpStatus.OK)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiOperation({ summary: '1-click rollback: restore historical policy configuration as a new version' })
   @ApiResponse({ status: 200, description: 'Rollback policy version created successfully' })
