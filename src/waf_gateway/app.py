@@ -180,7 +180,11 @@ async def verify_challenge(request: Request, body: ChallengeVerifyRequest):
     3. On failure: returns 403 Forbidden with details.
     """
     gw = get_gateway()
-    client_ip = request.client.host if request.client else "127.0.0.1"
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "127.0.0.1"
     user_agent = request.headers.get("user-agent", "")
 
     valid, reason, meta = challenge_manager.verify_solution(
@@ -197,14 +201,23 @@ async def verify_challenge(request: Request, body: ChallengeVerifyRequest):
     if not valid:
         # Log CHALLENGE_FAILED
         dummy_req = ParsedRequest(
-            method="POST", path="/_waf/challenge/verify",
-            headers=dict(request.headers), request_id=f"chk_{int(time.time()*1000)}"
+            id=f"chk_{int(time.time()*1000)}",
+            raw_text="POST /_waf/challenge/verify HTTP/1.1\r\n\r\n",
+            method="POST",
+            path="/_waf/challenge/verify",
+            headers=dict(request.headers),
         )
         dummy_dec = WAFDecision(
-            action="CHALLENGE", would_action="CHALLENGE",
+            request_id=dummy_req.id,
+            tenant_id=gw.policy.tenant_id,
+            site_id=gw.policy.site_id,
+            action="CHALLENGE",
+            would_action="CHALLENGE",
             inspection_mode=gw.policy.inspection_mode,
-            risk_score=0.75, reason=f"CHALLENGE_FAILED_{reason}",
-            request_id=dummy_req.request_id, latency_ms=0.0
+            risk_score=0.75,
+            stage_used="challenge_verification",
+            reason=f"CHALLENGE_FAILED_{reason}",
+            latency_ms=0.0
         )
         gw.log_security_event(dummy_req, dummy_dec, client_ip=client_ip, extra_event_type="CHALLENGE_FAILED")
 
@@ -218,14 +231,23 @@ async def verify_challenge(request: Request, body: ChallengeVerifyRequest):
 
     # Log CHALLENGE_PASSED
     dummy_req = ParsedRequest(
-        method="POST", path="/_waf/challenge/verify",
-        headers=dict(request.headers), request_id=f"chk_{int(time.time()*1000)}"
+        id=f"chk_{int(time.time()*1000)}",
+        raw_text="POST /_waf/challenge/verify HTTP/1.1\r\n\r\n",
+        method="POST",
+        path="/_waf/challenge/verify",
+        headers=dict(request.headers),
     )
     dummy_dec = WAFDecision(
-        action="ALLOW", would_action="ALLOW",
+        request_id=dummy_req.id,
+        tenant_id=gw.policy.tenant_id,
+        site_id=gw.policy.site_id,
+        action="ALLOW",
+        would_action="ALLOW",
         inspection_mode=gw.policy.inspection_mode,
-        risk_score=0.0, reason="CHALLENGE_PASSED",
-        request_id=dummy_req.request_id, latency_ms=float(body.duration_ms)
+        risk_score=0.0,
+        stage_used="challenge_verification",
+        reason="CHALLENGE_PASSED",
+        latency_ms=float(body.duration_ms)
     )
     gw.log_security_event(dummy_req, dummy_dec, client_ip=client_ip, extra_event_type="CHALLENGE_PASSED")
 
@@ -343,7 +365,12 @@ async def reverse_proxy_handler(request: Request, full_path: str):
         raise HTTPException(status_code=404, detail="Not Found")
 
     gw = get_gateway()
-    client_ip = request.client.host if request.client else "127.0.0.1"
+    # Respect X-Forwarded-For if set (e.g. from reverse proxy or test client)
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "127.0.0.1"
     body_bytes = await request.body()
     body_str = body_bytes.decode("utf-8", errors="replace")
 

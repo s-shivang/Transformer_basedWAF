@@ -84,13 +84,13 @@ def test_browser_in_gray_zone_receives_html_challenge(challenge_gateway):
             import src.waf_gateway.app as gw_mod
             gw_mod.set_gateway(challenge_gateway)
 
-            # Trigger an anomaly score into the challenge band
-            # We can mock the decision engine or trigger rate anomaly
+            # Trigger an anomaly score into the challenge band via sensitive probe scanning
             client_ip = "192.168.1.100"
-            for _ in range(12):
-                challenge_gateway.decision_engine.anomaly_detector.analyze(
-                    ParsedRequest(method="GET", path="/api/items/1", headers={}, client_ip=client_ip),
-                    client_id=client_ip
+            for probe in ["/admin", "/.env", "/config.php", "/phpmyadmin"]:
+                challenge_gateway.decision_engine.anomaly_detector.record_event(
+                    client_id=client_ip,
+                    path=probe,
+                    status_code=404,
                 )
 
             transport = httpx.ASGITransport(app=gw_mod.app)
@@ -128,10 +128,11 @@ def test_api_in_gray_zone_receives_json_429(challenge_gateway):
             gw_mod.set_gateway(challenge_gateway)
 
             client_ip = "192.168.1.101"
-            for _ in range(12):
-                challenge_gateway.decision_engine.anomaly_detector.analyze(
-                    ParsedRequest(method="GET", path="/api/items/1", headers={}, client_ip=client_ip),
-                    client_id=client_ip
+            for probe in ["/admin", "/.env", "/config.php", "/phpmyadmin"]:
+                challenge_gateway.decision_engine.anomaly_detector.record_event(
+                    client_id=client_ip,
+                    path=probe,
+                    status_code=404,
                 )
 
             transport = httpx.ASGITransport(app=gw_mod.app)
@@ -211,10 +212,11 @@ def test_challenge_solve_sets_cookie_and_permits_traffic(challenge_gateway):
                 clearance_val = v_resp.cookies["waf_clearance"]
 
                 # 3. Trigger anomaly challenge condition on client IP
-                for _ in range(12):
-                    challenge_gateway.decision_engine.anomaly_detector.analyze(
-                        ParsedRequest(method="GET", path="/api/items/5", headers={}, client_ip=client_ip),
-                        client_id=client_ip
+                for probe in ["/admin", "/.env", "/config.php", "/phpmyadmin"]:
+                    challenge_gateway.decision_engine.anomaly_detector.record_event(
+                        client_id=client_ip,
+                        path=probe,
+                        status_code=404,
                     )
 
                 # 4. Make request with clearance cookie -> should pass through (200 OK)
