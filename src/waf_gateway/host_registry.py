@@ -29,9 +29,11 @@ class SitePolicyConfig(BaseModel):
     block_threshold: float = Field(default=0.85, ge=0.0, le=1.0)
     challenge_threshold: float = Field(default=0.50, ge=0.0, le=1.0)
     monitor_threshold: float = Field(default=0.20, ge=0.0, le=1.0)
+    strict_block_threshold: float = Field(default=0.50, ge=0.0, le=1.0)
     ml_enabled: bool = Field(default=True)
     rules_enabled: bool = Field(default=True)
     challenge_enabled: bool = Field(default=True)
+    anomaly_enabled: bool = Field(default=True)
     exclusions: List[Dict[str, Any]] = Field(default_factory=list)
 
     @field_validator("mode")

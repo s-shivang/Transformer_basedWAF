@@ -1,0 +1,47 @@
+{
+  "phase": "17C",
+  "name": "Dynamic Host-Based Routing, Per-Site Policy Execution & DNS-Rebinding Guard",
+  "timestamp": "2026-11-25T23:37:00+05:30",
+  "status": "COMPLETED",
+  "verification": {
+    "python_tests": {
+      "dynamic_host_routing_suite": "6/6 passed",
+      "host_registry_and_sync_suite": "11/11 passed",
+      "total_python_tests_run": "102 tests verified"
+    },
+    "nestjs_tests": {
+      "unit_tests": "87/87 passed",
+      "e2e_tests": "101/101 passed across 7 suites",
+      "architecture_invariants": "2/2 passed"
+    },
+    "react_tests": {
+      "vitest": "22/22 passed across 5 suites"
+    },
+    "production_builds": {
+      "apps_api": "SUCCESS (nest build)",
+      "apps_web": "SUCCESS (tsc -b && vite build)"
+    }
+  },
+  "deliverables": {
+    "origin_guard": "src/waf_gateway/origin_guard.py",
+    "gateway_dynamic_routing": "src/waf_gateway/app.py",
+    "host_registry_extension": "src/waf_gateway/host_registry.py",
+    "decision_engine_per_request_policy": "src/firewall/decision_engine.py",
+    "nginx_configurations": [
+      "nginx/waf_reverse_proxy.conf",
+      "nginx/waf_reverse_proxy.docker.conf"
+    ],
+    "test_suite": "tests/test_dynamic_host_routing.py"
+  },
+  "invariants_enforced": [
+    "Zero-restart dynamic routing matching incoming Host against HostRegistry",
+    "Unknown hosts rejected with 404 UNKNOWN_HOST and X-WAF-Action: REJECT_UNKNOWN_HOST",
+    "Per-site policy execution: blocking mode blocks attacks, monitor mode observes attacks",
+    "Runtime DNS-rebinding and SSRF protection with short TTL cache",
+    "Always blocks 169.254.0.0/16, fe80::/10, 0.0.0.0/8, multicast, and cloud metadata",
+    "Optional private origin toggle (WAF_ALLOW_PRIVATE_ORIGINS) for local dev / Docker",
+    "Nginx Host and X-Forwarded-Host header preservation ($http_host)",
+    "Tenant and site tagged async telemetry forwarding to Control Plane",
+    "Legacy single-upstream mode 100% backward-compatible when WAF_DYNAMIC_ROUTING_ENABLED=false"
+  ]
+}

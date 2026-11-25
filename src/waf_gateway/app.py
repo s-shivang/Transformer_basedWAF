@@ -58,11 +58,12 @@ def build_firewall_policy_from_site(route_config: SiteRouteConfig) -> FirewallPo
         if prefix:
             path_exclusions.append(prefix)
 
+    strict_thr = getattr(p_cfg, "strict_block_threshold", p_cfg.challenge_threshold)
     thresholds = ThresholdConfig(
         monitor=p_cfg.monitor_threshold,
         challenge=p_cfg.challenge_threshold,
         block=p_cfg.block_threshold,
-        strict_block=p_cfg.strict_block_threshold,
+        strict_block=strict_thr,
     )
     mode = p_cfg.mode.lower() if p_cfg.mode else "monitor"
     if mode not in ("monitor", "blocking", "strict", "disabled"):
@@ -74,7 +75,7 @@ def build_firewall_policy_from_site(route_config: SiteRouteConfig) -> FirewallPo
         inspection_mode=mode,
         rules_enabled=p_cfg.rules_enabled,
         ml_enabled=p_cfg.ml_enabled,
-        anomaly_enabled=p_cfg.anomaly_enabled,
+        anomaly_enabled=getattr(p_cfg, "anomaly_enabled", True),
         thresholds=thresholds,
         path_exclusions=path_exclusions,
     )
