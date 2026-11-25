@@ -52,11 +52,24 @@ enum MlFailureMode {
   FAIL_CLOSED
 }
 
-enum PolicyAction {
+enum WafAction {
   ALLOW
   MONITOR
   CHALLENGE
   BLOCK
+}
+
+enum FeedbackLabel {
+  FALSE_POSITIVE
+  CONFIRMED_ATTACK
+  SUSPICIOUS
+  NEEDS_INVESTIGATION
+}
+
+enum FeedbackReviewStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
 
 enum SecuritySeverity {
@@ -80,6 +93,7 @@ model Tenant {
   protectedSites  ProtectedSite[]
   wafPolicies     WafPolicy[]
   securityEvents  SecurityEvent[]
+  eventFeedbacks  EventFeedback[]
   auditLogs       AuditLog[]
   refreshSessions RefreshSession[]
 
@@ -98,9 +112,11 @@ model User {
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
   // Relationships
-  memberships     Membership[]
-  auditLogs       AuditLog[]
-  refreshSessions RefreshSession[]
+  memberships        Membership[]
+  auditLogs          AuditLog[]
+  refreshSessions    RefreshSession[]
+  submittedFeedbacks EventFeedback[]  @relation("FeedbackSubmittedBy")
+  reviewedFeedbacks  EventFeedback[]  @relation("FeedbackReviewedBy")
 
   @@index([email])
   @@map("users")
@@ -157,6 +173,7 @@ model ProtectedSite {
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   wafPolicies    WafPolicy[]
   securityEvents SecurityEvent[]
+  eventFeedbacks EventFeedback[]
 
   @@unique([tenantId, domain])
   @@index([tenantId])
@@ -199,30 +216,61 @@ model WafPolicy {
 // ----------------------------------------------------
 
 model SecurityEvent {
-  id            String           @id @default(uuid()) @db.Uuid
-  tenantId      String           @map("tenant_id") @db.Uuid
-  siteId        String?          @map("site_id") @db.Uuid
-  requestId     String           @map("request_id") @db.VarChar(64)
-  clientIp      String           @map("client_ip") @db.VarChar(45)
-  method        String           @db.VarChar(10)
-  uri           String           @db.VarChar(2048)
-  action        PolicyAction
-  severity      SecuritySeverity @default(LOW)
-  mlScore       Float?           @map("ml_score")
-  calibratedP   Float?           @map("calibrated_p")
-  triggeredRule String?          @map("triggered_rule") @db.VarChar(100)
-  stageUsed     String?          @map("stage_used") @db.VarChar(50)
-  redactedEvent Json?            @map("redacted_event")
-  createdAt     DateTime         @default(now()) @map("created_at")
+  id                  String           @id @default(uuid()) @db.Uuid
+  tenantId            String           @map("tenant_id") @db.Uuid
+  siteId              String?          @map("site_id") @db.Uuid
+  requestId           String           @map("request_id") @db.VarChar(64)
+  clientIpHash        String?          @map("client_ip_hash") @db.VarChar(64)
+  method              String           @db.VarChar(10)
+  path                String           @db.VarChar(2048)
+  action              WafAction
+  wouldAction         WafAction?       @map("would_action")
+  reason              String?          @db.VarChar(255)
+  riskScore           Float            @default(0.0) @map("risk_score")
+  severity            SecuritySeverity @default(LOW)
+  stageUsed           String?          @map("stage_used") @db.VarChar(50)
+  ruleMatchesJson     Json?            @default("[]") @map("rule_matches_json")
+  anomalyFlagsJson    Json?            @default("[]") @map("anomaly_flags_json")
+  degradedMode        Boolean          @default(false) @map("degraded_mode")
+  modelVersion        String?          @default("v1_0") @map("model_version") @db.VarChar(50)
+  policyVersion       Int?             @default(1) @map("policy_version")
+  latencyMs           Float            @default(0.0) @map("latency_ms")
+  redactedRequestJson Json?            @map("redacted_request_json")
+  createdAt           DateTime         @default(now()) @map("created_at")
 
-  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  site   ProtectedSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  site           ProtectedSite?  @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  eventFeedbacks EventFeedback[]
 
   @@index([tenantId, createdAt])
-  @@index([siteId, createdAt])
+  @@index([tenantId, siteId, createdAt])
   @@index([action])
-  @@index([clientIp])
   @@map("security_events")
+}
+
+model EventFeedback {
+  id                String               @id @default(uuid()) @db.Uuid
+  tenantId          String               @map("tenant_id") @db.Uuid
+  siteId            String?              @map("site_id") @db.Uuid
+  securityEventId   String               @map("security_event_id") @db.Uuid
+  submittedByUserId String?              @map("submitted_by_user_id") @db.Uuid
+  label             FeedbackLabel
+  reviewStatus      FeedbackReviewStatus @default(PENDING_REVIEW) @map("review_status")
+  reviewerUserId    String?              @map("reviewer_user_id") @db.Uuid
+  notes             String?              @db.Text
+  reviewNotes       String?              @map("review_notes") @db.Text
+  createdAt         DateTime             @default(now()) @map("created_at")
+  reviewedAt        DateTime?            @map("reviewed_at")
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  site            ProtectedSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  securityEvent   SecurityEvent @relation(fields: [securityEventId], references: [id], onDelete: Cascade)
+  submittedByUser User?         @relation("FeedbackSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+  reviewerUser    User?         @relation("FeedbackReviewedBy", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, reviewStatus])
+  @@index([tenantId, securityEventId])
+  @@map("event_feedbacks")
 }
 
 model AuditLog {
