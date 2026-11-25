@@ -118,6 +118,7 @@ export const GlobalThreatGlobe: React.FC<GlobalThreatGlobeProps> = ({
     }));
 
     let globe: ReturnType<typeof createGlobe> | null = null;
+    let animId: number | null = null;
     try {
       globe = createGlobe(currentCanvas, {
         devicePixelRatio: Math.min(2, window.devicePixelRatio || 1),
@@ -133,17 +134,23 @@ export const GlobalThreatGlobe: React.FC<GlobalThreatGlobeProps> = ({
         markerColor: [1.0, 0.4, 0.0], // Glowing orange marker dots
         glowColor: isDark ? [1.0, 0.42, 0.0] : [0.95, 0.55, 0.2], // Subtle orange atmospheric halo
         markers,
-        onRender: (state) => {
-          state.phi = phi;
-          phi += 0.003;
-        },
       });
+
+      const animate = () => {
+        phi += 0.003;
+        globe?.update({ phi });
+        animId = requestAnimationFrame(animate);
+      };
+      animId = requestAnimationFrame(animate);
     } catch {
       setWebGLSupported(false);
     }
 
     return () => {
       window.removeEventListener('resize', onResize);
+      if (animId !== null) {
+        cancelAnimationFrame(animId);
+      }
       if (globe) {
         try {
           globe.destroy();
