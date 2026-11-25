@@ -10,8 +10,8 @@ export class HttpWafGatewayClient implements IWafGatewayClient {
   private readonly adminKey: string;
 
   constructor() {
-    this.gatewayUrl = process.env.WAF_GATEWAY_URL || 'http://localhost:8000';
-    this.adminKey = process.env.WAF_ADMIN_KEY || 'waf-admin-secret-key';
+    this.gatewayUrl = process.env.WAF_GATEWAY_ADMIN_URL || process.env.WAF_GATEWAY_URL || 'http://localhost:8001';
+    this.adminKey = process.env.WAF_ADMIN_KEY || 'waf-admin-secret-key-local';
   }
 
   async syncPolicy(siteId: string, effectivePolicy: any): Promise<PolicySyncResult> {
@@ -19,16 +19,26 @@ export class HttpWafGatewayClient implements IWafGatewayClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
+      const mode = (effectivePolicy.mode || 'MONITOR').toLowerCase();
+      const payload: any = {
+        inspection_mode: mode === 'disabled' ? 'disabled' : mode === 'blocking' ? 'blocking' : mode === 'strict' ? 'strict' : 'monitor',
+        rules_enabled: effectivePolicy.rulesEnabled,
+        ml_enabled: effectivePolicy.mlEnabled,
+        ml_failure_mode: (effectivePolicy.mlFailureMode || 'FAIL_OPEN').toLowerCase(),
+        thresholds: {
+          block: effectivePolicy.blockThreshold,
+          challenge: effectivePolicy.challengeThreshold,
+          monitor: effectivePolicy.monitorThreshold,
+        },
+      };
+
       const response = await fetch(`${this.gatewayUrl}/_waf/policy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-WAF-Admin-Key': this.adminKey,
         },
-        body: JSON.stringify({
-          siteId,
-          policy: effectivePolicy,
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
