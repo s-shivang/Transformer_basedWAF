@@ -42,7 +42,7 @@ export const Login: React.FC = () => {
           </div>
           <h1 className="text-xl font-bold tracking-tight">
             <span>Transformer </span>
-            <span className="text-[#FF6600]">WAF</span>
+            <span className="text-[#FF6600]">WAF SOC</span>
           </h1>
           <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
             Sign in to your enterprise threat intelligence operations center

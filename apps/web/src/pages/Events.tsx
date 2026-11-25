@@ -97,7 +97,7 @@ export const Events: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-3.5 rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="p-3.5 rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] flex flex-wrap items-center justify-between gap-3 shadow-sm">
         {/* Action Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto">
           {actions.map((act) => (
@@ -109,10 +109,10 @@ export const Events: React.FC = () => {
                 setPage(1);
               }}
               className={cn(
-                'px-2.5 py-1 text-xs font-mono font-medium rounded-lg transition-colors border',
+                'px-2.5 py-1 text-xs font-mono font-medium rounded-xl transition-all border',
                 actionFilter === act
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200',
+                  ? 'bg-gradient-to-r from-[#FF6600] to-[#EA580C] text-white border-transparent shadow-[0_0_10px_rgba(255,102,0,0.3)]'
+                  : 'bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#71717A] dark:text-[#A1A1AA] hover:text-[#0A0A0A] dark:hover:text-white',
               )}
             >
               {act}
@@ -123,7 +123,7 @@ export const Events: React.FC = () => {
         {/* Search & Risk Inputs */}
         <div className="flex items-center gap-2.5 flex-1 max-w-md">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA] absolute left-3 top-2.5 pointer-events-none" />
             <input
               type="text"
               placeholder="Search path (e.g. /login, /search)..."
@@ -132,7 +132,7 @@ export const Events: React.FC = () => {
                 setSearchPath(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-3 py-1.5 text-xs font-mono rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937] text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-1.5 text-xs font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
             />
           </div>
 
@@ -155,11 +155,11 @@ export const Events: React.FC = () => {
       </div>
 
       {/* Dense Monospace Events Table */}
-      <div className="rounded-xl border bg-white dark:bg-[#111827] border-slate-200 dark:border-[#1F2937] overflow-hidden shadow-xs">
+      <div className="rounded-2xl border bg-white dark:bg-[#0A0A0A] border-[#E5E7EB] dark:border-[#222222] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1F2937] bg-slate-50/50 dark:bg-[#090D16]/50 text-slate-500 dark:text-slate-400 font-medium">
+              <tr className="border-b border-[#E5E7EB] dark:border-[#222222] bg-[#F9FAFB]/50 dark:bg-[#111111]/50 text-[#71717A] dark:text-[#A1A1AA] font-medium">
                 <th className="py-2.5 px-4 font-mono">Timestamp</th>
                 <th className="py-2.5 px-3">Action</th>
                 <th className="py-2.5 px-3 font-mono">Method & Path</th>
@@ -169,15 +169,15 @@ export const Events: React.FC = () => {
                 <th className="py-2.5 px-4">Trigger Reason</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1F2937]">
+            <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#222222]">
               {items.length > 0 ? (
                 items.map((event: any) => (
                   <tr
                     key={event.id}
                     onClick={() => handleOpenDrawer(event)}
                     className={cn(
-                      'cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50',
-                      selectedEvent?.id === event.id && 'bg-blue-50/50 dark:bg-blue-900/10',
+                      'cursor-pointer transition-colors hover:bg-[#F3F4F6] dark:hover:bg-[#161616]',
+                      selectedEvent?.id === event.id && 'bg-[#FFF7ED] dark:bg-[#1C1C1C]',
                     )}
                   >
                     <td className="py-2 px-4 font-mono text-slate-500 whitespace-nowrap">
@@ -260,19 +260,19 @@ export const Events: React.FC = () => {
 
       {/* Right Slide-Over Inspection Drawer */}
       {selectedEvent && (
-        <div className="fixed inset-y-0 right-0 w-full sm:w-[500px] z-50 bg-white dark:bg-[#111827] border-l border-slate-200 dark:border-[#1F2937] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-[500px] z-50 bg-white dark:bg-[#0A0A0A] border-l border-[#E5E7EB] dark:border-[#222222] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
           {/* Drawer Header */}
-          <div className="p-4 border-b border-slate-200 dark:border-[#1F2937] flex items-center justify-between bg-slate-50/50 dark:bg-[#090D16]/50">
+          <div className="p-4 border-b border-[#E5E7EB] dark:border-[#222222] flex items-center justify-between bg-[#F9FAFB]/50 dark:bg-[#111111]/50">
             <div className="flex items-center gap-2.5">
               <ActionBadge action={selectedEvent.action} />
-              <span className="font-mono font-semibold text-xs text-slate-800 dark:text-slate-200 truncate">
+              <span className="font-mono font-semibold text-xs text-[#0A0A0A] dark:text-white truncate">
                 {selectedEvent.requestId}
               </span>
             </div>
             <button
               type="button"
               onClick={() => setSelectedEvent(null)}
-              className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="p-1 rounded text-[#71717A] hover:text-[#0A0A0A] dark:text-[#A1A1AA] dark:hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -281,7 +281,7 @@ export const Events: React.FC = () => {
           {/* Drawer Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
             {/* Visual Risk Score Meter */}
-            <div className="p-3.5 rounded-lg border bg-slate-50 dark:bg-[#090D16] border-slate-200 dark:border-[#1F2937]">
+            <div className="p-3.5 rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222]">
               <RiskMeter score={selectedEvent.riskScore} />
             </div>
 
@@ -391,7 +391,7 @@ export const Events: React.FC = () => {
                   <button
                     type="submit"
                     disabled={submitFeedbackMutation.isPending}
-                    className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(255,102,0,0.3)] disabled:opacity-50"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{submitFeedbackMutation.isPending ? 'Submitting...' : 'Queue for Human Review'}</span>

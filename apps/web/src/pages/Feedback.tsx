@@ -90,21 +90,21 @@ export const FeedbackPage: React.FC = () => {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <MessageSquare className="w-6 h-6 text-indigo-500" />
+        <h1 className="text-xl font-bold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-[#FF6600]" />
           False-Positive Feedback Queue
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
           Review analyst feedback on flagged requests and curate high-confidence samples for the offline ML retraining pipeline.
         </p>
       </div>
 
       {/* Safety Notice Banner */}
-      <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 dark:bg-blue-950/20 p-4 text-blue-900 dark:text-blue-200">
+      <div className="rounded-2xl border border-[#FF6600]/30 bg-[#FFF7ED]/50 dark:bg-[#161616] p-4 text-[#0A0A0A] dark:text-white">
         <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <span className="font-semibold text-blue-800 dark:text-blue-300">
+          <Info className="w-5 h-5 text-[#FF6600] shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <span className="font-semibold text-[#FF6600] dark:text-[#FF8800]">
               ML Safety & Governance Protocol:
             </span>{' '}
             Marking an event as a False Positive never mutates live production weights or active thresholds automatically.
@@ -114,7 +114,7 @@ export const FeedbackPage: React.FC = () => {
       </div>
 
       {/* Status Filter Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-4">
+      <div className="flex border-b border-[#E5E7EB] dark:border-[#222222] space-x-4">
         {[
           { id: 'PENDING_REVIEW', label: 'Pending Review' },
           { id: 'APPROVED', label: 'Approved' },
@@ -124,10 +124,10 @@ export const FeedbackPage: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setSelectedStatus(tab.id)}
-            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`pb-3 text-xs font-medium border-b-2 transition-colors ${
               selectedStatus === tab.id
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                ? 'border-[#FF6600] text-[#FF6600] dark:text-[#FF8800] font-semibold'
+                : 'border-transparent text-[#71717A] hover:text-[#0A0A0A] dark:text-[#A1A1AA] dark:hover:text-white'
             }`}
           >
             {tab.label}
@@ -136,7 +136,7 @@ export const FeedbackPage: React.FC = () => {
       </div>
 
       {/* Feedback List Table */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#222222] bg-white dark:bg-[#0A0A0A] overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="p-12 text-center text-slate-400 animate-pulse">
             Loading feedback submissions...

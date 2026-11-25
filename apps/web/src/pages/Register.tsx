@@ -124,7 +124,7 @@ export const Register: React.FC = () => {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder="At least 8 characters"
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
               />
             </div>
@@ -142,7 +142,7 @@ export const Register: React.FC = () => {
                   required
                   value={tenantName}
                   onChange={(e) => handleSlugAuto(e.target.value)}
-                  placeholder="Acme Global Inc"
+                  placeholder="Acme Corp"
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
                 />
               </div>
@@ -158,7 +158,7 @@ export const Register: React.FC = () => {
                 pattern="^[a-z0-9]+(-[a-z0-9]+)*$"
                 value={tenantSlug}
                 onChange={(e) => setTenantSlug(e.target.value.toLowerCase())}
-                placeholder="acme-global"
+                placeholder="acme-corp"
                 className="w-full px-3 py-2 text-sm font-mono rounded-xl border bg-[#F9FAFB] dark:bg-[#111111] border-[#E5E7EB] dark:border-[#222222] text-[#0A0A0A] dark:text-white placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-[#FF6600] focus:border-[#FF6600]"
               />
             </div>
@@ -169,7 +169,7 @@ export const Register: React.FC = () => {
             disabled={loading}
             className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 text-white font-medium text-sm transition-all shadow-[0_0_15px_rgba(255,102,0,0.3)] disabled:opacity-50 mt-4"
           >
-            {loading ? 'Creating Tenant...' : 'Provision Tenant Account'}
+            {loading ? 'Registering...' : 'Register & Launch Workspace'}
           </button>
         </form>
 

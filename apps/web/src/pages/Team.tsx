@@ -85,18 +85,18 @@ export const TeamPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-500" />
+          <h1 className="text-xl font-bold tracking-tight text-[#0A0A0A] dark:text-white flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#FF6600]" />
             Team & Access Control (RBAC)
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
             Manage organization members, assign granular security roles, and enforce tenant access policies.
           </p>
         </div>
         {canManageTeam && (
           <button
             onClick={() => setIsInviteOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#FF6600] to-[#EA580C] hover:brightness-110 shadow-[0_0_15px_rgba(255,102,0,0.3)] transition-all"
           >
             <UserPlus className="w-4 h-4" />
             Add Member
@@ -110,32 +110,32 @@ export const TeamPage: React.FC = () => {
           {
             role: 'OWNER',
             desc: 'Full tenant ownership, billing, member deletion & all policies',
-            color: 'border-purple-500/30',
+            color: 'border-[#FF6600]/40',
           },
           {
             role: 'ADMIN',
             desc: 'Full WAF policy mutation, site provisioning, member invitations',
-            color: 'border-indigo-500/30',
+            color: 'border-[#EA580C]/40',
           },
           {
             role: 'ANALYST',
             desc: 'Investigate security events, submit false-positive feedback',
-            color: 'border-blue-500/30',
+            color: 'border-amber-500/30',
           },
           {
             role: 'VIEWER',
             desc: 'Read-only access to overview dashboards, analytics, and events',
-            color: 'border-slate-500/30',
+            color: 'border-[#71717A]/30',
           },
         ].map((item) => (
           <div
             key={item.role}
-            className={`p-4 rounded-xl border bg-white dark:bg-slate-900 ${item.color} shadow-sm`}
+            className={`p-4 rounded-2xl border bg-white dark:bg-[#0A0A0A] ${item.color} shadow-sm`}
           >
-            <div className="text-xs font-bold tracking-wider uppercase text-slate-900 dark:text-white">
+            <div className="text-xs font-bold tracking-wider uppercase text-[#0A0A0A] dark:text-white">
               {item.role}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1">
               {item.desc}
             </p>
           </div>
@@ -143,17 +143,17 @@ export const TeamPage: React.FC = () => {
       </div>
 
       {/* Members Table */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#222222] bg-white dark:bg-[#0A0A0A] overflow-hidden shadow-sm">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-400 animate-pulse">
+          <div className="p-12 text-center text-[#71717A] dark:text-[#A1A1AA] animate-pulse">
             Loading team members...
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-rose-500">
+          <div className="p-8 text-center text-red-500">
             Failed to load members: {(error as Error).message}
           </div>
         ) : !members || members.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
+          <div className="p-12 text-center text-[#71717A] dark:text-[#A1A1AA]">
             No team members found for this tenant.
           </div>
         ) : (

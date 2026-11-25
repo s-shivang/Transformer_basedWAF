@@ -63,6 +63,24 @@ interface GlobalThreatGlobeProps {
   className?: string;
 }
 
+const checkWebGLAvailability = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  // Detect if running in JSDOM or test environment where WebGL is not available
+  if (
+    navigator.userAgent.includes('jsdom') ||
+    typeof (window as any).WebGLRenderingContext === 'undefined'
+  ) {
+    return false;
+  }
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    return !!gl;
+  } catch {
+    return false;
+  }
+};
+
 export const GlobalThreatGlobe: React.FC<GlobalThreatGlobeProps> = ({
   callouts = DEFAULT_CALLOUTS,
   className,
@@ -72,23 +90,10 @@ export const GlobalThreatGlobe: React.FC<GlobalThreatGlobeProps> = ({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const [webGLSupported, setWebGLSupported] = useState<boolean>(true);
+  const [webGLSupported, setWebGLSupported] = useState<boolean>(checkWebGLAvailability);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [rotationOffset, setRotationOffset] = useState<number>(0);
   const [selectedCallout, setSelectedCallout] = useState<ThreatCallout | null>(null);
-
-  // Check WebGL availability safely (crucial for JSDOM / Vitest hermetic tests)
-  useEffect(() => {
-    try {
-      const testCanvas = document.createElement('canvas');
-      const gl = testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
-      if (!gl) {
-        setWebGLSupported(false);
-      }
-    } catch {
-      setWebGLSupported(false);
-    }
-  }, []);
 
   // WebGL Globe Initialization via cobe
   useEffect(() => {
