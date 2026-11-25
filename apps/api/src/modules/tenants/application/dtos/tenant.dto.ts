@@ -1,4 +1,4 @@
-import { TenantTier, TenantStatus } from '../domain/tenant.entity';
+import { TenantTier, TenantStatus } from '../../domain/tenant.entity';
 
 export interface CreateTenantDto {
   name: string;

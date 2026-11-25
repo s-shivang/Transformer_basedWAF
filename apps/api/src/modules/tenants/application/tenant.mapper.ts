@@ -1,4 +1,4 @@
-import { Tenant } from '../../domain/tenant.entity';
+import { Tenant } from '../domain/tenant.entity';
 import { TenantResponseDto } from './dtos/tenant.dto';
 
 export class TenantMapper {

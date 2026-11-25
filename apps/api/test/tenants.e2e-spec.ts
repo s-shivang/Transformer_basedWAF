@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
-import { TENANT_REPOSITORY } from '../../src/modules/tenants/domain/tenant.repository.interface';
-import { InMemoryTenantRepository } from '../../src/modules/tenants/infrastructure/in-memory-tenant.repository';
+import { AppModule } from '../src/app.module';
+import { TENANT_REPOSITORY } from '../src/modules/tenants/domain/tenant.repository.interface';
+import { InMemoryTenantRepository } from '../src/modules/tenants/infrastructure/in-memory-tenant.repository';
 
 describe('Tenants API (E2E Integration)', () => {
   let app: INestApplication;
