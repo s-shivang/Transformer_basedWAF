@@ -49,4 +49,45 @@ describe('DDD Architectural Boundary Invariants', () => {
 
     expect(violations).toEqual([]);
   });
+
+  it('modules/<ctxA> must NEVER directly import concrete repository or infrastructure classes from modules/<ctxB>/infrastructure', () => {
+    const modulesDir = path.resolve(__dirname, '../src/modules');
+    const moduleNames = fs.readdirSync(modulesDir).filter((name) => {
+      const full = path.join(modulesDir, name);
+      return fs.statSync(full).isDirectory();
+    });
+
+    const crossContextViolations: { file: string; line: string; importedModule: string }[] = [];
+
+    moduleNames.forEach((ctxA) => {
+      const ctxAFiles = getFilesRecursively(path.join(modulesDir, ctxA));
+
+      ctxAFiles.forEach((filePath) => {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const lines = content.split('\n');
+
+        lines.forEach((line) => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('import ') || trimmed.startsWith('from ')) {
+            // Check for cross-module infrastructure imports
+            moduleNames.forEach((ctxB) => {
+              if (ctxA !== ctxB) {
+                // Patterns like: '../ctxB/infrastructure' or '/modules/ctxB/infrastructure'
+                const crossModuleInfraPattern = new RegExp(`['"].*[/\\\\]${ctxB}[/\\\\]infrastructure[/\\\\].*['"]`);
+                if (crossModuleInfraPattern.test(trimmed)) {
+                  crossContextViolations.push({
+                    file: path.relative(path.resolve(__dirname, '..'), filePath),
+                    line: trimmed,
+                    importedModule: ctxB,
+                  });
+                }
+              }
+            });
+          }
+        });
+      });
+    });
+
+    expect(crossContextViolations).toEqual([]);
+  });
 });
