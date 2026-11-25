@@ -93,7 +93,7 @@ export class SecurityEventsController {
       throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
     }
 
-    const userId = (req as any).user?.sub;
+    const userId = req.tenantContext?.userId || (req as any).user?.sub;
     const clientIp = req.ip;
 
     const result = await this.submitFeedbackUseCase.execute(
@@ -142,7 +142,7 @@ export class SecurityEventsController {
       throw new HttpException('Tenant context required', HttpStatus.FORBIDDEN);
     }
 
-    const userId = (req as any).user?.sub;
+    const userId = req.tenantContext?.userId || (req as any).user?.sub;
     const clientIp = req.ip;
 
     const result = await this.reviewFeedbackUseCase.execute(
