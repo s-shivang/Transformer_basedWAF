@@ -282,9 +282,11 @@ export class ListFeedbackQueueUseCase {
     const page = Math.max(1, dto.page ?? 1);
     const limit = Math.min(100, Math.max(1, dto.limit ?? 20));
 
+    const reviewStatus = dto.reviewStatus || dto.status;
+
     const { items, total } = await this.feedbackRepo.list(tenantId, {
       siteId: dto.siteId,
-      reviewStatus: dto.reviewStatus,
+      reviewStatus,
       label: dto.label,
       page,
       limit,

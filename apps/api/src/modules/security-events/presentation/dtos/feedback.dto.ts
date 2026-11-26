@@ -44,6 +44,14 @@ export class QueryFeedbackDto {
   @IsEnum(FeedbackReviewStatus)
   reviewStatus?: FeedbackReviewStatus;
 
+  /**
+   * Alias for reviewStatus to support frontend queries using ?status=
+   */
+  @ApiPropertyOptional({ enum: FeedbackReviewStatus })
+  @IsOptional()
+  @IsEnum(FeedbackReviewStatus)
+  status?: FeedbackReviewStatus;
+
   @ApiPropertyOptional({ enum: FeedbackLabel })
   @IsOptional()
   @IsEnum(FeedbackLabel)

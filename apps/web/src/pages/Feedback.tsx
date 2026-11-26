@@ -25,11 +25,19 @@ export const FeedbackPage: React.FC = () => {
     notes: string;
   } | null>(null);
 
-  const { data: feedbackList, isLoading, error } = useQuery({
+  const { data: feedbackResponse, isLoading, error } = useQuery({
     queryKey: ['feedback', selectedStatus],
     queryFn: () =>
-      api.feedback.list(selectedStatus === 'ALL' ? {} : { status: selectedStatus }),
+      api.feedback.list(
+        selectedStatus === 'ALL'
+          ? {}
+          : { reviewStatus: selectedStatus, status: selectedStatus },
+      ),
   });
+
+  const feedbackList: any[] = Array.isArray(feedbackResponse)
+    ? feedbackResponse
+    : feedbackResponse?.items || [];
 
   const reviewMutation = useMutation({
     mutationFn: ({
@@ -176,7 +184,7 @@ export const FeedbackPage: React.FC = () => {
                     className="hover:bg-[#F3F4F6] dark:hover:bg-[#161616] transition-colors"
                   >
                     <td className="py-3 px-4 whitespace-nowrap">
-                      {getStatusBadge(item.status)}
+                      {getStatusBadge(item.reviewStatus || item.status)}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap font-medium text-[#0A0A0A] dark:text-white">
                       <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#FF6600]/10 text-[#FF6600] dark:text-[#FF8800] border border-[#FF6600]/20">
@@ -212,7 +220,7 @@ export const FeedbackPage: React.FC = () => {
                       {new Date(item.createdAt).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap text-right">
-                      {canReviewFeedback && item.status === 'PENDING_REVIEW' ? (
+                      {canReviewFeedback && (item.reviewStatus === 'PENDING_REVIEW' || item.status === 'PENDING_REVIEW') ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() =>
@@ -241,7 +249,7 @@ export const FeedbackPage: React.FC = () => {
                         </div>
                       ) : (
                         <span className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
-                          {item.status === 'PENDING_REVIEW' ? 'Review restricted' : 'Completed'}
+                          {(item.reviewStatus === 'PENDING_REVIEW' || item.status === 'PENDING_REVIEW') ? 'Review restricted' : 'Completed'}
                         </span>
                       )}
                     </td>
