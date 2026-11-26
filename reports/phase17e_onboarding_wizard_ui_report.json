@@ -1,0 +1,71 @@
+{
+  "phase": "17E",
+  "name": "React 6-Step Site Onboarding Setup Wizard & Owner Site Quota UI",
+  "timestamp": "2026-11-26T07:46:00.000Z",
+  "status": "PASS",
+  "environment": {
+    "os": "Windows (Local Laptop)",
+    "cloudSpend": "$0.00",
+    "stack": ["React 18", "TypeScript", "Vite", "Tailwind CSS", "TanStack Query", "Lucide React"]
+  },
+  "deliverables": [
+    {
+      "path": "apps/web/src/lib/api.ts",
+      "type": "Client Methods & Types",
+      "description": "Added Tenant quota endpoints and 10 onboarding lifecycle API client methods"
+    },
+    {
+      "path": "apps/web/src/components/SiteOnboardingWizard.tsx",
+      "type": "React Component",
+      "description": "6-step interactive modal wizard with copyable DNS tokens, TLS status, origin health probes, and error banners"
+    },
+    {
+      "path": "apps/web/src/pages/Sites.tsx",
+      "type": "React Page",
+      "description": "Enhanced sites table with lifecycle status badges, TLS badges, origin health badges, quota banner, OWNER inline quota editor, and health check actions"
+    },
+    {
+      "path": "apps/web/src/__tests__/SiteOnboardingWizard.test.tsx",
+      "type": "Vitest Test Suite",
+      "description": "6 comprehensive unit tests covering wizard steps, DNS copying, error recovery, and quota limit enforcement"
+    }
+  ],
+  "verificationMatrix": {
+    "webVitest": {
+      "command": "npm test -- --run",
+      "suites": 6,
+      "passed": 28,
+      "failed": 0
+    },
+    "webBuild": {
+      "command": "npm run build",
+      "durationSeconds": 5.54,
+      "status": "SUCCESS"
+    },
+    "apiUnitTests": {
+      "command": "npm test",
+      "suites": 9,
+      "passed": 87,
+      "failed": 0
+    },
+    "apiE2ETests": {
+      "command": "npx jest --config ./test/jest-e2e.json",
+      "suites": 7,
+      "passed": 111,
+      "failed": 0
+    },
+    "pythonGatewayTests": {
+      "command": "pytest tests/ -q",
+      "passed": 102,
+      "failed": 0
+    },
+    "totalTestsPassed": 328
+  },
+  "invariants": {
+    "zeroBackendModifications": true,
+    "zeroCloudSpend": true,
+    "strictPitchBlackDesignSystem": true,
+    "zeroDddBoundaryViolations": true,
+    "zeroPrivateKeyExposure": true
+  }
+}
