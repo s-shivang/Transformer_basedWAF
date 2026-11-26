@@ -78,6 +78,17 @@ export class PrismaSecurityEventRepository implements ISecurityEventRepository {
     return this.toDomain(record);
   }
 
+  async findByIds(tenantId: string, eventIds: string[]): Promise<SecurityEvent[]> {
+    if (eventIds.length === 0) return [];
+    const records = await this.prisma.securityEvent.findMany({
+      where: {
+        id: { in: eventIds },
+        tenantId,
+      },
+    });
+    return records.map((r) => this.toDomain(r));
+  }
+
   async query(
     tenantId: string,
     params: SecurityEventQueryParams,

@@ -276,6 +276,7 @@ export class SubmitEventFeedbackUseCase {
 export class ListFeedbackQueueUseCase {
   constructor(
     @Inject(EVENT_FEEDBACK_REPOSITORY) private readonly feedbackRepo: IEventFeedbackRepository,
+    @Inject(SECURITY_EVENT_REPOSITORY) private readonly eventRepo: ISecurityEventRepository,
   ) {}
 
   async execute(tenantId: string, dto: QueryFeedbackDto): Promise<Result<any>> {
@@ -292,8 +293,20 @@ export class ListFeedbackQueueUseCase {
       limit,
     });
 
+    const eventIds = Array.from(new Set(items.map((i) => i.securityEventId).filter(Boolean)));
+    const events = await this.eventRepo.findByIds(tenantId, eventIds);
+    const eventMap = new Map(events.map((e) => [e.id, serializeSecurityEvent(e)]));
+
+    const serializedItems = items.map((feedback) => {
+      const serialized = serializeEventFeedback(feedback);
+      return {
+        ...serialized,
+        event: eventMap.get(feedback.securityEventId) || null,
+      };
+    });
+
     return Result.ok({
-      items: items.map(serializeEventFeedback),
+      items: serializedItems,
       total,
       page,
       limit,

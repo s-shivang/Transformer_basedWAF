@@ -23,6 +23,13 @@ export class InMemorySecurityEventRepository implements ISecurityEventRepository
     return null;
   }
 
+  async findByIds(tenantId: string, eventIds: string[]): Promise<SecurityEvent[]> {
+    const idSet = new Set(eventIds);
+    return Array.from(this.events.values()).filter(
+      (e) => e.tenantId === tenantId && idSet.has(e.id),
+    );
+  }
+
   async query(
     tenantId: string,
     params: SecurityEventQueryParams,
